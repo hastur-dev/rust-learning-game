@@ -12,10 +12,12 @@ mod item;
 mod grid;
 mod robot;
 mod game_state;
+mod menu;
 
 use level::*;
 use item::*;
 use game_state::*;
+use menu::{MenuAction, MenuState};
 
 // Re-use some functions from original code that are still needed
 fn extract_crates_from_code(code: &str) -> HashSet<String> {
@@ -300,7 +302,7 @@ fn try_search_all(game: &mut Game) -> String {
     
     game.enemy_step_paused = true;
 
-    let robot_pos = game.robot.get_position();
+    let _robot_pos = game.robot.get_position();
     
     // Try to move to top-left corner first
     while game.robot.get_position().1 > 0 {
@@ -1077,9 +1079,9 @@ fn draw_game(game: &Game) {
     );
 
     let controls_text = if game.external_file_mode {
-        "Controls: Edit robot_code.rs in your IDE | ENTER execute | F create file | B shop | N finish | L reload | Q quit"
+        "Controls: Edit robot_code.rs in your IDE | ENTER execute | F create file | B shop | N finish | L reload | M menu"
     } else {
-        "Controls: Write Rust code to control robot | ENTER execute | B shop | N finish | L reload | Q quit"
+        "Controls: Write Rust code to control robot | ENTER execute | B shop | N finish | L reload | M menu"
     };
     draw_text(controls_text, PADDING, screen_height() - 18.0, 18.0, GRAY);
 
@@ -1154,132 +1156,172 @@ async fn main() {
     }
     
     let mut game = Game::new(levels, rng);
-    game.load_level(0);
-    
     let mut shop_open = false;
+    let mut selected_level_file: Option<String> = None;
 
     loop {
-        clear_background(Color::from_rgba(18, 18, 18, 255));
+        // Handle menu input and updates
+        let menu_action = game.menu.handle_input();
+        game.menu.update(menu_action.clone());
 
-        draw_game(&game);
-
-        if shop_open { handle_shop(&mut game); }
-
-        if !shop_open {
-            if is_key_pressed(KeyCode::Q) { break; }
-
-            // Check for file changes
-            if game.external_file_mode {
-                if let Some(ref receiver) = game.file_watcher_receiver {
-                    if let Ok(_event) = receiver.try_recv() {
-                        game.external_file_modified = true;
+        // Handle menu actions
+        match menu_action {
+            MenuAction::StartGame => {
+                game.load_level(0);
+            },
+            MenuAction::LoadPlayerLevel(level_name) => {
+                selected_level_file = Some(level_name.clone());
+                // Try to load the specific YAML level
+                if let Ok(yaml_config) = YamlLevelConfig::from_yaml_file(format!("levels/{}.yaml", level_name)) {
+                    if let Ok(level_spec) = yaml_config.to_level_spec(&mut game.rng) {
+                        game.levels = vec![level_spec];
+                        game.level_idx = 0;
+                        game.load_level(0);
                     }
                 }
-            }
-            
-            // Mouse handling - simplified for now
-            let (mouse_x, mouse_y) = mouse_position();
-            
-            if is_mouse_button_pressed(MouseButton::Left) {
-                // Function definitions area
-                let def_x = PADDING;
-                let def_y = PADDING + 100.0;
-                let available_functions = game.get_available_functions();
-                
-                for (i, func) in available_functions.iter().enumerate() {
-                    let button_y = def_y + 50.0 + (i as f32 * 30.0);
-                    if mouse_x >= def_x && mouse_x <= def_x + 200.0 &&
-                       mouse_y >= button_y && mouse_y <= button_y + 25.0 {
-                        game.selected_function_to_view = Some(*func);
-                    }
-                }
-                
-                // Editor mode toggle
-                let editor_x = screen_width() - 500.0 - PADDING;
-                let editor_y = PADDING + 100.0;
-                if !game.external_file_mode {
-                    if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + 510.0 &&
-                       mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + 410.0 {
-                        game.code_editor_active = true;
-                    } else if mouse_x > screen_width() / 2.0 {
-                        game.code_editor_active = false;
-                    }
-                }
-            }
-            
-            if is_key_pressed(KeyCode::Escape) {
-                game.code_editor_active = false;
-            }
-            
-            // Code editor input
-            if !game.external_file_mode && game.code_editor_active {
-                while let Some(character) = get_char_pressed() {
-                    if character.is_ascii() && !character.is_control() {
-                        game.code_input.insert(game.cursor_position, character);
-                        game.cursor_position += 1;
-                    }
-                }
-                
-                if is_key_pressed(KeyCode::Enter) {
-                    if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
-                        game.execution_result = execute_rust_code(&mut game);
-                    } else {
-                        game.code_input.insert(game.cursor_position, '\n');
-                        game.cursor_position += 1;
-                    }
-                }
-                
-                if is_key_pressed(KeyCode::Backspace) {
-                    if game.cursor_position > 0 {
-                        game.cursor_position -= 1;
-                        game.code_input.remove(game.cursor_position);
-                    }
-                }
-                
-                if is_key_pressed(KeyCode::C) {
-                    game.code_input.clear();
-                    game.cursor_position = 0;
-                    game.execution_result.clear();
-                }
-            }
-            
-            if is_key_pressed(KeyCode::Enter) && !game.code_editor_active {
-                game.execution_result = execute_rust_code(&mut game);
-                if game.external_file_mode {
-                    game.external_file_modified = false;
-                }
-            }
-            
-            if game.external_file_mode {
-                if is_key_pressed(KeyCode::F) {
-                    match create_sample_external_file(&game.external_file_path) {
-                        Ok(_) => {
-                            game.execution_result = format!("Created sample file: {}", game.external_file_path);
-                        },
-                        Err(e) => {
-                            game.execution_result = e;
-                        }
-                    }
-                }
-            }
-
-            if is_key_pressed(KeyCode::B) { shop_open = true; }
-            if is_key_pressed(KeyCode::N) {
-                if !game.finished { game.finish_level(); }
-                game.next_level();
-            }
-            if is_key_pressed(KeyCode::L) {
-                let idx = game.level_idx;
-                game.load_level(idx);
-                game.code_input.clear();
-                game.cursor_position = 0;
-                game.execution_result.clear();
-            }
-        } else {
-            if is_key_pressed(KeyCode::Escape) { shop_open = false; }
+            },
+            MenuAction::Exit => break,
+            _ => {}
         }
 
-        game.check_end_condition();
+        // Draw based on current menu state
+        match game.menu.state {
+            MenuState::InGame => {
+                clear_background(Color::from_rgba(18, 18, 18, 255));
+                draw_game(&game);
+
+                if shop_open { 
+                    handle_shop(&mut game); 
+                }
+
+                // Game input handling
+                if !shop_open {
+                    // Check for file changes
+                    if game.external_file_mode {
+                        if let Some(ref receiver) = game.file_watcher_receiver {
+                            if let Ok(_event) = receiver.try_recv() {
+                                game.external_file_modified = true;
+                            }
+                        }
+                    }
+                    
+                    // Mouse handling
+                    let (mouse_x, mouse_y) = mouse_position();
+                    
+                    if is_mouse_button_pressed(MouseButton::Left) {
+                        // Function definitions area
+                        let def_x = PADDING;
+                        let def_y = PADDING + 100.0;
+                        let available_functions = game.get_available_functions();
+                        
+                        for (i, func) in available_functions.iter().enumerate() {
+                            let button_y = def_y + 50.0 + (i as f32 * 30.0);
+                            if mouse_x >= def_x && mouse_x <= def_x + 200.0 &&
+                               mouse_y >= button_y && mouse_y <= button_y + 25.0 {
+                                game.selected_function_to_view = Some(*func);
+                            }
+                        }
+                        
+                        // Editor mode toggle
+                        let editor_x = screen_width() - 500.0 - PADDING;
+                        let editor_y = PADDING + 100.0;
+                        if !game.external_file_mode {
+                            if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + 510.0 &&
+                               mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + 410.0 {
+                                game.code_editor_active = true;
+                            } else if mouse_x > screen_width() / 2.0 {
+                                game.code_editor_active = false;
+                            }
+                        }
+                    }
+                    
+                    // Code editor input
+                    if !game.external_file_mode && game.code_editor_active {
+                        while let Some(character) = get_char_pressed() {
+                            if character.is_ascii() && !character.is_control() {
+                                game.code_input.insert(game.cursor_position, character);
+                                game.cursor_position += 1;
+                            }
+                        }
+                        
+                        if is_key_pressed(KeyCode::Enter) {
+                            if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
+                                game.execution_result = execute_rust_code(&mut game);
+                            } else {
+                                game.code_input.insert(game.cursor_position, '\n');
+                                game.cursor_position += 1;
+                            }
+                        }
+                        
+                        if is_key_pressed(KeyCode::Backspace) {
+                            if game.cursor_position > 0 {
+                                game.cursor_position -= 1;
+                                game.code_input.remove(game.cursor_position);
+                            }
+                        }
+                        
+                        if is_key_pressed(KeyCode::C) {
+                            game.code_input.clear();
+                            game.cursor_position = 0;
+                            game.execution_result.clear();
+                        }
+                    }
+                    
+                    if is_key_pressed(KeyCode::Enter) && !game.code_editor_active {
+                        game.execution_result = execute_rust_code(&mut game);
+                        if game.external_file_mode {
+                            game.external_file_modified = false;
+                        }
+                    }
+                    
+                    if game.external_file_mode {
+                        if is_key_pressed(KeyCode::F) {
+                            match create_sample_external_file(&game.external_file_path) {
+                                Ok(_) => {
+                                    game.execution_result = format!("Created sample file: {}", game.external_file_path);
+                                },
+                                Err(e) => {
+                                    game.execution_result = e;
+                                }
+                            }
+                        }
+                    }
+
+                    if is_key_pressed(KeyCode::B) { shop_open = true; }
+                    if is_key_pressed(KeyCode::N) {
+                        if !game.finished { game.finish_level(); }
+                        game.next_level();
+                    }
+                    if is_key_pressed(KeyCode::L) {
+                        let idx = game.level_idx;
+                        game.load_level(idx);
+                        game.code_input.clear();
+                        game.cursor_position = 0;
+                        game.execution_result.clear();
+                    }
+                    if is_key_pressed(KeyCode::M) {
+                        // Return to main menu
+                        game.menu.state = MenuState::MainMenu;
+                        game.menu.setup_main_menu();
+                        shop_open = false;
+                    }
+                } else {
+                    if is_key_pressed(KeyCode::Escape) { shop_open = false; }
+                }
+
+                game.check_end_condition();
+            },
+            _ => {
+                // Draw menu
+                game.menu.draw();
+                
+                // Show selected level info in player levels menu
+                if let (MenuState::PlayerLevels, Some(ref level_name)) = (&game.menu.state, &selected_level_file) {
+                    let info_text = format!("Selected: {}.yaml", level_name);
+                    draw_text(&info_text, 50.0, 50.0, 18.0, YELLOW);
+                }
+            }
+        }
 
         next_frame().await;
     }

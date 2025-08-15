@@ -2,6 +2,7 @@ use crate::level::LevelSpec;
 use crate::grid::Grid;
 use crate::robot::Robot;
 use crate::item::ItemManager;
+use crate::menu::Menu;
 use rand::rngs::StdRng;
 use crossbeam_channel::Receiver;
 use notify::Event;
@@ -46,6 +47,7 @@ pub struct Game {
     pub file_watcher_receiver: Option<Receiver<notify::Result<Event>>>,
     pub external_file_modified: bool,
     pub enemy_step_paused: bool,
+    pub menu: Menu,
 }
 
 impl Game {
@@ -86,6 +88,7 @@ search_all();
             file_watcher_receiver: None,
             external_file_modified: false,
             enemy_step_paused: false,
+            menu: Menu::new(),
         }
     }
 
