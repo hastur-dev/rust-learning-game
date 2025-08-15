@@ -1,0 +1,9 @@
+name: "Level 3 - Blockers!"
+grid_size: "16x10"
+obstacles: 8
+start_position: [1, 1]
+fog_of_war: true
+max_turns: 0
+income_per_square: 1
+
+items: []

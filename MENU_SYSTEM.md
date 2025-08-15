@@ -13,13 +13,29 @@ The game now features a comprehensive start menu system with the banner "Welcome
 
 ## Settings Menu
 
-The settings menu displays current configuration:
-- Window resolution
-- Fullscreen mode status
-- SFX and Music volume levels
-- Back to main menu option
+The settings menu provides **fully interactive** configuration options:
 
-*Note: Settings are currently read-only for display. Future versions may include interactive settings modification.*
+### **Interactive Controls:**
+- **Resolution**: Click through 6 preset resolutions (720p to 4K)
+  - **Left Click**: Next resolution
+  - **Right Click**: Previous resolution
+  - Available: 1280x720, 1366x768, 1600x900, 1920x1080, 2560x1440, 3840x2160
+
+- **Fullscreen**: Toggle fullscreen mode
+  - **Click**: Toggle on/off
+
+- **SFX Volume**: Audio effects volume (0-100%)
+  - **Left Click**: +10% volume
+  - **Right Click**: -10% volume
+
+- **Music Volume**: Background music volume (0-100%)
+  - **Left Click**: +10% volume
+  - **Right Click**: -10% volume
+
+### **Clear Instructions:**
+- On-screen prompts show "Left Click: Increase/Next | Right Click: Decrease/Previous"
+- Each button displays current value and available actions
+- Immediate visual feedback when settings change
 
 ## Player Levels Menu
 

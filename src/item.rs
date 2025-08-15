@@ -22,6 +22,7 @@ pub struct ItemCapabilities {
     pub scanner_range: Option<u32>,
     pub grabber_boost: Option<u32>,
     pub credits_value: Option<u32>,
+    pub time_slow_duration: Option<u32>, // Milliseconds between actions
     pub special_functions: Vec<String>,
     pub rust_code: Option<String>, // Raw Rust code for advanced items
 }
@@ -32,6 +33,7 @@ impl Default for ItemCapabilities {
             scanner_range: None,
             grabber_boost: None,
             credits_value: Some(1), // Default credit value
+            time_slow_duration: None,
             special_functions: Vec::new(),
             rust_code: None,
         }
@@ -148,6 +150,11 @@ impl ItemManager {
                         capabilities.credits_value = Some(value);
                     }
                 }
+                "time_slow_duration" => {
+                    if let Ok(duration) = parts[1].parse::<u32>() {
+                        capabilities.time_slow_duration = Some(duration);
+                    }
+                }
                 _ => {}
             }
         }
@@ -176,6 +183,7 @@ pub fn create_scanner_item(pos: Pos) -> Item {
             scanner_range: Some(1),
             grabber_boost: None,
             credits_value: Some(5),
+            time_slow_duration: None,
             special_functions: vec!["scan".to_string()],
             rust_code: None,
         },
@@ -191,6 +199,7 @@ pub fn create_grabber_upgrade(pos: Pos) -> Item {
             scanner_range: None,
             grabber_boost: Some(1),
             credits_value: Some(3),
+            time_slow_duration: None,
             special_functions: Vec::new(),
             rust_code: None,
         },
@@ -206,7 +215,24 @@ pub fn create_credit_gem(pos: Pos, value: u32) -> Item {
             scanner_range: None,
             grabber_boost: None,
             credits_value: Some(value),
+            time_slow_duration: None,
             special_functions: Vec::new(),
+            rust_code: None,
+        },
+        collected: false,
+    }
+}
+
+pub fn create_time_slow_item(pos: Pos, duration_ms: u32) -> Item {
+    Item {
+        name: "time_slow".to_string(),
+        pos,
+        capabilities: ItemCapabilities {
+            scanner_range: None,
+            grabber_boost: None,
+            credits_value: Some(25),
+            time_slow_duration: Some(duration_ms),
+            special_functions: vec!["time_slow".to_string()],
             rust_code: None,
         },
         collected: false,

@@ -37,16 +37,17 @@ pub struct Game {
     pub discovered_this_level: usize,
     pub finished: bool,
     pub scan_armed: bool,
-    pub code_input: String,
-    pub cursor_position: usize,
     pub execution_result: String,
     pub code_editor_active: bool,
     pub selected_function_to_view: Option<RustFunction>,
-    pub external_file_mode: bool,
-    pub external_file_path: String,
+    pub robot_code_path: String,
     pub file_watcher_receiver: Option<Receiver<notify::Result<Event>>>,
-    pub external_file_modified: bool,
+    pub robot_code_modified: bool,
+    pub current_code: String,
+    pub cursor_position: usize,
     pub enemy_step_paused: bool,
+    pub time_slow_active: bool,
+    pub time_slow_duration_ms: u32,
     pub menu: Menu,
 }
 
@@ -70,24 +71,17 @@ impl Game {
             discovered_this_level: 0,
             finished: false,
             scan_armed: false,
-            code_input: r#"// Welcome to Rust Robot Programming!
-// Try this function to search all reachable areas:
-search_all();
-
-// You can also use:
-// move(right);
-// move(up);
-// grab();  // Available from Level 2+
-// scan(left);  // Available from Level 3+"#.to_string(),
-            cursor_position: 67, // Position after "search_all();"
             execution_result: String::new(),
             code_editor_active: false,
             selected_function_to_view: None,
-            external_file_mode: false,
-            external_file_path: "robot_code.rs".to_string(),
+            robot_code_path: "robot_code.rs".to_string(),
             file_watcher_receiver: None,
-            external_file_modified: false,
+            robot_code_modified: false,
+            current_code: String::new(),
+            cursor_position: 0,
             enemy_step_paused: false,
+            time_slow_active: false,
+            time_slow_duration_ms: 500, // Default 500ms
             menu: Menu::new(),
         }
     }
@@ -123,6 +117,19 @@ search_all();
         if self.level_idx + 1 < self.levels.len() {
             self.level_idx += 1;
             self.load_level(self.level_idx);
+        }
+    }
+
+    pub fn load_robot_code(&mut self) {
+        if let Ok(code) = crate::read_robot_code(&self.robot_code_path) {
+            self.current_code = code;
+            self.cursor_position = self.cursor_position.min(self.current_code.len());
+        }
+    }
+
+    pub fn save_robot_code(&mut self) {
+        if let Err(e) = crate::write_robot_code(&self.robot_code_path, &self.current_code) {
+            self.execution_result = format!("Save error: {}", e);
         }
     }
 

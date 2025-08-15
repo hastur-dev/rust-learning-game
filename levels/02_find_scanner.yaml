@@ -1,0 +1,13 @@
+name: "Level 2 - Find the scanner"
+grid_size: "14x9"
+obstacles: 0
+start_position: [2, 2]
+fog_of_war: true
+max_turns: 0
+income_per_square: 1
+
+items:
+  - name: "scanner"
+    item_file: "items/scanner.rs"
+    spawn_randomly: false
+    location: [7, 4]

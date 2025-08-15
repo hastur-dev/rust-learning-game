@@ -214,6 +214,12 @@ fn try_grab(game: &mut Game) -> &'static str {
                 "scanner" => {
                     game.robot.set_scanner_level(1);
                 },
+                "time_slow" => {
+                    game.time_slow_active = true;
+                    if let Some(duration) = item.capabilities.time_slow_duration {
+                        game.time_slow_duration_ms = duration;
+                    }
+                },
                 _ => {
                     if let Some(credits) = item.capabilities.credits_value {
                         game.credits += credits;
@@ -222,6 +228,10 @@ fn try_grab(game: &mut Game) -> &'static str {
                         for _ in 0..grabber_boost {
                             game.robot.upgrade_grabber();
                         }
+                    }
+                    if let Some(duration) = item.capabilities.time_slow_duration {
+                        game.time_slow_active = true;
+                        game.time_slow_duration_ms = duration;
                     }
                 }
             }
@@ -550,10 +560,10 @@ fn load_external_code(file_path: &str) -> Result<String, String> {
     }
 }
 
-fn create_sample_external_file(file_path: &str) -> Result<(), String> {
-    let sample_code = r#"// Rust Robot Programming - External File Mode
-// Save this file and the game will automatically detect changes!
-// Use your favorite IDE/editor to write code here.
+fn get_default_robot_code() -> &'static str {
+    r#"// Welcome to Rust Robot Programming!
+// This file is automatically saved as you type.
+// You can also edit this file externally with any text editor.
 
 // Try this function to search all reachable areas:
 search_all();
@@ -579,11 +589,31 @@ search_all();
 // move(right);
 // move(right);
 // grab();
-"#;
-    
-    match fs::write(file_path, sample_code) {
+"#
+}
+
+fn create_default_robot_code(file_path: &str) -> Result<(), String> {
+    match fs::write(file_path, get_default_robot_code()) {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!("Failed to create sample file: {}", e)),
+        Err(e) => Err(format!("Failed to create robot_code.rs: {}", e)),
+    }
+}
+
+fn read_robot_code(file_path: &str) -> Result<String, String> {
+    match fs::read_to_string(file_path) {
+        Ok(content) => Ok(content),
+        Err(_) => {
+            // File doesn't exist, create it with default content
+            create_default_robot_code(file_path)?;
+            Ok(get_default_robot_code().to_string())
+        }
+    }
+}
+
+fn write_robot_code(file_path: &str, content: &str) -> Result<(), String> {
+    match fs::write(file_path, content) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(format!("Failed to save robot_code.rs: {}", e)),
     }
 }
 
@@ -605,14 +635,18 @@ fn setup_file_watcher(file_path: &str) -> Option<Receiver<notify::Result<Event>>
     Some(rx)
 }
 
-fn execute_rust_code(game: &mut Game) -> String {
-    let code_to_execute = if game.external_file_mode {
-        match load_external_code(&game.external_file_path) {
-            Ok(code) => code,
+async fn execute_rust_code(game: &mut Game) -> String {
+    let code_to_execute = if game.current_code.is_empty() {
+        // Fallback to reading from file if current_code is empty
+        match read_robot_code(&game.robot_code_path) {
+            Ok(code) => {
+                game.current_code = code.clone();
+                code
+            },
             Err(e) => return e,
         }
     } else {
-        game.code_input.clone()
+        game.current_code.clone()
     };
     
     let calls = parse_rust_code(&code_to_execute);
@@ -625,6 +659,14 @@ fn execute_rust_code(game: &mut Game) -> String {
         let result = execute_function(game, call);
         results.push(result.clone());
         
+        // Add delay if time slow is active
+        if game.time_slow_active {
+            let frames_to_wait = (game.time_slow_duration_ms as f32 / 16.67).round() as i32; // Assuming ~60 FPS
+            for _ in 0..frames_to_wait {
+                next_frame().await;
+            }
+        }
+        
         if result.contains("Unknown Object Blocking Function") || 
            result.contains("blocked by obstacle") || 
            result.contains("Search blocked") {
@@ -636,63 +678,6 @@ fn execute_rust_code(game: &mut Game) -> String {
     results.join("; ")
 }
 
-// Level loading functions
-fn make_built_in_levels() -> Vec<LevelSpec> {
-    vec![
-        LevelSpec { 
-            name: "Level 1 - Explore the grid".into(), 
-            width: 12, 
-            height: 8, 
-            start: (1,1), 
-            scanner_at: None, 
-            blockers: vec![], 
-            enemies: vec![],
-            items: vec![],
-            fog_of_war: true, 
-            max_turns: 0,
-            income_per_square: 1,
-        },
-        LevelSpec { 
-            name: "Level 2 - Find the scanner".into(), 
-            width: 14, 
-            height: 9, 
-            start: (2,2), 
-            scanner_at: Some((7, 4)), 
-            blockers: vec![], 
-            enemies: vec![],
-            items: vec![],
-            fog_of_war: true, 
-            max_turns: 0,
-            income_per_square: 1,
-        },
-        LevelSpec { 
-            name: "Level 3 - Blockers!".into(), 
-            width: 16, 
-            height: 10, 
-            start: (1,1), 
-            scanner_at: None, 
-            blockers: vec![], 
-            enemies: vec![],
-            items: vec![],
-            fog_of_war: true, 
-            max_turns: 0,
-            income_per_square: 1,
-        },
-        LevelSpec { 
-            name: "Level 4 - Moving Enemies".into(), 
-            width: 18, 
-            height: 12, 
-            start: (1,1), 
-            scanner_at: None, 
-            blockers: vec![], 
-            enemies: vec![],
-            items: vec![],
-            fog_of_war: true, 
-            max_turns: 0,
-            income_per_square: 1,
-        },
-    ]
-}
 
 fn load_yaml_levels() -> Vec<LevelSpec> {
     let mut levels = Vec::new();
@@ -857,9 +842,7 @@ fn draw_code_editor(game: &Game) {
     let editor_x = screen_width() - editor_width - PADDING;
     let editor_y = PADDING + 100.0;
     
-    let bg_color = if game.external_file_mode {
-        Color::new(0.1, 0.2, 0.1, 0.9)
-    } else if game.code_editor_active { 
+    let bg_color = if game.code_editor_active { 
         Color::new(0.1, 0.1, 0.2, 0.9) 
     } else { 
         Color::new(0.0, 0.0, 0.0, 0.8) 
@@ -867,20 +850,16 @@ fn draw_code_editor(game: &Game) {
     
     draw_rectangle(editor_x - 10.0, editor_y - 10.0, editor_width + 20.0, editor_height + 20.0, bg_color);
     draw_rectangle_lines(editor_x - 10.0, editor_y - 10.0, editor_width + 20.0, editor_height + 20.0, 2.0, 
-                        if game.external_file_mode { GREEN } else if game.code_editor_active { YELLOW } else { WHITE });
+                        if game.code_editor_active { YELLOW } else { WHITE });
     
-    let title = if game.external_file_mode { "EXTERNAL FILE MODE" } else { "RUST CODE EDITOR" };
-    draw_text(title, editor_x, editor_y, 20.0, if game.external_file_mode { GREEN } else { YELLOW });
+    let title = "ROBOT CODE EDITOR";
+    draw_text(title, editor_x, editor_y, 20.0, YELLOW);
     
-    if game.external_file_mode {
-        draw_text(&format!("File: {}", game.external_file_path), editor_x, editor_y + 20.0, 12.0, LIGHTGRAY);
-        if game.external_file_modified {
-            draw_text("File modified! Press ENTER to execute", editor_x, editor_y + 35.0, 12.0, YELLOW);
-        } else {
-            draw_text("Watching for file changes...", editor_x, editor_y + 35.0, 12.0, GREEN);
-        }
+    draw_text(&format!("File: {}", game.robot_code_path), editor_x, editor_y + 20.0, 12.0, LIGHTGRAY);
+    if game.robot_code_modified {
+        draw_text("File modified externally! Changes loaded.", editor_x, editor_y + 35.0, 12.0, YELLOW);
     } else {
-        draw_text("Click to activate, ESC to deactivate", editor_x, editor_y + 20.0, 12.0, GRAY);
+        draw_text("Click to edit, auto-saves on changes", editor_x, editor_y + 35.0, 12.0, GRAY);
     }
     
     let available_functions = game.get_available_functions();
@@ -902,69 +881,54 @@ fn draw_code_editor(game: &Game) {
     draw_rectangle(editor_x, input_y, editor_width, input_height, Color::new(0.05, 0.05, 0.05, 0.9));
     draw_rectangle_lines(editor_x, input_y, editor_width, input_height, 1.0, WHITE);
     
-    if game.external_file_mode {
-        match load_external_code(&game.external_file_path) {
-            Ok(external_code) => {
-                let lines: Vec<&str> = external_code.lines().collect();
-                for (i, line) in lines.iter().take(8).enumerate() {
-                    let line_y = input_y + 20.0 + (i as f32 * 16.0);
-                    let display_line = if line.len() > 55 {
-                        format!("{}...", &line[..52])
-                    } else {
-                        line.to_string()
-                    };
-                    draw_text(&display_line, editor_x + 10.0, line_y, 12.0, LIGHTGRAY);
-                }
-                if lines.len() > 8 {
-                    draw_text(&format!("... and {} more lines", lines.len() - 8), editor_x + 10.0, input_y + 145.0, 12.0, GRAY);
-                }
-            },
-            Err(e) => {
-                draw_text(&e, editor_x + 10.0, input_y + 20.0, 14.0, RED);
-            }
-        }
+    // Show current code from game state
+    let code_to_display = if game.current_code.is_empty() {
+        "// Loading robot_code.rs...".to_string()
     } else {
-        let lines: Vec<&str> = game.code_input.lines().collect();
-        for (i, line) in lines.iter().enumerate() {
-            let line_y = input_y + 20.0 + (i as f32 * 16.0);
-            if line_y < input_y + input_height - 10.0 {
-                draw_text(line, editor_x + 10.0, line_y, 14.0, WHITE);
-            }
-        }
+        game.current_code.clone()
+    };
+    
+    let lines: Vec<&str> = code_to_display.lines().collect();
+    for (i, line) in lines.iter().take(8).enumerate() {
+        let line_y = input_y + 20.0 + (i as f32 * 16.0);
+        let display_line = if line.len() > 55 {
+            format!("{}...", &line[..52])
+        } else {
+            line.to_string()
+        };
+        let color = if game.code_editor_active { WHITE } else { LIGHTGRAY };
+        draw_text(&display_line, editor_x + 10.0, line_y, 12.0, color);
+    }
+    if lines.len() > 8 {
+        draw_text(&format!("... and {} more lines", lines.len() - 8), editor_x + 10.0, input_y + 145.0, 12.0, GRAY);
+    }
+    
+    // Show cursor when editing (simplified cursor position)
+    if game.code_editor_active {
+        let cursor_line = game.current_code[..game.cursor_position].matches('\n').count();
+        let line_start = game.current_code[..game.cursor_position].rfind('\n').map(|i| i + 1).unwrap_or(0);
+        let cursor_col = game.cursor_position - line_start;
         
-        if game.code_editor_active {
-            let cursor_line = game.code_input[..game.cursor_position].matches('\n').count();
-            let line_start = game.code_input[..game.cursor_position].rfind('\n').map(|i| i + 1).unwrap_or(0);
-            let cursor_col = game.cursor_position - line_start;
-            
-            let cursor_x = editor_x + 10.0 + (cursor_col as f32 * 8.0);
+        if cursor_line < 8 { // Only show cursor if it's in visible area
+            let cursor_x = editor_x + 10.0 + (cursor_col as f32 * 7.0); // Approximate char width
             let cursor_y = input_y + 20.0 + (cursor_line as f32 * 16.0);
-            
-            if cursor_y < input_y + input_height - 10.0 {
-                draw_line(cursor_x, cursor_y - 12.0, cursor_x, cursor_y + 2.0, 1.0, YELLOW);
-            }
+            draw_line(cursor_x, cursor_y - 12.0, cursor_x, cursor_y + 2.0, 1.0, YELLOW);
         }
     }
     
     let button_y = input_y + input_height + 10.0;
     
-    if game.external_file_mode {
-        draw_rectangle(editor_x, button_y, 120.0, 30.0, DARKBLUE);
-        draw_rectangle_lines(editor_x, button_y, 120.0, 30.0, 1.0, WHITE);
-        draw_text("[F] Create File", editor_x + 5.0, button_y + 20.0, 14.0, WHITE);
-        
-        draw_rectangle(editor_x + 130.0, button_y, 100.0, 30.0, DARKGREEN);
-        draw_rectangle_lines(editor_x + 130.0, button_y, 100.0, 30.0, 1.0, WHITE);
-        draw_text("[ENTER] Run", editor_x + 140.0, button_y + 20.0, 14.0, WHITE);
-    } else {
-        draw_rectangle(editor_x, button_y, 100.0, 30.0, DARKGREEN);
-        draw_rectangle_lines(editor_x, button_y, 100.0, 30.0, 1.0, WHITE);
-        draw_text("[ENTER] Run", editor_x + 10.0, button_y + 20.0, 16.0, WHITE);
-        
-        draw_rectangle(editor_x + 110.0, button_y, 100.0, 30.0, Color::new(0.5, 0.1, 0.1, 1.0));
-        draw_rectangle_lines(editor_x + 110.0, button_y, 100.0, 30.0, 1.0, WHITE);
-        draw_text("[C] Clear", editor_x + 120.0, button_y + 20.0, 16.0, WHITE);
-    }
+    draw_rectangle(editor_x, button_y, 100.0, 30.0, DARKGREEN);
+    draw_rectangle_lines(editor_x, button_y, 100.0, 30.0, 1.0, WHITE);
+    draw_text("[ENTER] Run", editor_x + 10.0, button_y + 20.0, 16.0, WHITE);
+    
+    draw_rectangle(editor_x + 110.0, button_y, 120.0, 30.0, DARKBLUE);
+    draw_rectangle_lines(editor_x + 110.0, button_y, 120.0, 30.0, 1.0, WHITE);
+    draw_text("[E] Edit in IDE", editor_x + 120.0, button_y + 20.0, 14.0, WHITE);
+    
+    draw_rectangle(editor_x + 240.0, button_y, 100.0, 30.0, Color::new(0.5, 0.1, 0.1, 1.0));
+    draw_rectangle_lines(editor_x + 240.0, button_y, 100.0, 30.0, 1.0, WHITE);
+    draw_text("[R] Reset", editor_x + 250.0, button_y + 20.0, 16.0, WHITE);
     
     if !game.execution_result.is_empty() {
         let result_y = button_y + 40.0;
@@ -1073,16 +1037,29 @@ fn draw_game(game: &Game) {
         &format!("Credits: {}   Turns: {}{}", game.credits, game.turns, if game.max_turns>0 { format!("/{}", game.max_turns) } else { "".into() }),
         PADDING, PADDING + 24.0, 22.0, WHITE,
     );
+    let time_slow_status = if game.time_slow_active {
+        format!(" | Time Slow: {}ms", game.time_slow_duration_ms)
+    } else {
+        "".to_string()
+    };
+    
     draw_text(
-        &format!("Upgrades  Grabber range={}  |  Scanner len={}{}", game.robot.upgrades.grabber_level, game.robot.upgrades.scanner_level, if game.robot.has_scanner() { " (owned)" } else { "" }),
+        &format!("Upgrades  Grabber range={}  |  Scanner len={}{}{}", 
+                game.robot.upgrades.grabber_level, 
+                game.robot.upgrades.scanner_level, 
+                if game.robot.has_scanner() { " (owned)" } else { "" },
+                time_slow_status),
         PADDING, PADDING + 46.0, 20.0, WHITE,
     );
 
-    let controls_text = if game.external_file_mode {
-        "Controls: Edit robot_code.rs in your IDE | ENTER execute | F create file | B shop | N finish | L reload | M menu"
-    } else {
-        "Controls: Write Rust code to control robot | ENTER execute | B shop | N finish | L reload | M menu"
-    };
+    // Draw time slow indicator
+    if game.time_slow_active {
+        draw_rectangle(screen_width() - 200.0, PADDING, 180.0, 30.0, Color::new(0.0, 0.0, 0.5, 0.8));
+        draw_rectangle_lines(screen_width() - 200.0, PADDING, 180.0, 30.0, 2.0, YELLOW);
+        draw_text("TIME SLOW ACTIVE", screen_width() - 190.0, PADDING + 20.0, 16.0, YELLOW);
+    }
+
+    let controls_text = "Controls: Click code editor to edit robot_code.rs | ENTER execute | E IDE hint | B shop | N finish | L reload | M menu";
     draw_text(controls_text, PADDING, screen_height() - 18.0, 18.0, GRAY);
 
     draw_function_definitions(game);
@@ -1150,14 +1127,15 @@ async fn main() {
     let rng = StdRng::seed_from_u64(0xC0FFEE);
     
     // Load levels - first try YAML, then fallback to built-in
-    let mut levels = load_yaml_levels();
-    if levels.is_empty() {
-        levels = make_built_in_levels();
-    }
+    let levels = load_yaml_levels();
     
     let mut game = Game::new(levels, rng);
+    
+    // Initialize robot code
+    game.load_robot_code();
+    game.file_watcher_receiver = setup_file_watcher(&game.robot_code_path);
+    
     let mut shop_open = false;
-    let mut selected_level_file: Option<String> = None;
 
     loop {
         // Handle menu input and updates
@@ -1168,17 +1146,6 @@ async fn main() {
         match menu_action {
             MenuAction::StartGame => {
                 game.load_level(0);
-            },
-            MenuAction::LoadPlayerLevel(level_name) => {
-                selected_level_file = Some(level_name.clone());
-                // Try to load the specific YAML level
-                if let Ok(yaml_config) = YamlLevelConfig::from_yaml_file(format!("levels/{}.yaml", level_name)) {
-                    if let Ok(level_spec) = yaml_config.to_level_spec(&mut game.rng) {
-                        game.levels = vec![level_spec];
-                        game.level_idx = 0;
-                        game.load_level(0);
-                    }
-                }
             },
             MenuAction::Exit => break,
             _ => {}
@@ -1197,11 +1164,10 @@ async fn main() {
                 // Game input handling
                 if !shop_open {
                     // Check for file changes
-                    if game.external_file_mode {
-                        if let Some(ref receiver) = game.file_watcher_receiver {
-                            if let Ok(_event) = receiver.try_recv() {
-                                game.external_file_modified = true;
-                            }
+                    if let Some(ref receiver) = game.file_watcher_receiver {
+                        if let Ok(_event) = receiver.try_recv() {
+                            game.robot_code_modified = true;
+                            game.load_robot_code(); // Reload file content
                         }
                     }
                     
@@ -1225,66 +1191,65 @@ async fn main() {
                         // Editor mode toggle
                         let editor_x = screen_width() - 500.0 - PADDING;
                         let editor_y = PADDING + 100.0;
-                        if !game.external_file_mode {
-                            if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + 510.0 &&
-                               mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + 410.0 {
-                                game.code_editor_active = true;
-                            } else if mouse_x > screen_width() / 2.0 {
-                                game.code_editor_active = false;
-                            }
+                        if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + 510.0 &&
+                           mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + 410.0 {
+                            game.code_editor_active = true;
+                        } else if mouse_x > screen_width() / 2.0 {
+                            game.code_editor_active = false;
                         }
                     }
                     
                     // Code editor input
-                    if !game.external_file_mode && game.code_editor_active {
+                    if game.code_editor_active {
+                        let mut code_modified = false;
+                        
                         while let Some(character) = get_char_pressed() {
                             if character.is_ascii() && !character.is_control() {
-                                game.code_input.insert(game.cursor_position, character);
+                                game.current_code.insert(game.cursor_position, character);
                                 game.cursor_position += 1;
+                                code_modified = true;
                             }
                         }
                         
                         if is_key_pressed(KeyCode::Enter) {
                             if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
-                                game.execution_result = execute_rust_code(&mut game);
+                                game.execution_result = execute_rust_code(&mut game).await;
                             } else {
-                                game.code_input.insert(game.cursor_position, '\n');
+                                game.current_code.insert(game.cursor_position, '\n');
                                 game.cursor_position += 1;
+                                code_modified = true;
                             }
                         }
                         
                         if is_key_pressed(KeyCode::Backspace) {
                             if game.cursor_position > 0 {
                                 game.cursor_position -= 1;
-                                game.code_input.remove(game.cursor_position);
+                                game.current_code.remove(game.cursor_position);
+                                code_modified = true;
                             }
                         }
                         
-                        if is_key_pressed(KeyCode::C) {
-                            game.code_input.clear();
+                        if is_key_pressed(KeyCode::R) {
+                            // Reset to default code
+                            game.current_code = get_default_robot_code().to_string();
                             game.cursor_position = 0;
-                            game.execution_result.clear();
+                            code_modified = true;
+                        }
+                        
+                        // Auto-save on any modification
+                        if code_modified {
+                            game.save_robot_code();
                         }
                     }
                     
                     if is_key_pressed(KeyCode::Enter) && !game.code_editor_active {
-                        game.execution_result = execute_rust_code(&mut game);
-                        if game.external_file_mode {
-                            game.external_file_modified = false;
-                        }
+                        game.execution_result = execute_rust_code(&mut game).await;
+                        game.robot_code_modified = false;
                     }
                     
-                    if game.external_file_mode {
-                        if is_key_pressed(KeyCode::F) {
-                            match create_sample_external_file(&game.external_file_path) {
-                                Ok(_) => {
-                                    game.execution_result = format!("Created sample file: {}", game.external_file_path);
-                                },
-                                Err(e) => {
-                                    game.execution_result = e;
-                                }
-                            }
-                        }
+                    if is_key_pressed(KeyCode::E) && !game.code_editor_active {
+                        // Open external editor hint
+                        game.execution_result = format!("Edit {} with your preferred IDE/editor", game.robot_code_path);
                     }
 
                     if is_key_pressed(KeyCode::B) { shop_open = true; }
@@ -1295,8 +1260,6 @@ async fn main() {
                     if is_key_pressed(KeyCode::L) {
                         let idx = game.level_idx;
                         game.load_level(idx);
-                        game.code_input.clear();
-                        game.cursor_position = 0;
                         game.execution_result.clear();
                     }
                     if is_key_pressed(KeyCode::M) {
@@ -1314,12 +1277,6 @@ async fn main() {
             _ => {
                 // Draw menu
                 game.menu.draw();
-                
-                // Show selected level info in player levels menu
-                if let (MenuState::PlayerLevels, Some(ref level_name)) = (&game.menu.state, &selected_level_file) {
-                    let info_text = format!("Selected: {}.yaml", level_name);
-                    draw_text(&info_text, 50.0, 50.0, 18.0, YELLOW);
-                }
             }
         }
 

@@ -28,3 +28,7 @@ items:
     item_file: "items/grabber_upgrade.rs"
     spawn_randomly: false
     location: [10, 7]
+  - name: "time_slow"
+    item_file: "items/time_slow.rs"
+    spawn_randomly: false
+    location: [15, 8]

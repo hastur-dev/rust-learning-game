@@ -1,0 +1,11 @@
+# Level ordering configuration
+# List YAML files in the order they should appear in the game
+# One filename per line (without the .yaml extension)
+# Lines starting with # are comments and will be ignored
+
+01_explore_grid
+02_find_scanner
+03_blockers
+04_moving_enemies
+time_slow_demo
+treasure_hunt

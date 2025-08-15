@@ -1,12 +1,9 @@
 use macroquad::prelude::*;
-use std::fs;
-use std::path::Path;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum MenuState {
     MainMenu,
     Settings,
-    PlayerLevels,
     InGame,
 }
 
@@ -15,10 +12,15 @@ pub enum MenuAction {
     None,
     StartGame,
     OpenSettings,
-    OpenPlayerLevels,
     BackToMain,
     Exit,
-    LoadPlayerLevel(String),
+    IncreaseResolution,
+    DecreaseResolution,
+    ToggleFullscreen,
+    IncreaseSfxVolume,
+    DecreaseSfxVolume,
+    IncreaseMusicVolume,
+    DecreaseMusicVolume,
 }
 
 #[derive(Clone, Debug)]
@@ -102,7 +104,6 @@ pub struct Menu {
     pub state: MenuState,
     pub buttons: Vec<MenuButton>,
     pub settings: GameSettings,
-    pub player_levels: Vec<String>,
     pub scroll_offset: f32,
 }
 
@@ -112,12 +113,28 @@ impl Menu {
             state: MenuState::MainMenu,
             buttons: Vec::new(),
             settings: GameSettings::default(),
-            player_levels: Vec::new(),
             scroll_offset: 0.0,
         };
-        menu.load_player_levels();
         menu.setup_main_menu();
         menu
+    }
+
+    fn get_available_resolutions() -> Vec<(i32, i32)> {
+        vec![
+            (1280, 720),
+            (1366, 768),
+            (1600, 900),
+            (1920, 1080),
+            (2560, 1440),
+            (3840, 2160),
+        ]
+    }
+
+    fn current_resolution_index(&self) -> usize {
+        let resolutions = Self::get_available_resolutions();
+        resolutions.iter()
+            .position(|(w, h)| *w == self.settings.window_width && *h == self.settings.window_height)
+            .unwrap_or(3) // Default to 1920x1080 if not found
     }
 
     pub fn setup_main_menu(&mut self) {
@@ -148,18 +165,9 @@ impl Menu {
         ));
 
         self.buttons.push(MenuButton::new(
-            "Player Levels".to_string(),
-            screen_center_x - button_width / 2.0,
-            start_y + button_spacing * 2.0,
-            button_width,
-            button_height,
-            MenuAction::OpenPlayerLevels,
-        ));
-
-        self.buttons.push(MenuButton::new(
             "Exit".to_string(),
             screen_center_x - button_width / 2.0,
-            start_y + button_spacing * 3.0,
+            start_y + button_spacing * 2.0,
             button_width,
             button_height,
             MenuAction::Exit,
@@ -170,48 +178,52 @@ impl Menu {
         self.buttons.clear();
         
         let screen_center_x = screen_width() / 2.0;
-        let button_width = 300.0;
+        let button_width = 400.0;
         let button_height = 50.0;
         let button_spacing = 70.0;
-        let start_y = screen_height() / 2.0 - 50.0;
+        let start_y = screen_height() / 2.0 - 100.0;
 
         // Resolution buttons
         self.buttons.push(MenuButton::new(
-            format!("Resolution: {}x{}", self.settings.window_width, self.settings.window_height),
+            format!("Resolution: {}x{} (Click: Next, Right-Click: Previous)", 
+                   self.settings.window_width, self.settings.window_height),
             screen_center_x - button_width / 2.0,
             start_y,
             button_width,
             button_height,
-            MenuAction::None,
+            MenuAction::IncreaseResolution,
         ));
 
         // Fullscreen toggle
         self.buttons.push(MenuButton::new(
-            format!("Fullscreen: {}", if self.settings.fullscreen { "On" } else { "Off" }),
+            format!("Fullscreen: {} (Click to Toggle)", 
+                   if self.settings.fullscreen { "On" } else { "Off" }),
             screen_center_x - button_width / 2.0,
             start_y + button_spacing,
             button_width,
             button_height,
-            MenuAction::None,
+            MenuAction::ToggleFullscreen,
         ));
 
         // Volume controls
         self.buttons.push(MenuButton::new(
-            format!("SFX Volume: {:.0}%", self.settings.sfx_volume * 100.0),
+            format!("SFX Volume: {:.0}% (Click: +10%, Right-Click: -10%)", 
+                   self.settings.sfx_volume * 100.0),
             screen_center_x - button_width / 2.0,
             start_y + button_spacing * 2.0,
             button_width,
             button_height,
-            MenuAction::None,
+            MenuAction::IncreaseSfxVolume,
         ));
 
         self.buttons.push(MenuButton::new(
-            format!("Music Volume: {:.0}%", self.settings.music_volume * 100.0),
+            format!("Music Volume: {:.0}% (Click: +10%, Right-Click: -10%)", 
+                   self.settings.music_volume * 100.0),
             screen_center_x - button_width / 2.0,
             start_y + button_spacing * 3.0,
             button_width,
             button_height,
-            MenuAction::None,
+            MenuAction::IncreaseMusicVolume,
         ));
 
         // Back button
@@ -225,95 +237,31 @@ impl Menu {
         ));
     }
 
-    pub fn setup_player_levels_menu(&mut self) {
-        self.buttons.clear();
-        self.load_player_levels();
-        
-        let screen_center_x = screen_width() / 2.0;
-        let button_width = 400.0;
-        let button_height = 50.0;
-        let button_spacing = 60.0;
-        let start_y = 200.0;
-
-        // Level buttons
-        for (i, level_name) in self.player_levels.iter().enumerate() {
-            let y_pos = start_y + (i as f32 * button_spacing) - self.scroll_offset;
-            
-            // Only create buttons that are visible on screen
-            if y_pos > -button_height && y_pos < screen_height() {
-                self.buttons.push(MenuButton::new(
-                    level_name.clone(),
-                    screen_center_x - button_width / 2.0,
-                    y_pos,
-                    button_width,
-                    button_height,
-                    MenuAction::LoadPlayerLevel(level_name.clone()),
-                ));
-            }
-        }
-
-        // Back button (always visible)
-        self.buttons.push(MenuButton::new(
-            "Back to Main".to_string(),
-            screen_center_x - 150.0,
-            screen_height() - 80.0,
-            300.0,
-            50.0,
-            MenuAction::BackToMain,
-        ));
-
-        // Refresh button
-        self.buttons.push(MenuButton::new(
-            "Refresh".to_string(),
-            50.0,
-            screen_height() - 80.0,
-            120.0,
-            50.0,
-            MenuAction::OpenPlayerLevels,
-        ));
-    }
-
-    fn load_player_levels(&mut self) {
-        self.player_levels.clear();
-        
-        if Path::new("levels").exists() {
-            if let Ok(entries) = fs::read_dir("levels") {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if let Some(extension) = path.extension() {
-                        if extension == "yaml" || extension == "yml" {
-                            if let Some(file_name) = path.file_stem() {
-                                if let Some(name_str) = file_name.to_str() {
-                                    self.player_levels.push(name_str.to_string());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        self.player_levels.sort();
-    }
 
     pub fn handle_input(&mut self) -> MenuAction {
         let (mouse_x, mouse_y) = mouse_position();
-        
-        // Handle scrolling in player levels menu
-        if self.state == MenuState::PlayerLevels {
-            let scroll_speed = 30.0;
-            if mouse_wheel().1 > 0.0 {
-                self.scroll_offset = (self.scroll_offset - scroll_speed).max(0.0);
-            } else if mouse_wheel().1 < 0.0 {
-                let max_scroll = (self.player_levels.len() as f32 * 60.0).max(0.0);
-                self.scroll_offset = (self.scroll_offset + scroll_speed).min(max_scroll);
-            }
-        }
 
+        // Handle left mouse button
         if is_mouse_button_pressed(MouseButton::Left) {
             for button in &self.buttons {
                 if button.is_clicked(mouse_x, mouse_y) {
                     return button.action.clone();
+                }
+            }
+        }
+
+        // Handle right mouse button (for settings decrease actions)
+        if is_mouse_button_pressed(MouseButton::Right) {
+            for button in &self.buttons {
+                if button.is_clicked(mouse_x, mouse_y) {
+                    // Convert increase actions to decrease actions
+                    return match button.action {
+                        MenuAction::IncreaseResolution => MenuAction::DecreaseResolution,
+                        MenuAction::IncreaseSfxVolume => MenuAction::DecreaseSfxVolume,
+                        MenuAction::IncreaseMusicVolume => MenuAction::DecreaseMusicVolume,
+                        MenuAction::ToggleFullscreen => MenuAction::ToggleFullscreen,
+                        _ => button.action.clone(),
+                    };
                 }
             }
         }
@@ -338,17 +286,51 @@ impl Menu {
                 self.state = MenuState::Settings;
                 self.setup_settings_menu();
             },
-            MenuAction::OpenPlayerLevels => {
-                self.state = MenuState::PlayerLevels;
-                self.setup_player_levels_menu();
-            },
             MenuAction::BackToMain => {
                 self.state = MenuState::MainMenu;
                 self.setup_main_menu();
             },
-            MenuAction::LoadPlayerLevel(_level_name) => {
-                // Level loading will be handled by the main game loop
-                self.state = MenuState::InGame;
+            MenuAction::IncreaseResolution => {
+                let resolutions = Self::get_available_resolutions();
+                let current_index = self.current_resolution_index();
+                let next_index = (current_index + 1) % resolutions.len();
+                let (width, height) = resolutions[next_index];
+                self.settings.window_width = width;
+                self.settings.window_height = height;
+                self.setup_settings_menu(); // Refresh the menu
+            },
+            MenuAction::DecreaseResolution => {
+                let resolutions = Self::get_available_resolutions();
+                let current_index = self.current_resolution_index();
+                let prev_index = if current_index == 0 { 
+                    resolutions.len() - 1 
+                } else { 
+                    current_index - 1 
+                };
+                let (width, height) = resolutions[prev_index];
+                self.settings.window_width = width;
+                self.settings.window_height = height;
+                self.setup_settings_menu(); // Refresh the menu
+            },
+            MenuAction::ToggleFullscreen => {
+                self.settings.fullscreen = !self.settings.fullscreen;
+                self.setup_settings_menu(); // Refresh the menu
+            },
+            MenuAction::IncreaseSfxVolume => {
+                self.settings.sfx_volume = (self.settings.sfx_volume + 0.1).min(1.0);
+                self.setup_settings_menu(); // Refresh the menu
+            },
+            MenuAction::DecreaseSfxVolume => {
+                self.settings.sfx_volume = (self.settings.sfx_volume - 0.1).max(0.0);
+                self.setup_settings_menu(); // Refresh the menu
+            },
+            MenuAction::IncreaseMusicVolume => {
+                self.settings.music_volume = (self.settings.music_volume + 0.1).min(1.0);
+                self.setup_settings_menu(); // Refresh the menu
+            },
+            MenuAction::DecreaseMusicVolume => {
+                self.settings.music_volume = (self.settings.music_volume - 0.1).max(0.0);
+                self.setup_settings_menu(); // Refresh the menu
             },
             _ => {}
         }
@@ -360,7 +342,6 @@ impl Menu {
         match self.state {
             MenuState::MainMenu => self.draw_main_menu(),
             MenuState::Settings => self.draw_settings_menu(),
-            MenuState::PlayerLevels => self.draw_player_levels_menu(),
             MenuState::InGame => {}, // Game drawing handled elsewhere
         }
     }
@@ -406,66 +387,25 @@ impl Menu {
         let title_size = 36.0;
         let title_dimensions = measure_text(title, None, title_size as u16, 1.0);
         let title_x = (screen_width() - title_dimensions.width) / 2.0;
-        draw_text(title, title_x, 150.0, title_size, WHITE);
-
-        // Draw buttons
-        for button in &self.buttons {
-            button.draw();
-        }
-
-        // Draw instructions
-        draw_text("Note: Some settings require restart to take effect", 50.0, screen_height() - 50.0, 16.0, GRAY);
-    }
-
-    fn draw_player_levels_menu(&self) {
-        // Draw background
-        self.draw_background();
-
-        // Draw title
-        let title = "Player Levels";
-        let title_size = 36.0;
-        let title_dimensions = measure_text(title, None, title_size as u16, 1.0);
-        let title_x = (screen_width() - title_dimensions.width) / 2.0;
         draw_text(title, title_x, 100.0, title_size, WHITE);
 
-        // Draw subtitle
-        let subtitle = format!("Found {} custom levels", self.player_levels.len());
-        let subtitle_size = 18.0;
-        let subtitle_dimensions = measure_text(&subtitle, None, subtitle_size as u16, 1.0);
-        let subtitle_x = (screen_width() - subtitle_dimensions.width) / 2.0;
-        draw_text(&subtitle, subtitle_x, 140.0, subtitle_size, LIGHTGRAY);
-
-        if self.player_levels.is_empty() {
-            let no_levels_text = "No custom levels found. Create .yaml files in the 'levels' directory.";
-            let no_levels_size = 16.0;
-            let no_levels_dimensions = measure_text(no_levels_text, None, no_levels_size as u16, 1.0);
-            let no_levels_x = (screen_width() - no_levels_dimensions.width) / 2.0;
-            draw_text(no_levels_text, no_levels_x, screen_height() / 2.0, no_levels_size, GRAY);
-        }
+        // Draw instructions
+        let instructions = "Left Click: Increase/Next | Right Click: Decrease/Previous";
+        let inst_size = 18.0;
+        let inst_dimensions = measure_text(instructions, None, inst_size as u16, 1.0);
+        let inst_x = (screen_width() - inst_dimensions.width) / 2.0;
+        draw_text(instructions, inst_x, 140.0, inst_size, YELLOW);
 
         // Draw buttons
         for button in &self.buttons {
             button.draw();
         }
 
-        // Draw scroll indicator if needed
-        if self.player_levels.len() > 8 {
-            let scroll_bar_x = screen_width() - 20.0;
-            let scroll_bar_height = 300.0;
-            let scroll_bar_y = 200.0;
-            
-            // Scroll bar background
-            draw_rectangle(scroll_bar_x, scroll_bar_y, 10.0, scroll_bar_height, DARKGRAY);
-            
-            // Scroll indicator
-            let max_scroll = (self.player_levels.len() as f32 * 60.0).max(1.0);
-            let scroll_ratio = self.scroll_offset / max_scroll;
-            let indicator_height = 20.0;
-            let indicator_y = scroll_bar_y + (scroll_bar_height - indicator_height) * scroll_ratio;
-            
-            draw_rectangle(scroll_bar_x, indicator_y, 10.0, indicator_height, WHITE);
-        }
+        // Draw footer notes
+        draw_text("Note: Window resolution changes require restart to take effect", 50.0, screen_height() - 70.0, 14.0, GRAY);
+        draw_text("Volume and fullscreen changes apply immediately", 50.0, screen_height() - 50.0, 14.0, GRAY);
     }
+
 
     fn draw_background(&self) {
         // Draw a simple grid pattern

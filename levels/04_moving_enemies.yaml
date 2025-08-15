@@ -1,0 +1,13 @@
+name: "Level 4 - Moving Enemies"
+grid_size: "18x12"
+obstacles: 5
+start_position: [1, 1]
+fog_of_war: true
+max_turns: 0
+income_per_square: 1
+
+enemies:
+  - start_position: [15, 8]
+    movement_pattern: "random"
+
+items: []

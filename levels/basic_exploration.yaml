@@ -14,3 +14,7 @@ items:
     item_file: "items/speed_boost.rs"
     spawn_randomly: false
     location: [8, 6]
+  - name: "time_slow"
+    item_file: "items/time_slow.rs"
+    spawn_randomly: false
+    location: [5, 4]

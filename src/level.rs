@@ -187,18 +187,54 @@ impl YamlLevelConfig {
 }
 
 pub fn load_yaml_levels_from_directory<P: AsRef<Path>>(dir: P) -> Vec<YamlLevelConfig> {
-    let mut levels = Vec::new();
+    let dir_path = dir.as_ref();
+    let order_file = dir_path.join("order.txt");
     
-    if let Ok(entries) = fs::read_dir(dir) {
+    // Try to load ordered list first
+    if let Ok(order_content) = fs::read_to_string(&order_file) {
+        let mut levels = Vec::new();
+        
+        for line in order_content.lines() {
+            let line = line.trim();
+            // Skip empty lines and comments
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            
+            // Try to load the specified file
+            let yaml_path = dir_path.join(format!("{}.yaml", line));
+            if let Ok(level) = YamlLevelConfig::from_yaml_file(yaml_path) {
+                levels.push(level);
+            }
+        }
+        
+        // If we found ordered levels, return them
+        if !levels.is_empty() {
+            return levels;
+        }
+    }
+    
+    // Fallback: load all yaml files in directory order (alphabetical)
+    let mut levels = Vec::new();
+    let mut paths = Vec::new();
+    
+    if let Ok(entries) = fs::read_dir(dir_path) {
         for entry in entries.flatten() {
             let path = entry.path();
             if let Some(ext) = path.extension() {
                 if ext == "yaml" || ext == "yml" {
-                    if let Ok(level) = YamlLevelConfig::from_yaml_file(path) {
-                        levels.push(level);
-                    }
+                    paths.push(path);
                 }
             }
+        }
+    }
+    
+    // Sort paths alphabetically
+    paths.sort();
+    
+    for path in paths {
+        if let Ok(level) = YamlLevelConfig::from_yaml_file(path) {
+            levels.push(level);
         }
     }
     

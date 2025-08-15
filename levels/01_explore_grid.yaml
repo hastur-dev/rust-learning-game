@@ -1,0 +1,9 @@
+name: "Level 1 - Explore the grid"
+grid_size: "12x8"
+obstacles: 0
+start_position: [1, 1]
+fog_of_war: true
+max_turns: 0
+income_per_square: 1
+
+items: []
