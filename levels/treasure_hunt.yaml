@@ -1,0 +1,30 @@
+name: "Treasure Hunt Challenge"
+grid_size: "20x15"
+obstacles: 15
+start_position: [1, 1]
+fog_of_war: true
+max_turns: 200
+income_per_square: 5
+
+items:
+  - name: "scanner"
+    item_file: "items/scanner.rs"
+    spawn_randomly: false
+    location: [3, 3]
+  - name: "golden_gem"
+    item_file: "items/golden_gem.rs"
+    spawn_randomly: false
+    location: [18, 13]
+  - name: "silver_coin"
+    item_file: "items/silver_coin.rs"
+    spawn_randomly: true
+  - name: "silver_coin"
+    item_file: "items/silver_coin.rs"
+    spawn_randomly: true
+  - name: "silver_coin"
+    item_file: "items/silver_coin.rs"
+    spawn_randomly: true
+  - name: "grabber_upgrade"
+    item_file: "items/grabber_upgrade.rs"
+    spawn_randomly: false
+    location: [10, 7]

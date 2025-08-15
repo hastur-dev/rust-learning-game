@@ -1,0 +1,16 @@
+name: "Basic Exploration Level"
+grid_size: "10x8"
+obstacles: 5
+start_position: [1, 1]
+fog_of_war: true
+max_turns: 50
+income_per_square: 2
+
+items:
+  - name: "scanner"
+    item_file: "items/scanner.rs"
+    spawn_randomly: true
+  - name: "speed_boost"
+    item_file: "items/speed_boost.rs"
+    spawn_randomly: false
+    location: [8, 6]
