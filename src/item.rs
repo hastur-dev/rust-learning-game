@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
@@ -97,6 +97,11 @@ impl ItemManager {
 
     pub fn get_active_items(&self) -> Vec<&Item> {
         self.items.iter().filter(|item| !item.collected).collect()
+    }
+    
+    pub fn add_dummy_item(&mut self, name: &str) {
+        // Add a dummy collected item for tracking purposes (like tutorial shown flags)
+        self.collected_items.insert(name.to_string());
     }
 
     fn load_item_capabilities(file_path: &str) -> Result<ItemCapabilities, Box<dyn std::error::Error>> {

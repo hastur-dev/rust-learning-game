@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Steam Game - Web Edition</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #00ff41;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .controls {
+            background-color: #2a2a2a;
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            padding: 15px;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        .controls h3 {
+            margin-top: 0;
+            color: #00ff41;
+        }
+
+        .controls p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+
+        .key {
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #00ff41;
+        }
+
+        #canvas {
+            border: 2px solid #00ff41;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .loading {
+            text-align: center;
+            color: #00ff41;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+
+        .error {
+            background-color: #4a1a1a;
+            border: 2px solid #ff4141;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #ff8888;
+            max-width: 600px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #00ff41;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .controls {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Rust Steam Game - Web Edition</h1>
+    
+    <div class="game-container">
+        <div class="controls">
+            <h3>🎯 Game Controls</h3>
+            <p><span class="key">WASD</span> or <span class="key">Arrow Keys</span> - Move robot</p>
+            <p><span class="key">Space</span> - Scan area (if you have a scanner)</p>
+            <p><span class="key">E</span> - Grab item</p>
+            <p><span class="key">Q</span> - Use time slow (if available)</p>
+            <p><span class="key">R</span> - Restart level</p>
+            <p><span class="key">Esc</span> - Return to menu</p>
+            
+            <h3>🎯 Game Features</h3>
+            <p>• Explore grid-based levels with fog of war</p>
+            <p>• Collect items and avoid moving enemies</p>
+            <p>• Custom enemy movement patterns (horizontal, vertical, random, diagonal, circular)</p>
+            <p>• Multiple levels with increasing difficulty</p>
+        </div>
+
+        <div id="loading" class="loading">
+            🔄 Loading game...
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            ❌ <strong>Error loading game:</strong>
+            <div id="error-message"></div>
+            <br>
+            <small>Make sure your browser supports WebAssembly and try refreshing the page.</small>
+        </div>
+
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
+
+    <div class="footer">
+        <p>Built with 🦀 <strong>Rust</strong> + 🎮 <strong>Macroquad</strong> + 🌐 <strong>WebAssembly</strong></p>
+        <p>Move with WASD, scan with Space, grab with E</p>
+    </div>
+
+    <script type="module">
+        async function init() {
+            try {
+                const { default: init, start_game } = await import('./pkg/robo_grid_explorer_gui.js');
+                await init();
+                
+                // Hide loading, show canvas
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('canvas').style.display = 'block';
+                
+                // Start the game
+                await start_game();
+            } catch (error) {
+                console.error('Failed to load game:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-message').textContent = error.toString();
+            }
+        }
+
+        // Handle canvas focus for keyboard input
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+            
+            // Make sure canvas can receive keyboard events
+            const canvas = document.getElementById('canvas');
+            canvas.addEventListener('click', () => {
+                canvas.focus();
+            });
+            
+            // Set canvas as focusable
+            canvas.setAttribute('tabindex', '0');
+        });
+
+        // Prevent default behavior for game keys
+        document.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

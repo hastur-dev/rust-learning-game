@@ -1,14 +1,17 @@
 use crate::level::{LevelSpec, EnemyDirection};
 use crate::item::Pos;
+use crate::movement_patterns::MovementPatternRegistry;
 use rand::rngs::StdRng;
 use rand::Rng;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 #[derive(Clone, Debug)]
 pub struct Enemy {
     pub pos: Pos,
     pub direction: EnemyDirection,
     pub moving_positive: bool, // true = right/down, false = left/up
+    pub movement_pattern: Option<String>, // For custom movement patterns
+    pub movement_data: HashMap<String, serde_yaml::Value>, // Data for custom movement patterns
 }
 
 #[derive(Clone, Debug)]
@@ -21,6 +24,7 @@ pub struct Grid {
     pub enemies: Vec<Enemy>,
     pub fog_of_war: bool,
     pub income_per_square: u32,
+    pub movement_registry: MovementPatternRegistry,
 }
 
 impl Grid {
@@ -34,6 +38,7 @@ impl Grid {
             enemies: Vec::new(),
             fog_of_war: true,
             income_per_square: 1,
+            movement_registry: MovementPatternRegistry::new(),
         }
     }
 
@@ -41,6 +46,11 @@ impl Grid {
         let mut grid = Self::new(spec.width as i32, spec.height as i32);
         grid.fog_of_war = spec.fog_of_war;
         grid.income_per_square = spec.income_per_square;
+        
+        // Register additional built-in patterns
+        grid.movement_registry.register("random", Box::new(crate::movement_patterns::RandomMovement));
+        grid.movement_registry.register("diagonal", Box::new(crate::movement_patterns::DiagonalMovement { moving_positive: true }));
+        grid.movement_registry.register("circular", Box::new(crate::movement_patterns::CircularMovement::new()));
 
         // Add specified blockers
         for (x, y) in &spec.blockers {
@@ -49,10 +59,39 @@ impl Grid {
 
         // Add enemies
         for enemy_spec in &spec.enemies {
+            // Load custom movement pattern if specified
+            if let Some(ref pattern_str) = enemy_spec.movement_pattern {
+                if pattern_str.starts_with("file:") {
+                    let file_path = &pattern_str[5..]; // Remove "file:" prefix
+                    let pattern_name = format!("custom_{}", grid.enemies.len());
+                    if let Err(e) = grid.movement_registry.load_from_file(&pattern_name, file_path) {
+                        eprintln!("Failed to load movement pattern from {}: {}", file_path, e);
+                    }
+                }
+            }
+            
+            // Initialize movement data
+            let movement_data = if let Some(ref pattern_str) = enemy_spec.movement_pattern {
+                if pattern_str.starts_with("file:") {
+                    let pattern_name = format!("custom_{}", grid.enemies.len());
+                    if let Some(pattern) = grid.movement_registry.get(&pattern_name) {
+                        pattern.initialize()
+                    } else {
+                        HashMap::new()
+                    }
+                } else {
+                    HashMap::new()
+                }
+            } else {
+                HashMap::new()
+            };
+            
             let enemy = Enemy {
                 pos: Pos { x: enemy_spec.pos.0, y: enemy_spec.pos.1 },
                 direction: enemy_spec.direction,
                 moving_positive: enemy_spec.moving_positive,
+                movement_pattern: enemy_spec.movement_pattern.clone(),
+                movement_data,
             };
             grid.enemies.push(enemy);
         }
@@ -100,7 +139,13 @@ impl Grid {
                                 EnemyDirection::Vertical 
                             };
                             let moving_positive = rng.gen_bool(0.5);
-                            grid.enemies.push(Enemy { pos, direction, moving_positive });
+                            grid.enemies.push(Enemy { 
+                                pos, 
+                                direction, 
+                                moving_positive,
+                                movement_pattern: None,
+                                movement_data: HashMap::new(),
+                            });
                             break;
                         }
                     }
@@ -144,7 +189,43 @@ impl Grid {
 
     pub fn move_enemies(&mut self) {
         let mut new_enemies = self.enemies.clone();
-        for enemy in &mut new_enemies {
+        
+        for (i, enemy) in new_enemies.iter_mut().enumerate() {
+            // Check if enemy uses a custom movement pattern
+            if let Some(ref pattern_str) = enemy.movement_pattern {
+                if pattern_str.starts_with("file:") {
+                    let pattern_name = format!("custom_{}", i);
+                    if let Some(pattern) = self.movement_registry.get(&pattern_name) {
+                        if let Some(new_pos) = pattern.next_move(enemy.pos, self, &mut enemy.movement_data) {
+                            enemy.pos = new_pos;
+                        }
+                        continue;
+                    }
+                } else if pattern_str == "random" {
+                    if let Some(pattern) = self.movement_registry.get("random") {
+                        if let Some(new_pos) = pattern.next_move(enemy.pos, self, &mut enemy.movement_data) {
+                            enemy.pos = new_pos;
+                        }
+                        continue;
+                    }
+                } else if pattern_str == "diagonal" {
+                    if let Some(pattern) = self.movement_registry.get("diagonal") {
+                        if let Some(new_pos) = pattern.next_move(enemy.pos, self, &mut enemy.movement_data) {
+                            enemy.pos = new_pos;
+                        }
+                        continue;
+                    }
+                } else if pattern_str == "circular" {
+                    if let Some(pattern) = self.movement_registry.get("circular") {
+                        if let Some(new_pos) = pattern.next_move(enemy.pos, self, &mut enemy.movement_data) {
+                            enemy.pos = new_pos;
+                        }
+                        continue;
+                    }
+                }
+            }
+            
+            // Fall back to built-in movement patterns
             let step = |_pos: Pos, dir: EnemyDirection, pos_dir: bool| -> (i32, i32) {
                 match dir {
                     EnemyDirection::Horizontal => if pos_dir { (1, 0) } else { (-1, 0) },

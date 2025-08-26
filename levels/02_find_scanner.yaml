@@ -5,6 +5,7 @@ start_position: [2, 2]
 fog_of_war: true
 max_turns: 0
 income_per_square: 1
+message: "Congrats on beating the 1st level! Now that you've gotten a feel for the game lets write some code that will pick up an item using the grab() command. when the robot is in the same square as the item, simply use the grab() command to pick up the item"
 
 items:
   - name: "scanner"

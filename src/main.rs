@@ -1,11 +1,18 @@
 use macroquad::prelude::*;
 use ::rand::{rngs::StdRng, SeedableRng};
-use std::path::Path;
-use std::fs;
-use notify::{Watcher, RecursiveMode, Event};
-use crossbeam_channel::{Receiver, Sender, unbounded};
-use std::process::Command;
 use std::collections::HashSet;
+
+// Desktop-only imports
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::Path;
+#[cfg(not(target_arch = "wasm32"))]
+use std::fs;
+#[cfg(not(target_arch = "wasm32"))]
+use notify::{Watcher, RecursiveMode, Event};
+#[cfg(not(target_arch = "wasm32"))]
+use crossbeam_channel::{Receiver, Sender, unbounded};
+#[cfg(not(target_arch = "wasm32"))]
+use std::process::Command;
 
 mod level;
 mod item;
@@ -13,13 +20,16 @@ mod grid;
 mod robot;
 mod game_state;
 mod menu;
+mod movement_patterns;
+mod popup;
 
 use level::*;
 use item::*;
 use game_state::*;
 use menu::{MenuAction, MenuState};
 
-// Re-use some functions from original code that are still needed
+// Desktop-only functions
+#[cfg(not(target_arch = "wasm32"))]
 fn extract_crates_from_code(code: &str) -> HashSet<String> {
     let mut out = HashSet::new();
     let ignore: HashSet<&'static str> = [
@@ -47,6 +57,7 @@ fn extract_crates_from_code(code: &str) -> HashSet<String> {
     out
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn existing_deps_from_cargo_toml(cargo_toml_path: &str) -> HashSet<String> {
     let mut deps = HashSet::new();
     let Ok(toml) = fs::read_to_string(cargo_toml_path) else { return deps; };
@@ -70,6 +81,7 @@ fn existing_deps_from_cargo_toml(cargo_toml_path: &str) -> HashSet<String> {
     deps
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn cargo_add_available() -> bool {
     Command::new("cargo")
         .arg("add")
@@ -79,6 +91,7 @@ fn cargo_add_available() -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn ensure_crates_in_cargo(new_crates: &HashSet<String>) -> String {
     if new_crates.is_empty() {
         return "No new libraries detected in robot_code.rs".to_string();
@@ -115,6 +128,7 @@ fn ensure_crates_in_cargo(new_crates: &HashSet<String>) -> String {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn auto_add_crates_from_robot_code(robot_code_path: &str) -> String {
     let Ok(code) = fs::read_to_string(robot_code_path) else {
         return format!("Could not read {}", robot_code_path);
@@ -208,6 +222,9 @@ fn try_grab(game: &mut Game) -> &'static str {
     for pos in grabbable_positions {
         if let Some(item) = game.item_manager.collect_item(pos) {
             items_found.push(item.name.clone());
+            
+            // Show popup for item collection
+            game.show_item_collected(&item.name);
             
             // Apply item effects
             match item.name.as_str() {
@@ -553,6 +570,7 @@ fn execute_function(game: &mut Game, call: FunctionCall) -> String {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn load_external_code(file_path: &str) -> Result<String, String> {
     match fs::read_to_string(file_path) {
         Ok(content) => Ok(content),
@@ -592,6 +610,7 @@ search_all();
 "#
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn create_default_robot_code(file_path: &str) -> Result<(), String> {
     match fs::write(file_path, get_default_robot_code()) {
         Ok(_) => Ok(()),
@@ -599,6 +618,7 @@ fn create_default_robot_code(file_path: &str) -> Result<(), String> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn read_robot_code(file_path: &str) -> Result<String, String> {
     match fs::read_to_string(file_path) {
         Ok(content) => Ok(content),
@@ -610,6 +630,7 @@ fn read_robot_code(file_path: &str) -> Result<String, String> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn write_robot_code(file_path: &str, content: &str) -> Result<(), String> {
     match fs::write(file_path, content) {
         Ok(_) => Ok(()),
@@ -617,6 +638,7 @@ fn write_robot_code(file_path: &str, content: &str) -> Result<(), String> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn setup_file_watcher(file_path: &str) -> Option<Receiver<notify::Result<Event>>> {
     let (tx, rx): (Sender<notify::Result<Event>>, Receiver<notify::Result<Event>>) = unbounded();
     
@@ -638,7 +660,7 @@ fn setup_file_watcher(file_path: &str) -> Option<Receiver<notify::Result<Event>>
 async fn execute_rust_code(game: &mut Game) -> String {
     let code_to_execute = if game.current_code.is_empty() {
         // Fallback to reading from file if current_code is empty
-        match read_robot_code(&game.robot_code_path) {
+        match crate::read_robot_code(&game.robot_code_path) {
             Ok(code) => {
                 game.current_code = code.clone();
                 code
@@ -679,6 +701,7 @@ async fn execute_rust_code(game: &mut Game) -> String {
 }
 
 
+#[cfg(not(target_arch = "wasm32"))]
 fn load_yaml_levels() -> Vec<LevelSpec> {
     let mut levels = Vec::new();
     let mut rng = StdRng::seed_from_u64(0xC0FFEE);
@@ -1111,6 +1134,7 @@ fn handle_shop(game: &mut Game) {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn window_conf() -> Conf {
     Conf {
         window_title: "Rust Robot Programming Game".to_owned(),
@@ -1122,8 +1146,23 @@ fn window_conf() -> Conf {
     }
 }
 
+// Main function for desktop
+#[cfg(not(target_arch = "wasm32"))]
 #[macroquad::main(window_conf)]
 async fn main() {
+    desktop_main().await;
+}
+
+// Main function for WASM
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    // For WASM, macroquad handles the main function differently
+    // The actual game logic is in lib.rs
+}
+
+// Desktop-specific main logic
+#[cfg(not(target_arch = "wasm32"))]
+async fn desktop_main() {
     let rng = StdRng::seed_from_u64(0xC0FFEE);
     
     // Load levels - first try YAML, then fallback to built-in
@@ -1154,15 +1193,24 @@ async fn main() {
         // Draw based on current menu state
         match game.menu.state {
             MenuState::InGame => {
+                // Handle popup input FIRST - before any other input processing
+                let popup_handled_input = game.handle_popup_input();
+                
+                // Update popup system with delta time
+                game.update_popup_system(get_frame_time());
+
                 clear_background(Color::from_rgba(18, 18, 18, 255));
                 draw_game(&game);
 
                 if shop_open { 
                     handle_shop(&mut game); 
                 }
+                
+                // Draw popups last so they appear on top
+                game.draw_popups();
 
                 // Game input handling
-                if !shop_open {
+                if !shop_open && !popup_handled_input {
                     // Check for file changes
                     if let Some(ref receiver) = game.file_watcher_receiver {
                         if let Ok(_event) = receiver.try_recv() {
@@ -1252,7 +1300,15 @@ async fn main() {
                         game.execution_result = format!("Edit {} with your preferred IDE/editor", game.robot_code_path);
                     }
 
-                    if is_key_pressed(KeyCode::B) { shop_open = true; }
+                    if is_key_pressed(KeyCode::B) { 
+                        // Show shop tutorial on first time opening
+                        if !game.item_manager.has_collected("shop_tutorial_shown") {
+                            game.show_shop_tutorial();
+                            // Mark tutorial as shown using a dummy item
+                            game.item_manager.add_dummy_item("shop_tutorial_shown");
+                        }
+                        shop_open = true; 
+                    }
                     if is_key_pressed(KeyCode::N) {
                         if !game.finished { game.finish_level(); }
                         game.next_level();

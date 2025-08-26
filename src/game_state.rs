@@ -3,8 +3,12 @@ use crate::grid::Grid;
 use crate::robot::Robot;
 use crate::item::ItemManager;
 use crate::menu::Menu;
+use crate::popup::PopupSystem;
 use rand::rngs::StdRng;
+
+#[cfg(not(target_arch = "wasm32"))]
 use crossbeam_channel::Receiver;
+#[cfg(not(target_arch = "wasm32"))]
 use notify::Event;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -41,6 +45,7 @@ pub struct Game {
     pub code_editor_active: bool,
     pub selected_function_to_view: Option<RustFunction>,
     pub robot_code_path: String,
+    #[cfg(not(target_arch = "wasm32"))]
     pub file_watcher_receiver: Option<Receiver<notify::Result<Event>>>,
     pub robot_code_modified: bool,
     pub current_code: String,
@@ -49,6 +54,7 @@ pub struct Game {
     pub time_slow_active: bool,
     pub time_slow_duration_ms: u32,
     pub menu: Menu,
+    pub popup_system: PopupSystem,
 }
 
 impl Game {
@@ -75,6 +81,7 @@ impl Game {
             code_editor_active: false,
             selected_function_to_view: None,
             robot_code_path: "robot_code.rs".to_string(),
+            #[cfg(not(target_arch = "wasm32"))]
             file_watcher_receiver: None,
             robot_code_modified: false,
             current_code: String::new(),
@@ -83,6 +90,7 @@ impl Game {
             time_slow_active: false,
             time_slow_duration_ms: 500, // Default 500ms
             menu: Menu::new(),
+            popup_system: PopupSystem::new(),
         }
     }
 
@@ -120,17 +128,29 @@ impl Game {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn load_robot_code(&mut self) {
-        if let Ok(code) = crate::read_robot_code(&self.robot_code_path) {
+        if let Ok(code) = super::read_robot_code(&self.robot_code_path) {
             self.current_code = code;
             self.cursor_position = self.cursor_position.min(self.current_code.len());
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
+    pub fn load_robot_code(&mut self) {
+        // WASM version - no file I/O
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn save_robot_code(&mut self) {
-        if let Err(e) = crate::write_robot_code(&self.robot_code_path, &self.current_code) {
+        if let Err(e) = super::write_robot_code(&self.robot_code_path, &self.current_code) {
             self.execution_result = format!("Save error: {}", e);
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn save_robot_code(&mut self) {
+        // WASM version - no file I/O
     }
 
     pub fn load_level(&mut self, idx: usize) {
@@ -173,6 +193,41 @@ impl Game {
                 self.item_manager.items.push(scanner_item);
             }
         }
+
+        // Show level message if it exists
+        if let Some(ref message) = spec.message {
+            self.popup_system.show_level_message(message.clone());
+        }
+    }
+
+    pub fn show_shop_tutorial(&mut self) {
+        self.popup_system.show_tutorial(
+            "Welcome to the Shop!\n\nHere you can spend your credits to upgrade your robot:\n• Scanner: Reveals hidden areas\n• Grabber: Increases item collection range\n• Time Slow: Slows down enemies temporarily\n\nUse your credits wisely to overcome challenging levels!".to_string()
+        );
+    }
+
+    pub fn show_item_collected(&mut self, item_name: &str) {
+        self.popup_system.show_item_collected(item_name.to_string());
+    }
+
+    pub fn show_level_complete(&mut self) {
+        self.popup_system.show_level_complete();
+    }
+
+    pub fn update_popup_system(&mut self, delta_time: f32) {
+        self.popup_system.update(delta_time);
+    }
+
+    pub fn handle_popup_input(&mut self) -> bool {
+        self.popup_system.handle_input()
+    }
+
+    pub fn draw_popups(&self) {
+        self.popup_system.draw();
+    }
+
+    pub fn is_popup_showing(&self) -> bool {
+        self.popup_system.is_showing()
     }
 
     pub fn check_end_condition(&mut self) {
@@ -206,6 +261,7 @@ impl Game {
         if known_nonblockers + blockers_count == total_cells || 
            (self.max_turns > 0 && self.turns >= self.max_turns) {
             self.finish_level();
+            self.show_level_complete();
         }
     }
 }

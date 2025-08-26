@@ -15,12 +15,13 @@ pub struct YamlLevelConfig {
     pub start_position: Option<(u32, u32)>,
     pub max_turns: Option<u32>,
     pub fog_of_war: Option<bool>,
+    pub message: Option<String>, // Popup message shown at level start
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnemyConfig {
     pub start_location: (u32, u32),
-    pub movement_pattern: String, // "horizontal" or "vertical"
+    pub movement_pattern: String, // "horizontal", "vertical", or "file:path/to/pattern.rs"
     pub moving_positive: Option<bool>, // true = right/down, false = left/up
 }
 
@@ -45,6 +46,7 @@ pub struct LevelSpec {
     pub fog_of_war: bool,
     pub max_turns: usize,
     pub income_per_square: u32,
+    pub message: Option<String>, // Popup message shown at level start
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -52,6 +54,7 @@ pub struct EnemySpec {
     pub pos: (i32, i32),
     pub direction: EnemyDirection,
     pub moving_positive: bool,
+    pub movement_pattern: Option<String>, // For custom movement patterns
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -111,14 +114,24 @@ impl YamlLevelConfig {
         let enemies = self.enemies.as_ref()
             .map(|enemies| {
                 enemies.iter().map(|enemy| {
-                    EnemySpec {
-                        pos: (enemy.start_location.0 as i32, enemy.start_location.1 as i32),
-                        direction: match enemy.movement_pattern.as_str() {
+                    let (direction, movement_pattern) = if enemy.movement_pattern.starts_with("file:") {
+                        // Custom movement pattern from file
+                        (EnemyDirection::Horizontal, Some(enemy.movement_pattern.clone()))
+                    } else {
+                        // Built-in movement pattern
+                        let dir = match enemy.movement_pattern.as_str() {
                             "horizontal" => EnemyDirection::Horizontal,
                             "vertical" => EnemyDirection::Vertical,
                             _ => EnemyDirection::Horizontal, // Default
-                        },
+                        };
+                        (dir, None)
+                    };
+                    
+                    EnemySpec {
+                        pos: (enemy.start_location.0 as i32, enemy.start_location.1 as i32),
+                        direction,
                         moving_positive: enemy.moving_positive.unwrap_or(true),
+                        movement_pattern,
                     }
                 }).collect()
             })
@@ -182,6 +195,7 @@ impl YamlLevelConfig {
             fog_of_war: self.fog_of_war.unwrap_or(true),
             max_turns: self.max_turns.unwrap_or(0) as usize,
             income_per_square: self.income_per_square.unwrap_or(1),
+            message: self.message.clone(),
         })
     }
 }
