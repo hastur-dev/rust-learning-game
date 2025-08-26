@@ -336,6 +336,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                         coordinates: None,
                         level_number: None,
                         boolean_param: None,
+                        message: None,
                     });
                 }
             }
@@ -348,6 +349,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                 coordinates: None,
                 level_number: None,
                 boolean_param: None,
+                message: None,
             });
         }
         // Parse skip_this_level_because_i_say_so() calls
@@ -358,6 +360,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                 coordinates: None,
                 level_number: None,
                 boolean_param: None,
+                message: None,
             });
         }
         // Parse scan() calls
@@ -379,6 +382,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                         coordinates: None,
                         level_number: None,
                         boolean_param: None,
+                        message: None,
                     });
                 }
             }
@@ -402,6 +406,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                         coordinates: None,
                         level_number: None,
                         boolean_param: None,
+                        message: None,
                     });
                 }
             }
@@ -422,6 +427,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                             coordinates: Some((x, y)),
                             level_number: None,
                             boolean_param: None,
+                            message: None,
                         });
                     }
                 }
@@ -439,6 +445,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                         coordinates: None,
                         level_number: Some(level_num),
                         boolean_param: None,
+                        message: None,
                     });
                 }
             }
@@ -460,8 +467,80 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                         coordinates: None,
                         level_number: None,
                         boolean_param: Some(open_val),
+                        message: None,
                     });
                 }
+            }
+        }
+        // Parse println!() calls
+        else if let Some(start) = trimmed.find("println!(") {
+            let after_paren = &trimmed[start + 9..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                // Extract string content from quotes
+                let message_content = if param.starts_with('"') && param.ends_with('"') {
+                    param[1..param.len()-1].to_string()
+                } else if param.contains("{}") {
+                    // Handle simple format strings like println!("Value: {}", variable)
+                    param.replace("{}", "[value]").trim_matches('"').to_string()
+                } else {
+                    param.to_string()
+                };
+                
+                calls.push(FunctionCall {
+                    function: RustFunction::Println,
+                    direction: None,
+                    coordinates: None,
+                    level_number: None,
+                    boolean_param: None,
+                    message: Some(message_content),
+                });
+            }
+        }
+        // Parse eprintln!() calls (error messages)
+        else if let Some(start) = trimmed.find("eprintln!(") {
+            let after_paren = &trimmed[start + 10..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                let message_content = if param.starts_with('"') && param.ends_with('"') {
+                    param[1..param.len()-1].to_string()
+                } else if param.contains("{}") {
+                    param.replace("{}", "[value]").trim_matches('"').to_string()
+                } else {
+                    param.to_string()
+                };
+                
+                calls.push(FunctionCall {
+                    function: RustFunction::Eprintln,
+                    direction: None,
+                    coordinates: None,
+                    level_number: None,
+                    boolean_param: None,
+                    message: Some(message_content),
+                });
+            }
+        }
+        // Parse panic!() calls (critical errors)
+        else if let Some(start) = trimmed.find("panic!(") {
+            let after_paren = &trimmed[start + 7..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                let message_content = if param.starts_with('"') && param.ends_with('"') {
+                    param[1..param.len()-1].to_string()
+                } else if param.contains("{}") {
+                    param.replace("{}", "[value]").trim_matches('"').to_string()
+                } else {
+                    param.to_string()
+                };
+                
+                calls.push(FunctionCall {
+                    function: RustFunction::Panic,
+                    direction: None,
+                    coordinates: None,
+                    level_number: None,
+                    boolean_param: None,
+                    message: Some(message_content),
+                });
             }
         }
     }
@@ -572,6 +651,30 @@ fn execute_function(game: &mut Game, call: FunctionCall) -> String {
                 "Boolean parameter required for open_door (true or false)".to_string()
             }
         },
+        RustFunction::Println => {
+            if let Some(message) = call.message {
+                // Display the message as game output
+                format!("📝 {}", message)
+            } else {
+                "No message content for println".to_string()
+            }
+        },
+        RustFunction::Eprintln => {
+            if let Some(message) = call.message {
+                // Display error message in red
+                format!("🔴 Error: {}", message)
+            } else {
+                "No message content for eprintln".to_string()
+            }
+        },
+        RustFunction::Panic => {
+            if let Some(message) = call.message {
+                // Display panic as critical error - this should halt execution
+                format!("💥 PANIC: {} - Program terminated!", message)
+            } else {
+                "💥 PANIC: Program terminated!".to_string()
+            }
+        },
     }
 }
 
@@ -588,10 +691,17 @@ fn get_default_robot_code() -> &'static str {
 // This file is automatically saved as you type.
 // You can also edit this file externally with any text editor.
 
+// Display messages in the game:
+println!("Starting robot program!");
+
 // Always available functions:
 move(right);
 grab();
 scan(left);
+
+// Display educational messages:
+// println!("Hello from the robot!");
+// println!("Learning Rust is fun!");
 
 // Door system (teaches boolean literals):
 // open_door(true);   // Opens door at robot position
@@ -601,21 +711,21 @@ scan(left);
 // laser::direction(up);
 // laser::tile(5, 3);
 
-// Secret commands for testing:
-// skip_this_level_because_i_say_so();
-// goto_this_level_because_i_say_so(3);
-
-// Example: Move in a pattern
+// Example: Move in a pattern with messages
+// println!("Moving in a square pattern");
 // move(right);
 // move(down);
 // move(left);
 // move(up);
+// println!("Square pattern complete!");
 
-// Example: Scan and grab
+// Example: Scan and grab with feedback
+// println!("Scanning area and grabbing items");
 // scan(up);
 // grab();
 // move(right);
 // grab();
+// println!("Items collected!");
 "#
 }
 
@@ -698,10 +808,15 @@ async fn execute_rust_code(game: &mut Game) -> String {
             }
         }
         
+        // Halt execution on blocking conditions or panic
         if result.contains("Unknown Object Blocking Function") || 
            result.contains("blocked by obstacle") || 
            result.contains("Search blocked") {
             results.push("EXECUTION HALTED! Rewrite your program to avoid obstacles.".to_string());
+            break;
+        } else if result.contains("💥 PANIC:") {
+            // Panic halts all further execution
+            results.push("EXECUTION HALTED! Program panicked.".to_string());
             break;
         }
     }
@@ -812,6 +927,27 @@ fn get_function_definition(func: RustFunction) -> &'static str {
     // Pass true to open, false to close
     // Teaches about boolean literals in Rust
 }"#,
+        RustFunction::Println => r#"macro_rules! println {
+    ($($arg:tt)*) => {{
+        // Display a message in the game
+        // Works like Rust's println! but shows in-game
+        // Example: println!("Hello, world!");
+    }};
+}"#,
+        RustFunction::Eprintln => r#"macro_rules! eprintln {
+    ($($arg:tt)*) => {{
+        // Display an error message in red text
+        // Used for error output in Rust programs
+        // Example: eprintln!("Error: Invalid input");
+    }};
+}"#,
+        RustFunction::Panic => r#"macro_rules! panic {
+    ($($arg:tt)*) => {{
+        // Terminate program with critical error message
+        // Use sparingly - only for unrecoverable errors
+        // Example: panic!("Critical failure detected");
+    }};
+}"#,
     }
 }
 
@@ -827,7 +963,7 @@ fn draw_function_definitions(game: &Game) {
     draw_text("FUNCTION DEFINITIONS", def_x, def_y, 20.0, YELLOW);
     draw_text("Click a function name to view its implementation", def_x, def_y + 20.0, 12.0, GRAY);
     
-    let available_functions = game.get_available_functions();
+    let available_functions = game.get_gui_functions();
     let mut y_offset = 50.0;
     
     for func in &available_functions {
@@ -844,9 +980,11 @@ fn draw_function_definitions(game: &Game) {
             RustFunction::Scan => "scan(direction)",
             RustFunction::LaserDirection => "laser::direction(dir)",
             RustFunction::LaserTile => "laser::tile(x,y)",
-            RustFunction::SkipLevel => "skip_this_level_because_i_say_so()",
-            RustFunction::GotoLevel => "goto_this_level_because_i_say_so(#)",
             RustFunction::OpenDoor => "open_door(true/false)",
+            RustFunction::Println => "println!(\"message\")",
+            RustFunction::Eprintln => "eprintln!(\"error\")",
+            RustFunction::Panic => "panic!(\"critical\")",
+            _ => continue, // Skip hidden functions
         };
         
         draw_text(func_name, def_x + 10.0, button_y + 17.0, 16.0, text_color);
@@ -910,7 +1048,7 @@ fn draw_code_editor(game: &Game) {
         draw_text("Click to edit, auto-saves on changes", editor_x, editor_y + 35.0, 12.0, GRAY);
     }
     
-    let available_functions = game.get_available_functions();
+    let available_functions = game.get_gui_functions();
     let mut help_text = "Available functions: ".to_string();
     for func in &available_functions {
         match func {
@@ -919,9 +1057,11 @@ fn draw_code_editor(game: &Game) {
             RustFunction::Scan => help_text.push_str("scan(up/down/left/right) "),
             RustFunction::LaserDirection => help_text.push_str("laser::direction(dir) "),
             RustFunction::LaserTile => help_text.push_str("laser::tile(x,y) "),
-            RustFunction::SkipLevel => help_text.push_str("skip_this_level_because_i_say_so() "),
-            RustFunction::GotoLevel => help_text.push_str("goto_this_level_because_i_say_so(#) "),
             RustFunction::OpenDoor => help_text.push_str("open_door(true/false) "),
+            RustFunction::Println => help_text.push_str("println!(\"message\") "),
+            RustFunction::Eprintln => help_text.push_str("eprintln!(\"error\") "),
+            RustFunction::Panic => help_text.push_str("panic!(\"critical\") "),
+            _ => {} // Skip hidden functions
         }
     }
     
@@ -1302,7 +1442,7 @@ async fn desktop_main() {
                         // Function definitions area
                         let def_x = PADDING;
                         let def_y = PADDING + 100.0;
-                        let available_functions = game.get_available_functions();
+                        let available_functions = game.get_gui_functions();
                         
                         for (i, func) in available_functions.iter().enumerate() {
                             let button_y = def_y + 50.0 + (i as f32 * 30.0);

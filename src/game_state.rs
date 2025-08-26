@@ -21,6 +21,9 @@ pub enum RustFunction {
     OpenDoor,
     SkipLevel,
     GotoLevel,
+    Println,
+    Eprintln, // Error messages
+    Panic,    // Critical errors
 }
 
 #[derive(Clone, Debug)]
@@ -30,6 +33,7 @@ pub struct FunctionCall {
     pub coordinates: Option<(i32, i32)>, // for laser tile targeting
     pub level_number: Option<usize>, // for goto_level
     pub boolean_param: Option<bool>, // for open_door
+    pub message: Option<String>, // for println
 }
 
 #[derive(Clone, Debug)]
@@ -111,8 +115,26 @@ impl Game {
             RustFunction::LaserDirection,
             RustFunction::LaserTile,
             RustFunction::OpenDoor,
+            RustFunction::Println,
+            RustFunction::Eprintln,
+            RustFunction::Panic,
             RustFunction::SkipLevel,
             RustFunction::GotoLevel,
+        ]
+    }
+    
+    // Functions displayed in GUI (excludes skip/goto commands)
+    pub fn get_gui_functions(&self) -> Vec<RustFunction> {
+        vec![
+            RustFunction::Move,
+            RustFunction::Scan, 
+            RustFunction::Grab,
+            RustFunction::LaserDirection,
+            RustFunction::LaserTile,
+            RustFunction::OpenDoor,
+            RustFunction::Println,
+            RustFunction::Eprintln,
+            RustFunction::Panic,
         ]
     }
 
@@ -257,7 +279,7 @@ impl Game {
             // For WASM, we'll use JavaScript to open the URL
             unsafe {
                 let js_code = format!("window.open('{}', '_blank');", url);
-                web_sys::eval(&js_code).ok();
+                js_sys::eval(&js_code).ok();
             }
             format!("Opening Rust docs: {}", url)
         } else {

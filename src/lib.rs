@@ -298,6 +298,9 @@ fn get_embedded_levels() -> Vec<LevelSpec> {
             max_turns: 50,
             income_per_square: 2,
             message: Some("Welcome to the Rust Steam Game! Use WASD or arrow keys to explore and discover hidden areas. This is your first level - good luck!".to_string()),
+            doors: vec![],
+            hint_message: Some("Move around to explore and discover the game mechanics".to_string()),
+            rust_docs_url: Some("https://doc.rust-lang.org/book/ch01-00-getting-started.html".to_string()),
         },
         // Enemy encounter level
         LevelSpec {
@@ -326,6 +329,9 @@ fn get_embedded_levels() -> Vec<LevelSpec> {
             max_turns: 0,
             income_per_square: 1,
             message: Some("Danger ahead! Red enemies patrol this area. Avoid them or they'll reset your progress. Plan your moves carefully.".to_string()),
+            doors: vec![],
+            hint_message: Some("Avoid the moving enemies while exploring the level".to_string()),
+            rust_docs_url: Some("https://doc.rust-lang.org/book/ch02-00-guessing-game-tutorial.html".to_string()),
         },
         // Custom movement demo level
         LevelSpec {
@@ -360,6 +366,9 @@ fn get_embedded_levels() -> Vec<LevelSpec> {
             max_turns: 0,
             income_per_square: 1,
             message: Some("Advanced level! Enemies here use special movement patterns: random, diagonal, and circular. Study their behavior to succeed.".to_string()),
+            doors: vec![],
+            hint_message: Some("Study the different enemy movement patterns to navigate safely".to_string()),
+            rust_docs_url: Some("https://doc.rust-lang.org/book/ch03-00-common-programming-concepts.html".to_string()),
         }
     ]
 }
