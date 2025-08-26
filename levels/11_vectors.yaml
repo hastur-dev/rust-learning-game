@@ -1,0 +1,64 @@
+name: "Level 11 - Vectors (Vec<T>)"
+grid_size: "23x16"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 11
+enemies:
+  - start_location: [21, 14]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [12, 7]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [17, 12]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [8, 10]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [5, 4]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [13, 11]
+  - [19, 9]
+  - [10, 14]
+  - [16, 5]
+
+items:
+  - name: "vector_creation_tip"
+    item_file: "items/vector_creation.rs"
+    spawn_randomly: false
+    location: [10, 9]
+  - name: "vector_methods_tip"
+    item_file: "items/vector_methods.rs"
+    spawn_randomly: false
+    location: [17, 7]
+  - name: "vector_indexing_tip"
+    item_file: "items/vector_indexing.rs"
+    spawn_randomly: false
+    location: [21, 11]
+  - name: "vector_iteration_tip"
+    item_file: "items/vector_iteration.rs"
+    spawn_randomly: false
+    location: [8, 14]
+  - name: "vector_capacity_tip"
+    item_file: "items/vector_capacity.rs"
+    spawn_randomly: false
+    location: [14, 4]
+  - name: "vector_ownership_tip"
+    item_file: "items/vector_ownership.rs"
+    spawn_randomly: false
+    location: [5, 12]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [15, 14]
+
+message: "Master Rust's most important collection: Vec<T>! Vectors are growable arrays allocated on the heap. Learn creation, manipulation, indexing, and iteration. Understand capacity vs length and ownership implications."
+
+hint_message: "Vectors: Vec::new() or vec![] macro. Methods: push(), pop(), get(), len(). Index with [i] (panics) or get(i) (returns Option). for item in &vec iterates by reference."

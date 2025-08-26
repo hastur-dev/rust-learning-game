@@ -1,0 +1,76 @@
+name: "Level 32 - Option<T> Advanced"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 32
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 28]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 29]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 25]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 25]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 22]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [22, 29]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [18, 23]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 31]
+  - [23, 30]
+  - [24, 27]
+  - [23, 26]
+  - [24, 29]
+  - [24, 20]
+  - [20, 27]
+
+items:
+  - name: "option_methods_tip"
+    item_file: "items/option_methods.rs"
+    spawn_randomly: false
+    location: [24, 30]
+  - name: "option_chaining_tip"
+    item_file: "items/option_chaining.rs"
+    spawn_randomly: false
+    location: [23, 28]
+  - name: "flatten_tip"
+    item_file: "items/flatten.rs"
+    spawn_randomly: false
+    location: [24, 32]
+  - name: "filter_tip"
+    item_file: "items/filter.rs"
+    spawn_randomly: false
+    location: [24, 25]
+  - name: "or_else_tip"
+    item_file: "items/or_else.rs"
+    spawn_randomly: false
+    location: [23, 24]
+  - name: "option_combinators_tip"
+    item_file: "items/option_combinators.rs"
+    spawn_randomly: false
+    location: [24, 22]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 30]
+
+message: "Master advanced Option<T> techniques! Explore powerful combinators like flatten, filter, or_else, and zip. Learn to chain operations elegantly and handle complex nested Option scenarios."
+
+hint_message: "Option methods: flatten() converts Option<Option<T>> to Option<T>. filter() applies predicate. or_else() provides lazy default. zip() combines Options. Use ? for early None returns."

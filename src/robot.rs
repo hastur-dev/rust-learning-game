@@ -71,7 +71,7 @@ impl Robot {
     }
 
     pub fn get_scanner_range(&self) -> i32 {
-        self.upgrades.scanner_level as i32
+        2 // Always 2-tile range for the new design
     }
 
     pub fn upgrade_grabber(&mut self) {
@@ -162,6 +162,6 @@ impl Robot {
 
     // Check if robot has scanner capability
     pub fn has_scanner(&self) -> bool {
-        self.has_item("scanner") && self.upgrades.scanner_level > 0
+        true // Scanner is always available in the new design
     }
 }

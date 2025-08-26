@@ -1,0 +1,76 @@
+name: "Level 44 - Associated Types"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 44
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 40]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 41]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 37]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 37]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 34]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 41]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 35]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 43]
+  - [23, 42]
+  - [24, 39]
+  - [23, 38]
+  - [24, 41]
+  - [24, 32]
+  - [24, 39]
+
+items:
+  - name: "associated_type_syntax_tip"
+    item_file: "items/associated_type_syntax.rs"
+    spawn_randomly: false
+    location: [24, 42]
+  - name: "iterator_associated_tip"
+    item_file: "items/iterator_associated.rs"
+    spawn_randomly: false
+    location: [23, 40]
+  - name: "projection_syntax_tip"
+    item_file: "items/projection_syntax.rs"
+    spawn_randomly: false
+    location: [24, 44]
+  - name: "associated_vs_generic_tip"
+    item_file: "items/associated_vs_generic.rs"
+    spawn_randomly: false
+    location: [24, 37]
+  - name: "higher_ranked_trait_bounds_tip"
+    item_file: "items/higher_ranked_trait_bounds.rs"
+    spawn_randomly: false
+    location: [23, 36]
+  - name: "associated_constants_tip"
+    item_file: "items/associated_constants.rs"
+    spawn_randomly: false
+    location: [24, 34]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 42]
+
+message: "Master Associated Types in traits! Learn when to use associated types vs generics, projection syntax, and how they create cleaner APIs. Explore iterator patterns and higher-ranked trait bounds."
+
+hint_message: "Associated types: 'type Item;' in traits. One implementation per type. Use when relationship is 1:1. Iterator::Item is classic example. <T as Trait>::AssociatedType for projection syntax."

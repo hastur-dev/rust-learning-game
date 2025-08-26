@@ -21,6 +21,8 @@ pub struct Grid {
     pub known: HashSet<Pos>,
     pub visited: HashSet<Pos>,
     pub blockers: HashSet<Pos>,
+    pub doors: HashSet<Pos>,  // Door positions
+    pub open_doors: HashSet<Pos>,  // Currently open doors
     pub enemies: Vec<Enemy>,
     pub fog_of_war: bool,
     pub income_per_square: u32,
@@ -35,6 +37,8 @@ impl Grid {
             known: HashSet::new(),
             visited: HashSet::new(),
             blockers: HashSet::new(),
+            doors: HashSet::new(),
+            open_doors: HashSet::new(),
             enemies: Vec::new(),
             fog_of_war: true,
             income_per_square: 1,
@@ -55,6 +59,11 @@ impl Grid {
         // Add specified blockers
         for (x, y) in &spec.blockers {
             grid.blockers.insert(Pos { x: *x as i32, y: *y as i32 });
+        }
+        
+        // Add specified doors
+        for (x, y) in &spec.doors {
+            grid.doors.insert(Pos { x: *x as i32, y: *y as i32 });
         }
 
         // Add enemies
@@ -187,10 +196,15 @@ impl Grid {
         revealed
     }
 
-    pub fn move_enemies(&mut self) {
+    pub fn move_enemies(&mut self, player_pos: Option<(i32, i32)>, stunned_enemies: &std::collections::HashMap<usize, u8>) {
         let mut new_enemies = self.enemies.clone();
         
         for (i, enemy) in new_enemies.iter_mut().enumerate() {
+            // Skip stunned enemies
+            if stunned_enemies.contains_key(&i) {
+                continue;
+            }
+            
             // Check if enemy uses a custom movement pattern
             if let Some(ref pattern_str) = enemy.movement_pattern {
                 if pattern_str.starts_with("file:") {
@@ -217,6 +231,19 @@ impl Grid {
                     }
                 } else if pattern_str == "circular" {
                     if let Some(pattern) = self.movement_registry.get("circular") {
+                        if let Some(new_pos) = pattern.next_move(enemy.pos, self, &mut enemy.movement_data) {
+                            enemy.pos = new_pos;
+                        }
+                        continue;
+                    }
+                } else if pattern_str == "chase" {
+                    // Pass player position to chase enemies
+                    if let Some((px, py)) = player_pos {
+                        enemy.movement_data.insert("player_x".to_string(), serde_yaml::Value::Number(serde_yaml::Number::from(px)));
+                        enemy.movement_data.insert("player_y".to_string(), serde_yaml::Value::Number(serde_yaml::Number::from(py)));
+                    }
+                    
+                    if let Some(pattern) = self.movement_registry.get("chase") {
                         if let Some(new_pos) = pattern.next_move(enemy.pos, self, &mut enemy.movement_data) {
                             enemy.pos = new_pos;
                         }
@@ -267,6 +294,40 @@ impl Grid {
     }
 
     pub fn is_blocked(&self, pos: Pos) -> bool {
+        self.blockers.contains(&pos) || (self.doors.contains(&pos) && !self.open_doors.contains(&pos))
+    }
+    
+    pub fn is_door(&self, pos: Pos) -> bool {
+        self.doors.contains(&pos)
+    }
+    
+    pub fn is_door_open(&self, pos: Pos) -> bool {
+        self.doors.contains(&pos) && self.open_doors.contains(&pos)
+    }
+    
+    pub fn open_door(&mut self, pos: Pos) -> bool {
+        if self.doors.contains(&pos) {
+            self.open_doors.insert(pos);
+            true
+        } else {
+            false
+        }
+    }
+    
+    pub fn close_door(&mut self, pos: Pos) -> bool {
+        if self.doors.contains(&pos) {
+            self.open_doors.remove(&pos);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_blocked_with_temp_removal(&self, pos: Pos, temp_removed: &std::collections::HashMap<(i32, i32), u8>) -> bool {
+        // Check if temporarily removed
+        if temp_removed.contains_key(&(pos.x, pos.y)) {
+            return false;
+        }
         self.blockers.contains(&pos)
     }
 

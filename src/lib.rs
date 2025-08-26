@@ -153,7 +153,8 @@ async fn run_game() {
         }
 
         if moved {
-            game.grid.move_enemies();
+            game.update_laser_effects();
+            game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
             game.turns += 1;
             
             // Check for enemy collision
@@ -207,7 +208,15 @@ fn draw_game_wasm(game: &Game) {
             
             let color = if game.grid.known.contains(&pos) {
                 if game.grid.is_blocked(pos) {
-                    BROWN
+                    if game.grid.is_door(pos) {
+                        if game.grid.is_door_open(pos) {
+                            GREEN  // Open door
+                        } else {
+                            BROWN  // Closed door
+                        }
+                    } else {
+                        BROWN  // Regular obstacle
+                    }
                 } else if game.grid.visited.contains(&pos) {
                     LIGHTGRAY
                 } else {
@@ -225,13 +234,45 @@ fn draw_game_wasm(game: &Game) {
     let robot_pos = game.robot.get_position();
     let robot_screen_x = grid_start_x + (robot_pos.0 as f32) * tile_size;
     let robot_screen_y = grid_start_y + (robot_pos.1 as f32) * tile_size;
-    draw_rectangle(robot_screen_x + 5.0, robot_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, BLUE);
+    draw_rectangle(robot_screen_x + 5.0, robot_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, SKYBLUE);
     
     // Draw enemies
     for enemy in &game.grid.enemies {
         let enemy_screen_x = grid_start_x + (enemy.pos.x as f32) * tile_size;
         let enemy_screen_y = grid_start_y + (enemy.pos.y as f32) * tile_size;
-        draw_rectangle(enemy_screen_x + 5.0, enemy_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, RED);
+        
+        // Determine enemy color based on movement type and state
+        let enemy_color = if let Some(ref pattern) = enemy.movement_pattern {
+            match pattern.as_str() {
+                "chase" => {
+                    // Check if actively chasing (orange) or not moving (blue)
+                    if let Some(is_chasing) = enemy.movement_data.get("is_chasing")
+                        .and_then(|v| v.as_bool()) {
+                        if is_chasing {
+                            ORANGE  // Actively chasing player
+                        } else {
+                            BLUE    // Not moving/searching
+                        }
+                    } else {
+                        ORANGE  // Default to orange for chase enemies
+                    }
+                }
+                "random" => MAGENTA,    // Random movement = magenta
+                "diagonal" => YELLOW,   // Diagonal movement = yellow
+                "circular" => LIME,     // Circular movement = lime green
+                "spiral" => PINK,       // Spiral movement = pink
+                pattern if pattern.starts_with("file:") => PURPLE, // Custom file patterns = purple
+                _ => RED                 // Unknown patterns = red
+            }
+        } else {
+            // Built-in horizontal/vertical enemies (no movement_pattern field)
+            match enemy.direction {
+                level::EnemyDirection::Horizontal => GREEN,  // Horizontal = green
+                level::EnemyDirection::Vertical => DARKBLUE, // Vertical = dark blue
+            }
+        };
+        
+        draw_rectangle(enemy_screen_x + 5.0, enemy_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, enemy_color);
     }
     
     // Draw controls

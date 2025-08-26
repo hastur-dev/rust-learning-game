@@ -16,15 +16,20 @@ pub enum RustFunction {
     Move,
     Grab,
     Scan,
-    SearchAll,
-    AutoGrab,
+    LaserDirection,
+    LaserTile,
+    OpenDoor,
+    SkipLevel,
+    GotoLevel,
 }
 
 #[derive(Clone, Debug)]
 pub struct FunctionCall {
     pub function: RustFunction,
-    pub direction: Option<(i32, i32)>, // for move and scan
-    pub boolean_param: Option<bool>, // for auto_grab
+    pub direction: Option<(i32, i32)>, // for move, scan, and laser direction
+    pub coordinates: Option<(i32, i32)>, // for laser tile targeting
+    pub level_number: Option<usize>, // for goto_level
+    pub boolean_param: Option<bool>, // for open_door
 }
 
 #[derive(Clone, Debug)]
@@ -55,6 +60,8 @@ pub struct Game {
     pub time_slow_duration_ms: u32,
     pub menu: Menu,
     pub popup_system: PopupSystem,
+    pub stunned_enemies: std::collections::HashMap<usize, u8>, // enemy_index -> remaining_stun_turns
+    pub temporary_removed_obstacles: std::collections::HashMap<(i32, i32), u8>, // position -> remaining_turns
 }
 
 impl Game {
@@ -91,28 +98,22 @@ impl Game {
             time_slow_duration_ms: 500, // Default 500ms
             menu: Menu::new(),
             popup_system: PopupSystem::new(),
+            stunned_enemies: std::collections::HashMap::new(),
+            temporary_removed_obstacles: std::collections::HashMap::new(),
         }
     }
 
     pub fn get_available_functions(&self) -> Vec<RustFunction> {
-        let mut functions = vec![];
-        
-        // Level 1: move, search_all, and auto_grab
-        functions.push(RustFunction::Move);
-        functions.push(RustFunction::SearchAll);
-        functions.push(RustFunction::AutoGrab);
-        
-        // Level 2+: grab becomes available
-        if self.level_idx >= 1 {
-            functions.push(RustFunction::Grab);
-        }
-        
-        // Scan only available if player has actually grabbed the scanner
-        if self.item_manager.has_collected("scanner") {
-            functions.push(RustFunction::Scan);
-        }
-        
-        functions
+        vec![
+            RustFunction::Move,
+            RustFunction::Scan, 
+            RustFunction::Grab,
+            RustFunction::LaserDirection,
+            RustFunction::LaserTile,
+            RustFunction::OpenDoor,
+            RustFunction::SkipLevel,
+            RustFunction::GotoLevel,
+        ]
     }
 
     pub fn finish_level(&mut self) {
@@ -214,6 +215,56 @@ impl Game {
         self.popup_system.show_level_complete();
     }
 
+    pub fn show_hint(&mut self) {
+        let current_level = &self.levels[self.level_idx];
+        if let Some(ref hint) = current_level.hint_message {
+            self.popup_system.show_message(
+                "Hint".to_string(),
+                hint.clone(),
+                crate::popup::PopupType::Info,
+                None
+            );
+        } else {
+            self.popup_system.show_message(
+                "Hint".to_string(),
+                "No hint available for this level.".to_string(),
+                crate::popup::PopupType::Info,
+                Some(3.0)
+            );
+        }
+    }
+    
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn open_rust_docs(&self) -> String {
+        let current_level = &self.levels[self.level_idx];
+        if let Some(ref url) = current_level.rust_docs_url {
+            if let Err(e) = std::process::Command::new("cmd")
+                .args(["/C", "start", url])
+                .spawn() {
+                format!("Failed to open browser: {}. Manual URL: {}", e, url)
+            } else {
+                format!("Opening Rust docs: {}", url)
+            }
+        } else {
+            "No documentation URL available for this level.".to_string()
+        }
+    }
+    
+    #[cfg(target_arch = "wasm32")]
+    pub fn open_rust_docs(&self) -> String {
+        let current_level = &self.levels[self.level_idx];
+        if let Some(ref url) = current_level.rust_docs_url {
+            // For WASM, we'll use JavaScript to open the URL
+            unsafe {
+                let js_code = format!("window.open('{}', '_blank');", url);
+                web_sys::eval(&js_code).ok();
+            }
+            format!("Opening Rust docs: {}", url)
+        } else {
+            "No documentation URL available for this level.".to_string()
+        }
+    }
+
     pub fn update_popup_system(&mut self, delta_time: f32) {
         self.popup_system.update(delta_time);
     }
@@ -228,6 +279,178 @@ impl Game {
 
     pub fn is_popup_showing(&self) -> bool {
         self.popup_system.is_showing()
+    }
+
+    // Laser system methods
+    pub fn fire_laser_direction(&mut self, direction: (i32, i32)) -> String {
+        let robot_pos = self.robot.get_position();
+        let mut current_pos = (robot_pos.0 + direction.0, robot_pos.1 + direction.1);
+        
+        // Trace laser path until it hits something
+        loop {
+            let pos = crate::item::Pos { x: current_pos.0, y: current_pos.1 };
+            
+            // Check bounds
+            if !self.grid.in_bounds(pos) {
+                return "Laser fired but hit the edge of the grid.".to_string();
+            }
+            
+            // Check for enemy hit
+            for (i, enemy) in self.grid.enemies.iter().enumerate() {
+                if enemy.pos == pos {
+                    self.stunned_enemies.insert(i, 5); // Stun for 5 turns
+                    return format!("Laser hit enemy at ({}, {})! Enemy stunned for 5 turns.", current_pos.0, current_pos.1);
+                }
+            }
+            
+            // Check for obstacle hit
+            if self.grid.is_blocked(pos) {
+                self.hit_obstacle_with_laser(current_pos);
+                return format!("Laser hit obstacle at ({}, {})! Obstacle destroyed for 2 turns.", current_pos.0, current_pos.1);
+            }
+            
+            // Continue laser path
+            current_pos = (current_pos.0 + direction.0, current_pos.1 + direction.1);
+        }
+    }
+
+    pub fn fire_laser_tile(&mut self, target: (i32, i32)) -> String {
+        let pos = crate::item::Pos { x: target.0, y: target.1 };
+        
+        // Check bounds
+        if !self.grid.in_bounds(pos) {
+            return "Target coordinates are outside the grid.".to_string();
+        }
+        
+        // Check for enemy at target
+        for (i, enemy) in self.grid.enemies.iter().enumerate() {
+            if enemy.pos == pos {
+                self.stunned_enemies.insert(i, 5); // Stun for 5 turns
+                return format!("Laser hit enemy at ({}, {})! Enemy stunned for 5 turns.", target.0, target.1);
+            }
+        }
+        
+        // Check for obstacle at target
+        if self.grid.is_blocked(pos) {
+            self.hit_obstacle_with_laser(target);
+            return format!("Laser hit obstacle at ({}, {})! Obstacle destroyed for 2 turns.", target.0, target.1);
+        }
+        
+        format!("Laser fired at ({}, {}) but hit empty space.", target.0, target.1)
+    }
+
+    fn hit_obstacle_with_laser(&mut self, obstacle_pos: (i32, i32)) {
+        // Remove obstacle temporarily
+        self.temporary_removed_obstacles.insert(obstacle_pos, 2);
+        
+        // Push back entities within 1 square
+        let directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
+        
+        // Collect entities to push back first
+        let mut entities_to_push = Vec::new();
+        
+        for &(dx, dy) in &directions {
+            let check_pos = (obstacle_pos.0 + dx, obstacle_pos.1 + dy);
+            let pos = crate::item::Pos { x: check_pos.0, y: check_pos.1 };
+            
+            // Check for enemies to push back
+            for (i, enemy) in self.grid.enemies.iter().enumerate() {
+                if enemy.pos == pos {
+                    let push_to = (check_pos.0 + dx, check_pos.1 + dy);
+                    let push_pos = crate::item::Pos { x: push_to.0, y: push_to.1 };
+                    
+                    if self.grid.in_bounds(push_pos) && !self.grid.is_blocked(push_pos) {
+                        entities_to_push.push(("enemy", i, push_pos));
+                    }
+                }
+            }
+            
+            // Check for robot to push back
+            let robot_pos = self.robot.get_position();
+            if robot_pos == check_pos {
+                let push_to = (check_pos.0 + dx, check_pos.1 + dy);
+                let push_pos = crate::item::Pos { x: push_to.0, y: push_to.1 };
+                
+                if self.grid.in_bounds(push_pos) && !self.grid.is_blocked(push_pos) {
+                    entities_to_push.push(("robot", 0, push_pos));
+                }
+            }
+        }
+        
+        // Apply the pushbacks
+        for (entity_type, index, new_pos) in entities_to_push {
+            match entity_type {
+                "enemy" => {
+                    if index < self.grid.enemies.len() {
+                        self.grid.enemies[index].pos = new_pos;
+                    }
+                }
+                "robot" => {
+                    self.robot.set_position((new_pos.x, new_pos.y));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    pub fn skip_level(&mut self) -> String {
+        if self.level_idx + 1 < self.levels.len() {
+            self.level_idx += 1;
+            self.load_level(self.level_idx);
+            format!("Skipped to level {}!", self.level_idx + 1)
+        } else {
+            "Already at the last level!".to_string()
+        }
+    }
+
+    pub fn goto_level(&mut self, target_level: usize) -> String {
+        if target_level > 0 && target_level <= self.levels.len() {
+            self.level_idx = target_level - 1; // Convert to 0-based index
+            self.load_level(self.level_idx);
+            format!("Jumped to level {}!", target_level)
+        } else {
+            format!("Invalid level number {}. Valid range: 1-{}", target_level, self.levels.len())
+        }
+    }
+    
+    pub fn open_door(&mut self, open: bool) -> String {
+        let robot_pos = self.robot.get_position();
+        let robot_item_pos = crate::item::Pos { x: robot_pos.0, y: robot_pos.1 };
+        
+        // Check if robot is standing on a door
+        if self.grid.is_door(robot_item_pos) {
+            if open {
+                if self.grid.is_door_open(robot_item_pos) {
+                    "Door is already open.".to_string()
+                } else {
+                    self.grid.open_door(robot_item_pos);
+                    "Door opened successfully!".to_string()
+                }
+            } else {
+                if !self.grid.is_door_open(robot_item_pos) {
+                    "Door is already closed.".to_string()
+                } else {
+                    self.grid.close_door(robot_item_pos);
+                    "Door closed successfully!".to_string()
+                }
+            }
+        } else {
+            "No door at robot's current position.".to_string()
+        }
+    }
+
+    pub fn update_laser_effects(&mut self) {
+        // Update stunned enemies
+        self.stunned_enemies.retain(|_, turns| {
+            *turns -= 1;
+            *turns > 0
+        });
+        
+        // Update temporary removed obstacles
+        self.temporary_removed_obstacles.retain(|_, turns| {
+            *turns -= 1;
+            *turns > 0
+        });
     }
 
     pub fn check_end_condition(&mut self) {

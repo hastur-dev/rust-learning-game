@@ -1,0 +1,76 @@
+name: "Level 29 - Drop Trait"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 29
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 25]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 26]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 22]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [23, 22]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [23, 19]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [19, 26]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [15, 20]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [23, 28]
+  - [23, 27]
+  - [24, 24]
+  - [23, 23]
+  - [24, 26]
+  - [21, 20]
+  - [17, 24]
+
+items:
+  - name: "drop_trait_basics_tip"
+    item_file: "items/drop_trait_basics.rs"
+    spawn_randomly: false
+    location: [24, 27]
+  - name: "automatic_drop_tip"
+    item_file: "items/automatic_drop.rs"
+    spawn_randomly: false
+    location: [23, 25]
+  - name: "drop_order_tip"
+    item_file: "items/drop_order.rs"
+    spawn_randomly: false
+    location: [24, 29]
+  - name: "explicit_drop_tip"
+    item_file: "items/explicit_drop.rs"
+    spawn_randomly: false
+    location: [24, 22]
+  - name: "drop_check_tip"
+    item_file: "items/drop_check.rs"
+    spawn_randomly: false
+    location: [23, 21]
+  - name: "resource_cleanup_tip"
+    item_file: "items/resource_cleanup.rs"
+    spawn_randomly: false
+    location: [23, 20]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 27]
+
+message: "Master resource cleanup with the Drop trait! Drop is called automatically when values go out of scope. Implement Drop for custom cleanup logic like closing files, freeing memory, or releasing locks."
+
+hint_message: "Drop trait: impl Drop for Type { fn drop(&mut self) {} }. Called automatically at end of scope. Can't call drop() directly - use std::mem::drop() for early cleanup. Drop order: reverse of creation."

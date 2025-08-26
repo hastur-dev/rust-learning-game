@@ -1,0 +1,76 @@
+name: "Level 38 - Environment Variables"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 38
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 34]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 35]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 31]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 31]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 28]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 35]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 29]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 37]
+  - [23, 36]
+  - [24, 33]
+  - [23, 32]
+  - [24, 35]
+  - [24, 26]
+  - [24, 33]
+
+items:
+  - name: "env_var_tip"
+    item_file: "items/env_var.rs"
+    spawn_randomly: false
+    location: [24, 36]
+  - name: "env_vars_tip"
+    item_file: "items/env_vars.rs"
+    spawn_randomly: false
+    location: [23, 34]
+  - name: "dotenv_tip"
+    item_file: "items/dotenv.rs"
+    spawn_randomly: false
+    location: [24, 38]
+  - name: "config_management_tip"
+    item_file: "items/config_management.rs"
+    spawn_randomly: false
+    location: [24, 31]
+  - name: "env_defaults_tip"
+    item_file: "items/env_defaults.rs"
+    spawn_randomly: false
+    location: [23, 30]
+  - name: "secure_env_tip"
+    item_file: "items/secure_env.rs"
+    spawn_randomly: false
+    location: [24, 28]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 36]
+
+message: "Configure applications with environment variables! Learn std::env functions, the dotenv crate for .env files, and best practices for configuration management and security."
+
+hint_message: "Environment variables: env::var() gets variable, env::vars() gets all. Use dotenv for .env files. Provide defaults with unwrap_or(). Never log sensitive env vars!"

@@ -9,6 +9,7 @@ pub struct YamlLevelConfig {
     pub name: String,
     pub grid_size: String, // Format: "WxH" like "16x10"
     pub obstacles: Option<u32>, // Number of random obstacles to place
+    pub doors: Option<Vec<(u32, u32)>>, // Door positions
     pub enemies: Option<Vec<EnemyConfig>>,
     pub items: Option<Vec<ItemConfig>>,
     pub income_per_square: Option<u32>,
@@ -16,6 +17,8 @@ pub struct YamlLevelConfig {
     pub max_turns: Option<u32>,
     pub fog_of_war: Option<bool>,
     pub message: Option<String>, // Popup message shown at level start
+    pub hint_message: Option<String>, // Hint message shown when hint button is pressed
+    pub rust_docs_url: Option<String>, // URL to relevant Rust documentation
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -41,12 +44,15 @@ pub struct LevelSpec {
     pub start: (usize, usize),
     pub scanner_at: Option<(usize, usize)>,
     pub blockers: Vec<(usize, usize)>,
+    pub doors: Vec<(usize, usize)>, // Door positions
     pub enemies: Vec<EnemySpec>,
     pub items: Vec<ItemSpec>,
     pub fog_of_war: bool,
     pub max_turns: usize,
     pub income_per_square: u32,
     pub message: Option<String>, // Popup message shown at level start
+    pub hint_message: Option<String>, // Hint message shown when hint button is pressed
+    pub rust_docs_url: Option<String>, // URL to relevant Rust documentation
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -183,6 +189,11 @@ impl YamlLevelConfig {
             .and_then(|scanner| scanner.pos)
             .map(|(x, y)| (x as usize, y as usize));
         
+        // Convert doors
+        let doors = self.doors.as_ref()
+            .map(|doors| doors.iter().map(|(x, y)| (*x as usize, *y as usize)).collect())
+            .unwrap_or_else(Vec::new);
+        
         Ok(LevelSpec {
             name: self.name.clone(),
             width,
@@ -190,12 +201,15 @@ impl YamlLevelConfig {
             start,
             scanner_at,
             blockers,
+            doors,
             enemies,
             items,
             fog_of_war: self.fog_of_war.unwrap_or(true),
             max_turns: self.max_turns.unwrap_or(0) as usize,
             income_per_square: self.income_per_square.unwrap_or(1),
             message: self.message.clone(),
+            hint_message: self.hint_message.clone(),
+            rust_docs_url: self.rust_docs_url.clone(),
         })
     }
 }

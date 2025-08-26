@@ -1,0 +1,76 @@
+name: "Level 37 - Command Line Arguments"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 37
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 33]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 34]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 30]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 30]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [23, 27]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 34]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [23, 28]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [23, 36]
+  - [23, 35]
+  - [24, 32]
+  - [23, 31]
+  - [24, 34]
+  - [24, 25]
+  - [24, 32]
+
+items:
+  - name: "std_env_args_tip"
+    item_file: "items/std_env_args.rs"
+    spawn_randomly: false
+    location: [24, 35]
+  - name: "args_parsing_tip"
+    item_file: "items/args_parsing.rs"
+    spawn_randomly: false
+    location: [23, 33]
+  - name: "clap_crate_tip"
+    item_file: "items/clap_crate.rs"
+    spawn_randomly: false
+    location: [24, 37]
+  - name: "structopt_tip"
+    item_file: "items/structopt.rs"
+    spawn_randomly: false
+    location: [24, 30]
+  - name: "args_validation_tip"
+    item_file: "items/args_validation.rs"
+    spawn_randomly: false
+    location: [23, 29]
+  - name: "help_messages_tip"
+    item_file: "items/help_messages.rs"
+    spawn_randomly: false
+    location: [24, 27]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 35]
+
+message: "Build command-line applications! Learn to parse command-line arguments with std::env::args, validate input, and use libraries like clap for sophisticated argument parsing with automatic help generation."
+
+hint_message: "Command line args: std::env::args() returns iterator. Skip first (program name). Use clap crate for advanced parsing with derives. Validate arguments and provide helpful error messages."

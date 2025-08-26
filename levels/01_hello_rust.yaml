@@ -1,0 +1,21 @@
+name: "Level 1 - Hello Rust!"
+grid_size: "12x8"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+message: "Welcome to Rust Robot Programming! 🦀 Your goal: Navigate to collect all items and reach the goal. Use basic movement commands (move, grab, scan) to explore. This level introduces Rust basics and the println! macro for output. TO WIN: Collect the 'hello_world_tip' item first, then grab the 'goal_item' to complete the level."
+hint_message: "HOW TO PLAY: Type commands like 'move(right);' then press ENTER to execute. Use 'grab();' to collect items. The exclamation mark in println! means it's a macro, not a function - this is Rust's way of code generation at compile time."
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/hello.html"
+obstacles: 3
+
+items:
+  - name: "hello_world_tip"
+    item_file: "items/hello_world.rs"
+    spawn_randomly: false
+    location: [10, 6]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs" 
+    spawn_randomly: false
+    location: [8, 2]
+

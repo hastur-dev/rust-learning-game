@@ -348,11 +348,19 @@ impl MovementPattern for SpiralMovement {
 pub struct ChaseMovement;
 
 impl MovementPattern for ChaseMovement {
-    fn next_move(&self, current_pos: Pos, _grid: &Grid, _enemy_data: &mut HashMap<String, serde_yaml::Value>) -> Option<Pos> {
-        // For simplicity, assume player is at (1, 1) - in a real implementation
-        // you'd need access to the actual player position
-        let player_pos = Pos { x: 1, y: 1 };
+    fn next_move(&self, current_pos: Pos, grid: &Grid, enemy_data: &mut HashMap<String, serde_yaml::Value>) -> Option<Pos> {
+        // Try to get player position from enemy data, fallback to (1,1) if not available
+        let player_pos = if let Some(player_x) = enemy_data.get("player_x").and_then(|v| v.as_i64()) {
+            if let Some(player_y) = enemy_data.get("player_y").and_then(|v| v.as_i64()) {
+                Pos { x: player_x as i32, y: player_y as i32 }
+            } else {
+                Pos { x: 1, y: 1 } // fallback
+            }
+        } else {
+            Pos { x: 1, y: 1 } // fallback
+        };
         
+        // Calculate direction to player
         let dx = if player_pos.x > current_pos.x {
             1
         } else if player_pos.x < current_pos.x {
@@ -369,14 +377,47 @@ impl MovementPattern for ChaseMovement {
             0
         };
         
-        if dx != 0 || dy != 0 {
-            Some(Pos {
-                x: current_pos.x + dx,
-                y: current_pos.y + dy,
-            })
-        } else {
-            None
+        // Try to move toward player
+        let preferred_pos = Pos {
+            x: current_pos.x + dx,
+            y: current_pos.y + dy,
+        };
+        
+        // Check if preferred move is valid
+        if grid.in_bounds(preferred_pos) && !grid.is_blocked(preferred_pos) {
+            // Mark as actively chasing (moving toward player)
+            enemy_data.insert("is_chasing".to_string(), serde_yaml::Value::Bool(true));
+            return Some(preferred_pos);
         }
+        
+        // If direct path blocked, try alternative moves
+        let alternative_moves = vec![
+            (dx, 0),  // Horizontal only
+            (0, dy),  // Vertical only
+            (1, 0),   // Right
+            (-1, 0),  // Left
+            (0, 1),   // Down
+            (0, -1),  // Up
+        ];
+        
+        for (alt_dx, alt_dy) in alternative_moves {
+            if alt_dx == 0 && alt_dy == 0 { continue; }
+            
+            let alt_pos = Pos {
+                x: current_pos.x + alt_dx,
+                y: current_pos.y + alt_dy,
+            };
+            
+            if grid.in_bounds(alt_pos) && !grid.is_blocked(alt_pos) {
+                // Mark as searching/not directly chasing
+                enemy_data.insert("is_chasing".to_string(), serde_yaml::Value::Bool(false));
+                return Some(alt_pos);
+            }
+        }
+        
+        // If all moves blocked, don't move - mark as not chasing
+        enemy_data.insert("is_chasing".to_string(), serde_yaml::Value::Bool(false));
+        None
     }
     
     fn description(&self) -> &'static str {

@@ -1,0 +1,73 @@
+name: "Level 20 - Error Handling Introduction"
+grid_size: "25x19"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 20
+enemies:
+  - start_location: [23, 17]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [21, 16]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 17]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [17, 19]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [14, 13]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 10]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [10, 17]
+    movement_pattern: "horizontal"
+    moving_positive: false
+
+doors:
+  - [22, 19]
+  - [23, 18]
+  - [19, 19]
+  - [23, 14]
+  - [15, 17]
+  - [12, 19]
+  - [8, 15]
+
+items:
+  - name: "panic_basics_tip"
+    item_file: "items/panic_basics.rs"
+    spawn_randomly: false
+    location: [19, 18]
+  - name: "option_basics_tip"
+    item_file: "items/option_basics.rs"
+    spawn_randomly: false
+    location: [23, 16]
+  - name: "result_basics_tip"
+    item_file: "items/result_basics.rs"
+    spawn_randomly: false
+    location: [23, 20]
+  - name: "unwrap_expect_tip"
+    item_file: "items/unwrap_expect.rs"
+    spawn_randomly: false
+    location: [17, 19]
+  - name: "match_errors_tip"
+    item_file: "items/match_errors.rs"
+    spawn_randomly: false
+    location: [23, 12]
+  - name: "error_philosophy_tip"
+    item_file: "items/error_philosophy.rs"
+    spawn_randomly: false
+    location: [14, 19]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 18]
+
+message: "Begin your journey into Rust's error handling philosophy! Learn when to panic vs return errors, basic Option<T> and Result<T, E> usage, and the difference between recoverable and unrecoverable errors."
+
+hint_message: "Error handling: panic! for unrecoverable errors. Option<T> for nullable values: Some(T) or None. Result<T, E> for operations that can fail: Ok(T) or Err(E). Use match, unwrap(), or expect()."

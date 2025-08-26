@@ -1,39 +1,32 @@
-// Rust Robot Programming - External File Mode
-// Save this file and the game will automatically detect changes!
-// Use your favorite IDE/editor to write code here.
-// robo bobo stuffs
-// Level 2 Strategy: Find and grab the scanner item
-// Note: You must grab ALL items before you can complete the level!
-search_all()
-set_auto_grab(true)
-// Enable auto-grab to automatically collect items when moving
-// Try this function to search all reachable areas:
-// search_all();
-// Once you find the scanner item (marked with "!"), grab it:
-// grab();  // This will unlock the scan() function!
+// Welcome to Rust Robot Programming Tutorial!
+// This file is automatically saved as you type.
+// You can also edit this file externally with any text editor.
 
-// You can also use:
-// move(right);
-// move(up);
-// grab();  // Available from Level 2+ - REQUIRED to pick up scanner!
-// scan(left);  // Available ONLY after grabbing scanner with grab()
+// Always available functions:
+move(right);
+grab();
+scan(left);
 
-// IMPORTANT: Items and obstacles ("!" and "?") only appear on explored squares!
+// Door system (teaches boolean literals):
+// open_door(true);   // Opens door at robot position
+// open_door(false);  // Closes door at robot position
 
-// Example: Manual exploration to find items
-// set_auto_grab(true);
+// Laser system (stuns enemies, destroys obstacles):
+// laser::direction(up);
+// laser::tile(5, 3);
+
+// Secret commands for testing:
+// skip_this_level_because_i_say_so();
+// goto_this_level_because_i_say_so(3);
+
+// Example: Move in a pattern
 // move(right);
 // move(down);
 // move(left);
 // move(up);
 
-// Example: Manual grabbing
-// set_auto_grab(false);
+// Example: Scan and grab
+// scan(up);
 // grab();
-
-// Example: Advanced exploration with auto-grab
-// set_auto_grab(true);
-// search_all();
 // move(right);
-// move(right);
-// set_auto_grab(false);  // Disable for precise control
+// grab();

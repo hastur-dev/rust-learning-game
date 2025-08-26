@@ -1,0 +1,76 @@
+name: "Level 46 - Concurrency - Threads"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 46
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 42]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 43]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 39]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 39]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 36]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 43]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 37]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 45]
+  - [23, 44]
+  - [24, 41]
+  - [23, 40]
+  - [24, 43]
+  - [24, 34]
+  - [24, 41]
+
+items:
+  - name: "thread_spawn_tip"
+    item_file: "items/thread_spawn.rs"
+    spawn_randomly: false
+    location: [24, 44]
+  - name: "thread_join_tip"
+    item_file: "items/thread_join.rs"
+    spawn_randomly: false
+    location: [23, 42]
+  - name: "move_closures_threads_tip"
+    item_file: "items/move_closures_threads.rs"
+    spawn_randomly: false
+    location: [24, 46]
+  - name: "shared_state_tip"
+    item_file: "items/shared_state.rs"
+    spawn_randomly: false
+    location: [24, 39]
+  - name: "mutex_arc_tip"
+    item_file: "items/mutex_arc.rs"
+    spawn_randomly: false
+    location: [23, 38]
+  - name: "thread_safety_tip"
+    item_file: "items/thread_safety.rs"
+    spawn_randomly: false
+    location: [24, 36]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 44]
+
+message: "Enter concurrent programming with threads! Learn thread::spawn, joining threads, moving data between threads safely, and sharing state with Mutex and Arc. Master Send and Sync traits."
+
+hint_message: "Threads: thread::spawn() creates threads, join() waits for completion. move closures transfer ownership. Arc<Mutex<T>> for shared mutable state. Send/Sync traits ensure thread safety."

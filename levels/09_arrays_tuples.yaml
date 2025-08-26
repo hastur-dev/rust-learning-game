@@ -1,0 +1,56 @@
+name: "Level 9 - Arrays & Tuples"
+grid_size: "21x15"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 9
+enemies:
+  - start_location: [19, 13]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [10, 5]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [15, 10]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [6, 8]
+    movement_pattern: "horizontal"
+    moving_positive: true
+
+doors:
+  - [11, 9]
+  - [17, 7]
+  - [8, 12]
+
+items:
+  - name: "arrays_tip"
+    item_file: "items/arrays.rs"
+    spawn_randomly: false
+    location: [8, 7]
+  - name: "array_methods_tip"
+    item_file: "items/array_methods.rs"
+    spawn_randomly: false
+    location: [15, 5]
+  - name: "tuples_tip"
+    item_file: "items/tuples.rs"
+    spawn_randomly: false
+    location: [19, 9]
+  - name: "tuple_destructuring_tip"
+    item_file: "items/tuple_destructuring.rs"
+    spawn_randomly: false
+    location: [6, 13]
+  - name: "array_slices_tip"
+    item_file: "items/array_slices.rs"
+    spawn_randomly: false
+    location: [12, 3]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [13, 13]
+
+message: "Explore compound data types! Arrays store multiple values of the same type with fixed size. Tuples group different types together. Both are stack-allocated and perfect for known-size collections."
+
+hint_message: "Arrays: [T; N] syntax, fixed size. let arr = [1, 2, 3] or [0; 5]. Tuples: (T1, T2, T3) syntax, different types. Access with .0, .1, etc. or destructure with let (a, b, c) = tuple."

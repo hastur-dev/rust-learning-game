@@ -108,6 +108,37 @@ Beyond custom level messages, the game automatically shows popups for:
 - **Shop Tutorial**: Detailed tutorial shown when first accessing the shop
 - **Game Events**: Various contextual messages during gameplay
 
+## Enemy Color System
+
+Enemies are color-coded based on their movement patterns to help players quickly identify different threats:
+
+### Movement Pattern Colors
+
+- **🟢 GREEN**: Horizontal movement enemies (built-in pattern)
+- **🔵 DARKBLUE**: Vertical movement enemies (built-in pattern) 
+- **🟠 ORANGE**: Chase enemies actively pursuing the player
+- **🔵 BLUE**: Chase enemies that are stuck/not moving toward player
+- **🟣 MAGENTA**: Random movement enemies
+- **🟡 YELLOW**: Diagonal movement enemies
+- **🟢 LIME**: Circular movement enemies
+- **🩷 PINK**: Spiral movement enemies
+- **🟣 PURPLE**: Custom movement patterns loaded from files
+- **🔴 RED**: Unknown or default movement patterns
+
+### Visual Enemy Identification
+
+```yaml
+enemies:
+  - start_location: [10, 5]
+    movement_pattern: "horizontal"  # Will appear GREEN
+  - start_location: [15, 8] 
+    movement_pattern: "chase"       # Will appear ORANGE (chasing) or BLUE (stuck)
+  - start_location: [8, 12]
+    movement_pattern: "random"      # Will appear MAGENTA
+```
+
+This color system makes it easy to understand enemy behavior at a glance and plan your strategy accordingly!
+
 ## Example Levels
 
 See the `levels/` directory for example YAML files:

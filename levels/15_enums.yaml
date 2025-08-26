@@ -1,0 +1,69 @@
+name: "Level 15 - Enums"
+grid_size: "25x17"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 15
+enemies:
+  - start_location: [23, 15]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [16, 11]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [21, 14]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [12, 14]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [9, 8]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [18, 5]
+    movement_pattern: "circular"
+    moving_positive: false
+
+doors:
+  - [17, 15]
+  - [23, 13]
+  - [14, 16]
+  - [20, 9]
+  - [10, 12]
+  - [7, 16]
+
+items:
+  - name: "enum_definition_tip"
+    item_file: "items/enum_definition.rs"
+    spawn_randomly: false
+    location: [14, 13]
+  - name: "enum_variants_tip"
+    item_file: "items/enum_variants.rs"
+    spawn_randomly: false
+    location: [21, 11]
+  - name: "enum_data_tip"
+    item_file: "items/enum_data.rs"
+    spawn_randomly: false
+    location: [23, 15]
+  - name: "option_enum_tip"
+    item_file: "items/option_enum.rs"
+    spawn_randomly: false
+    location: [12, 16]
+  - name: "result_enum_tip"
+    item_file: "items/result_enum.rs"
+    spawn_randomly: false
+    location: [18, 7]
+  - name: "enum_methods_tip"
+    item_file: "items/enum_methods.rs"
+    spawn_randomly: false
+    location: [9, 16]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [19, 15]
+
+message: "Explore algebraic data types with Enums! Unlike other languages, Rust enums can hold data in their variants. Master the powerful Option<T> and Result<T, E> enums that enable safe null and error handling."
+
+hint_message: "Enums: 'enum Name { Variant1, Variant2(Type) }'. Variants can hold data: Some(T), None, Ok(T), Err(E). Use match to handle all variants safely. impl blocks can add methods to enums."

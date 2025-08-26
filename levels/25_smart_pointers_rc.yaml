@@ -1,0 +1,76 @@
+name: "Level 25 - Smart Pointers - Rc<T>"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 25
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 21]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 22]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [22, 20]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [19, 18]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [23, 15]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [15, 22]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [11, 16]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [23, 24]
+  - [23, 23]
+  - [24, 20]
+  - [23, 19]
+  - [20, 22]
+  - [17, 20]
+  - [13, 20]
+
+items:
+  - name: "rc_basics_tip"
+    item_file: "items/rc_basics.rs"
+    spawn_randomly: false
+    location: [24, 23]
+  - name: "reference_counting_tip"
+    item_file: "items/reference_counting.rs"
+    spawn_randomly: false
+    location: [23, 21]
+  - name: "rc_clone_tip"
+    item_file: "items/rc_clone.rs"
+    spawn_randomly: false
+    location: [24, 25]
+  - name: "shared_ownership_tip"
+    item_file: "items/shared_ownership.rs"
+    spawn_randomly: false
+    location: [22, 20]
+  - name: "rc_strong_count_tip"
+    item_file: "items/rc_strong_count.rs"
+    spawn_randomly: false
+    location: [23, 17]
+  - name: "rc_limitations_tip"
+    item_file: "items/rc_limitations.rs"
+    spawn_randomly: false
+    location: [19, 20]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 23]
+
+message: "Enable shared ownership with Rc<T> (Reference Counted)! When you need multiple owners of the same data, Rc tracks references and deallocates when the count reaches zero. Single-threaded only!"
+
+hint_message: "Rc<T>: Shared ownership via reference counting. Rc::new(value) creates, Rc::clone(&rc) increases count. Immutable only. Use Rc::strong_count() to check references. Drops when count = 0."

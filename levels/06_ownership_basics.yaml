@@ -1,0 +1,37 @@
+name: "Level 6 - Ownership Basics"
+grid_size: "18x13"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 6
+enemies:
+  - start_location: [16, 10]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [8, 2]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+items:
+  - name: "ownership_rules_tip"
+    item_file: "items/ownership_rules.rs"
+    spawn_randomly: false
+    location: [6, 4]
+  - name: "move_semantics_tip"
+    item_file: "items/move_semantics.rs"
+    spawn_randomly: false
+    location: [12, 7]
+  - name: "stack_heap_tip"
+    item_file: "items/stack_heap.rs"
+    spawn_randomly: false
+    location: [16, 4]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [9, 11]
+
+message: "Welcome to Rust's most unique feature: Ownership! Understanding ownership is crucial for memory safety without garbage collection. Learn the three rules and how values move between scopes."
+
+hint_message: "Ownership Rules: 1) Each value has one owner, 2) Only one owner at a time, 3) Value is dropped when owner goes out of scope. Assignment moves ownership by default."

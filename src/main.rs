@@ -177,7 +177,8 @@ fn try_move(game: &mut Game, dx: i32, dy: i32) {
 
     // Enemies move after player action
     if game.level_idx >= 3 && !game.enemy_step_paused {
-        game.grid.move_enemies();
+        game.update_laser_effects();
+        game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
         if game.grid.check_enemy_collision(game.robot.get_position()) {
             let idx = game.level_idx;
             game.load_level(idx);
@@ -186,29 +187,8 @@ fn try_move(game: &mut Game, dx: i32, dy: i32) {
         }
     }
 
-    // Auto-grab behavior
-    if game.robot.auto_grab_enabled {
-        let range = game.robot.get_grabber_range();
-        let robot_pos = game.robot.get_pos();
-        let mut has_grabbable = false;
-        
-        for y in (robot_pos.y - range).max(0)..=(robot_pos.y + range).min(game.grid.height - 1) {
-            for x in (robot_pos.x - range).max(0)..=(robot_pos.x + range).min(game.grid.width - 1) {
-                let pos = Pos { x, y };
-                if game.robot.distance_to(pos) <= range && 
-                   game.grid.in_bounds(pos) && 
-                   !game.grid.known.contains(&pos) {
-                    has_grabbable = true;
-                    break;
-                }
-            }
-            if has_grabbable { break; }
-        }
-        
-        if has_grabbable { 
-            try_grab(game); 
-        }
-    }
+    // Always auto-grab behavior since grabber is always enabled
+    try_grab(game);
 }
 
 fn try_grab(game: &mut Game) -> &'static str {
@@ -274,7 +254,8 @@ fn try_grab(game: &mut Game) -> &'static str {
 
     // Enemies advance on any action
     if game.level_idx >= 3 && !game.enemy_step_paused {
-        game.grid.move_enemies();
+        game.update_laser_effects();
+        game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
         if game.grid.check_enemy_collision(game.robot.get_position()) {
             let idx = game.level_idx;
             game.load_level(idx);
@@ -311,7 +292,8 @@ fn try_scan(game: &mut Game, dir: (i32, i32)) -> &'static str {
     
     // Enemies advance on any action
     if game.level_idx >= 3 && !game.enemy_step_paused {
-        game.grid.move_enemies();
+        game.update_laser_effects();
+        game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
         if game.grid.check_enemy_collision(game.robot.get_position()) {
             let idx = game.level_idx;
             game.load_level(idx);
@@ -322,100 +304,6 @@ fn try_scan(game: &mut Game, dir: (i32, i32)) -> &'static str {
     if revealed_any { "Scan complete." } else { "Scan found nothing." }
 }
 
-fn try_search_all(game: &mut Game) -> String {
-    let mut discovered = 0;
-    let mut moves_made = 0;
-    let mut going_right = true;
-    
-    game.enemy_step_paused = true;
-
-    let _robot_pos = game.robot.get_position();
-    
-    // Try to move to top-left corner first
-    while game.robot.get_position().1 > 0 {
-        let current_pos = game.robot.get_position();
-        let next = Pos { x: current_pos.0, y: current_pos.1 - 1 };
-        if game.grid.is_blocked(next) {
-            game.enemy_step_paused = false;
-            return "Search blocked by obstacle - cannot reach starting position".to_string();
-        }
-        try_move(game, 0, -1);
-        moves_made += 1;
-        if moves_made > 100 { break; }
-    }
-    
-    while game.robot.get_position().0 > 0 {
-        let current_pos = game.robot.get_position();
-        let next = Pos { x: current_pos.0 - 1, y: current_pos.1 };
-        if game.grid.is_blocked(next) {
-            game.enemy_step_paused = false;
-            return "Search blocked by obstacle - cannot reach starting position".to_string();
-        }
-        try_move(game, -1, 0);
-        moves_made += 1;
-        if moves_made > 100 { break; }
-    }
-    
-    // Now do lawnmower pattern
-    let max_moves = 200;
-    
-    while moves_made < max_moves {
-        let current_pos = game.robot.get_pos();
-        if !game.grid.known.contains(&current_pos) {
-            discovered += 1;
-        }
-        
-        if going_right {
-            let next = Pos { x: current_pos.x + 1, y: current_pos.y };
-            if game.grid.in_bounds(next) && !game.grid.is_blocked(next) {
-                try_move(game, 1, 0);
-                moves_made += 1;
-            } else {
-                let down = Pos { x: current_pos.x, y: current_pos.y + 1 };
-                if game.grid.in_bounds(down) && !game.grid.is_blocked(down) {
-                    try_move(game, 0, 1);
-                    moves_made += 1;
-                    going_right = false;
-                } else {
-                    game.enemy_step_paused = false;
-                    return format!("Lawnmower search blocked by obstacle! Discovered {} squares.", discovered);
-                }
-            }
-        } else {
-            let next = Pos { x: current_pos.x - 1, y: current_pos.y };
-            if game.grid.in_bounds(next) && !game.grid.is_blocked(next) {
-                try_move(game, -1, 0);
-                moves_made += 1;
-            } else {
-                let down = Pos { x: current_pos.x, y: current_pos.y + 1 };
-                if game.grid.in_bounds(down) && !game.grid.is_blocked(down) {
-                    try_move(game, 0, 1);
-                    moves_made += 1;
-                    going_right = true;
-                } else {
-                    game.enemy_step_paused = false;
-                    return format!("Lawnmower search blocked by obstacle! Discovered {} squares.", discovered);
-                }
-            }
-        }
-        
-        let robot_pos = game.robot.get_position();
-        if robot_pos.1 >= game.grid.height - 1 {
-            if (going_right && robot_pos.0 >= game.grid.width - 1) || 
-               (!going_right && robot_pos.0 <= 0) {
-                break;
-            }
-        }
-    }
-    
-    game.enemy_step_paused = false;
-    
-    if moves_made >= max_moves {
-        format!("Lawnmower search incomplete - too many moves! Discovered {} squares.", discovered)
-    } else {
-        format!("Lawnmower search complete! Discovered {} squares.", discovered)
-    }
-}
 
 // Code parsing and execution
 fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
@@ -445,6 +333,8 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                     calls.push(FunctionCall {
                         function: RustFunction::Move,
                         direction: Some(d),
+                        coordinates: None,
+                        level_number: None,
                         boolean_param: None,
                     });
                 }
@@ -455,14 +345,18 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
             calls.push(FunctionCall {
                 function: RustFunction::Grab,
                 direction: None,
+                coordinates: None,
+                level_number: None,
                 boolean_param: None,
             });
         }
-        // Parse search_all() calls
-        else if trimmed.contains("search_all()") {
+        // Parse skip_this_level_because_i_say_so() calls
+        else if trimmed.contains("skip_this_level_because_i_say_so()") {
             calls.push(FunctionCall {
-                function: RustFunction::SearchAll,
+                function: RustFunction::SkipLevel,
                 direction: None,
+                coordinates: None,
+                level_number: None,
                 boolean_param: None,
             });
         }
@@ -482,14 +376,76 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                     calls.push(FunctionCall {
                         function: RustFunction::Scan,
                         direction: Some(d),
+                        coordinates: None,
+                        level_number: None,
                         boolean_param: None,
                     });
                 }
             }
         }
-        // Parse set_auto_grab() calls
-        else if let Some(start) = trimmed.find("set_auto_grab(") {
-            let after_paren = &trimmed[start + 14..];
+        // Parse laser::direction() calls
+        else if let Some(start) = trimmed.find("laser::direction(") {
+            let after_paren = &trimmed[start + 16..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                let dir = match param {
+                    "up" | "Up" | "\"up\"" | "\"Up\"" => Some((0, -1)),
+                    "down" | "Down" | "\"down\"" | "\"Down\"" => Some((0, 1)),
+                    "left" | "Left" | "\"left\"" | "\"Left\"" => Some((-1, 0)),
+                    "right" | "Right" | "\"right\"" | "\"Right\"" => Some((1, 0)),
+                    _ => None,
+                };
+                if let Some(d) = dir {
+                    calls.push(FunctionCall {
+                        function: RustFunction::LaserDirection,
+                        direction: Some(d),
+                        coordinates: None,
+                        level_number: None,
+                        boolean_param: None,
+                    });
+                }
+            }
+        }
+        // Parse laser::tile() calls
+        else if let Some(start) = trimmed.find("laser::tile(") {
+            let after_paren = &trimmed[start + 12..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                // Parse coordinates like (x,y) or x,y
+                let coords_str = param.trim_matches(|c| c == '(' || c == ')');
+                let parts: Vec<&str> = coords_str.split(',').collect();
+                if parts.len() == 2 {
+                    if let (Ok(x), Ok(y)) = (parts[0].trim().parse::<i32>(), parts[1].trim().parse::<i32>()) {
+                        calls.push(FunctionCall {
+                            function: RustFunction::LaserTile,
+                            direction: None,
+                            coordinates: Some((x, y)),
+                            level_number: None,
+                            boolean_param: None,
+                        });
+                    }
+                }
+            }
+        }
+        // Parse goto_this_level_because_i_say_so() calls
+        else if let Some(start) = trimmed.find("goto_this_level_because_i_say_so(") {
+            let after_paren = &trimmed[start + 33..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                if let Ok(level_num) = param.parse::<usize>() {
+                    calls.push(FunctionCall {
+                        function: RustFunction::GotoLevel,
+                        direction: None,
+                        coordinates: None,
+                        level_number: Some(level_num),
+                        boolean_param: None,
+                    });
+                }
+            }
+        }
+        // Parse open_door() calls
+        else if let Some(start) = trimmed.find("open_door(") {
+            let after_paren = &trimmed[start + 10..];
             if let Some(end) = after_paren.find(')') {
                 let param = after_paren[..end].trim();
                 let bool_param = match param {
@@ -497,11 +453,13 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                     "false" | "False" => Some(false),
                     _ => None,
                 };
-                if bool_param.is_some() {
+                if let Some(open_val) = bool_param {
                     calls.push(FunctionCall {
-                        function: RustFunction::AutoGrab,
+                        function: RustFunction::OpenDoor,
                         direction: None,
-                        boolean_param: bool_param,
+                        coordinates: None,
+                        level_number: None,
+                        boolean_param: Some(open_val),
                     });
                 }
             }
@@ -547,24 +505,71 @@ fn execute_function(game: &mut Game, call: FunctionCall) -> String {
                 "Direction required for scan".to_string()
             }
         },
-        RustFunction::SearchAll => {
-            try_search_all(game)
-        },
-        RustFunction::AutoGrab => {
-            if let Some(enabled) = call.boolean_param {
-                game.robot.set_auto_grab(enabled);
-                if enabled {
-                    "Auto-grab enabled - will grab items when moving onto squares with items".to_string()
-                } else {
-                    "Auto-grab disabled".to_string()
+        RustFunction::LaserDirection => {
+            if let Some(dir) = call.direction {
+                let result = game.fire_laser_direction(dir);
+                game.turns += 1;
+                // Move enemies after laser
+                if game.level_idx >= 3 && !game.enemy_step_paused {
+                    game.update_laser_effects();
+                    game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
+                    if game.grid.check_enemy_collision(game.robot.get_position()) {
+                        let idx = game.level_idx;
+                        game.load_level(idx);
+                        return "ENEMY COLLISION! Level reset and randomized.".to_string();
+                    }
                 }
+                result
             } else {
-                game.robot.toggle_auto_grab();
-                if game.robot.auto_grab_enabled {
-                    "Auto-grab enabled".to_string()
-                } else {
-                    "Auto-grab disabled".to_string()
+                "Direction required for laser".to_string()
+            }
+        },
+        RustFunction::LaserTile => {
+            if let Some(coords) = call.coordinates {
+                let result = game.fire_laser_tile(coords);
+                game.turns += 1;
+                // Move enemies after laser
+                if game.level_idx >= 3 && !game.enemy_step_paused {
+                    game.update_laser_effects();
+                    game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
+                    if game.grid.check_enemy_collision(game.robot.get_position()) {
+                        let idx = game.level_idx;
+                        game.load_level(idx);
+                        return "ENEMY COLLISION! Level reset and randomized.".to_string();
+                    }
                 }
+                result
+            } else {
+                "Coordinates required for laser tile".to_string()
+            }
+        },
+        RustFunction::SkipLevel => {
+            game.skip_level()
+        },
+        RustFunction::GotoLevel => {
+            if let Some(level) = call.level_number {
+                game.goto_level(level)
+            } else {
+                "Level number required for goto_level".to_string()
+            }
+        },
+        RustFunction::OpenDoor => {
+            if let Some(open) = call.boolean_param {
+                let result = game.open_door(open);
+                game.turns += 1;
+                // Move enemies after door action
+                if game.level_idx >= 3 && !game.enemy_step_paused {
+                    game.update_laser_effects();
+                    game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
+                    if game.grid.check_enemy_collision(game.robot.get_position()) {
+                        let idx = game.level_idx;
+                        game.load_level(idx);
+                        return "ENEMY COLLISION! Level reset and randomized.".to_string();
+                    }
+                }
+                result
+            } else {
+                "Boolean parameter required for open_door (true or false)".to_string()
             }
         },
     }
@@ -579,18 +584,26 @@ fn load_external_code(file_path: &str) -> Result<String, String> {
 }
 
 fn get_default_robot_code() -> &'static str {
-    r#"// Welcome to Rust Robot Programming!
+    r#"// Welcome to Rust Robot Programming Tutorial!
 // This file is automatically saved as you type.
 // You can also edit this file externally with any text editor.
 
-// Try this function to search all reachable areas:
-search_all();
+// Always available functions:
+move(right);
+grab();
+scan(left);
 
-// You can also use:
-// move(right);
-// move(up);
-// grab();  // Available from Level 2+
-// scan(left);  // Available from Level 3+
+// Door system (teaches boolean literals):
+// open_door(true);   // Opens door at robot position
+// open_door(false);  // Closes door at robot position
+
+// Laser system (stuns enemies, destroys obstacles):
+// laser::direction(up);
+// laser::tile(5, 3);
+
+// Secret commands for testing:
+// skip_this_level_because_i_say_so();
+// goto_this_level_because_i_say_so(3);
 
 // Example: Move in a pattern
 // move(right);
@@ -598,13 +611,9 @@ search_all();
 // move(left);
 // move(up);
 
-// Example: Grab everything nearby
+// Example: Scan and grab
+// scan(up);
 // grab();
-
-// Example: Advanced exploration
-// search_all();
-// grab();
-// move(right);
 // move(right);
 // grab();
 "#
@@ -779,16 +788,29 @@ fn get_function_definition(func: RustFunction) -> &'static str {
     // Returns status message with number of items grabbed
 }"#,
         RustFunction::Scan => r#"fn scan_direction(direction: Direction) -> Result<String, String> {
-    // Scan in a direction to reveal tiles
-    // Requires scanner to be owned
+    // Scan in a direction to reveal tiles (2-tile range)
+    // Always available in the new design
 }"#,
-        RustFunction::SearchAll => r#"fn search_all() -> String {
-    // Automated lawnmower pattern search
-    // May get blocked by obstacles
+        RustFunction::LaserDirection => r#"fn laser_direction(direction: Direction) -> String {
+    // Fire laser in specified direction until it hits something
+    // Stuns enemies for 5 turns, destroys obstacles for 2 turns
 }"#,
-        RustFunction::AutoGrab => r#"fn set_auto_grab(enabled: bool) -> String {
-    // Enable or disable automatic item grabbing
-    // When enabled, automatically grabs items when moving
+        RustFunction::LaserTile => r#"fn laser_tile(x: i32, y: i32) -> String {
+    // Fire laser at specific coordinates
+    // Stuns enemies for 5 turns, destroys obstacles for 2 turns
+}"#,
+        RustFunction::SkipLevel => r#"fn skip_this_level_because_i_say_so() -> String {
+    // Skip to the next level
+    // Secret command for testing and exploration
+}"#,
+        RustFunction::GotoLevel => r#"fn goto_this_level_because_i_say_so(level: usize) -> String {
+    // Jump to a specific level number
+    // Secret command for testing and exploration
+}"#,
+        RustFunction::OpenDoor => r#"fn open_door(open: bool) -> String {
+    // Open or close a door at the robot's current position
+    // Pass true to open, false to close
+    // Teaches about boolean literals in Rust
 }"#,
     }
 }
@@ -820,8 +842,11 @@ fn draw_function_definitions(game: &Game) {
             RustFunction::Move => "move(direction)",
             RustFunction::Grab => "grab()",
             RustFunction::Scan => "scan(direction)",
-            RustFunction::SearchAll => "search_all()",
-            RustFunction::AutoGrab => "set_auto_grab(bool)",
+            RustFunction::LaserDirection => "laser::direction(dir)",
+            RustFunction::LaserTile => "laser::tile(x,y)",
+            RustFunction::SkipLevel => "skip_this_level_because_i_say_so()",
+            RustFunction::GotoLevel => "goto_this_level_because_i_say_so(#)",
+            RustFunction::OpenDoor => "open_door(true/false)",
         };
         
         draw_text(func_name, def_x + 10.0, button_y + 17.0, 16.0, text_color);
@@ -892,8 +917,11 @@ fn draw_code_editor(game: &Game) {
             RustFunction::Move => help_text.push_str("move(up/down/left/right) "),
             RustFunction::Grab => help_text.push_str("grab() "),
             RustFunction::Scan => help_text.push_str("scan(up/down/left/right) "),
-            RustFunction::SearchAll => help_text.push_str("search_all() "),
-            RustFunction::AutoGrab => help_text.push_str("set_auto_grab(true/false) "),
+            RustFunction::LaserDirection => help_text.push_str("laser::direction(dir) "),
+            RustFunction::LaserTile => help_text.push_str("laser::tile(x,y) "),
+            RustFunction::SkipLevel => help_text.push_str("skip_this_level_because_i_say_so() "),
+            RustFunction::GotoLevel => help_text.push_str("goto_this_level_because_i_say_so(#) "),
+            RustFunction::OpenDoor => help_text.push_str("open_door(true/false) "),
         }
     }
     
@@ -997,15 +1025,33 @@ fn draw_game(game: &Game) {
             }
 
             if game.grid.is_blocked(p) && known {
-                let txt = "?";
-                let dim = measure_text(txt, None, 28, 1.0);
-                draw_text(
-                    txt,
-                    r.x + (r.w - dim.width) * 0.5,
-                    r.y + (r.h + dim.height) * 0.5 - 6.0,
-                    28.0,
-                    WHITE,
-                );
+                // Check if it's a door
+                if game.grid.is_door(p) {
+                    let (txt, color) = if game.grid.is_door_open(p) {
+                        ("|", GREEN)  // Open door - green vertical line
+                    } else {
+                        ("█", BROWN)  // Closed door - brown block
+                    };
+                    let dim = measure_text(txt, None, 28, 1.0);
+                    draw_text(
+                        txt,
+                        r.x + (r.w - dim.width) * 0.5,
+                        r.y + (r.h + dim.height) * 0.5 - 6.0,
+                        28.0,
+                        color,
+                    );
+                } else {
+                    // Regular obstacle
+                    let txt = "?";
+                    let dim = measure_text(txt, None, 28, 1.0);
+                    draw_text(
+                        txt,
+                        r.x + (r.w - dim.width) * 0.5,
+                        r.y + (r.h + dim.height) * 0.5 - 6.0,
+                        28.0,
+                        WHITE,
+                    );
+                }
             }
 
             // Draw items
@@ -1029,12 +1075,44 @@ fn draw_game(game: &Game) {
                     if enemy.pos == p {
                         let txt = "E";
                         let dim = measure_text(txt, None, 28, 1.0);
+                        
+                        // Determine enemy color based on movement type and state
+                        let enemy_color = if let Some(ref pattern) = enemy.movement_pattern {
+                            match pattern.as_str() {
+                                "chase" => {
+                                    // Check if actively chasing (orange) or not moving (blue)
+                                    if let Some(is_chasing) = enemy.movement_data.get("is_chasing")
+                                        .and_then(|v| v.as_bool()) {
+                                        if is_chasing {
+                                            ORANGE  // Actively chasing player
+                                        } else {
+                                            BLUE    // Not moving/searching
+                                        }
+                                    } else {
+                                        ORANGE  // Default to orange for chase enemies
+                                    }
+                                }
+                                "random" => MAGENTA,    // Random movement = magenta
+                                "diagonal" => YELLOW,   // Diagonal movement = yellow
+                                "circular" => LIME,     // Circular movement = lime green
+                                "spiral" => PINK,       // Spiral movement = pink
+                                pattern if pattern.starts_with("file:") => PURPLE, // Custom file patterns = purple
+                                _ => RED                 // Unknown patterns = red
+                            }
+                        } else {
+                            // Built-in horizontal/vertical enemies (no movement_pattern field)
+                            match enemy.direction {
+                                EnemyDirection::Horizontal => GREEN,  // Horizontal = green
+                                EnemyDirection::Vertical => DARKBLUE, // Vertical = dark blue
+                            }
+                        };
+                        
                         draw_text(
                             txt,
                             r.x + (r.w - dim.width) * 0.5,
                             r.y + (r.h + dim.height) * 0.5 - 6.0,
                             28.0,
-                            RED,
+                            enemy_color,
                         );
                         break;
                     }
@@ -1082,7 +1160,7 @@ fn draw_game(game: &Game) {
         draw_text("TIME SLOW ACTIVE", screen_width() - 190.0, PADDING + 20.0, 16.0, YELLOW);
     }
 
-    let controls_text = "Controls: Click code editor to edit robot_code.rs | ENTER execute | E IDE hint | B shop | N finish | L reload | M menu";
+    let controls_text = "Controls: Click code editor to edit robot_code.rs | ENTER execute | E IDE hint | B docs | N finish | L reload | M menu";
     draw_text(controls_text, PADDING, screen_height() - 18.0, 18.0, GRAY);
 
     draw_function_definitions(game);
@@ -1202,9 +1280,7 @@ async fn desktop_main() {
                 clear_background(Color::from_rgba(18, 18, 18, 255));
                 draw_game(&game);
 
-                if shop_open { 
-                    handle_shop(&mut game); 
-                }
+                // Shop functionality removed - replaced with Rust docs
                 
                 // Draw popups last so they appear on top
                 game.draw_popups();
@@ -1301,13 +1377,8 @@ async fn desktop_main() {
                     }
 
                     if is_key_pressed(KeyCode::B) { 
-                        // Show shop tutorial on first time opening
-                        if !game.item_manager.has_collected("shop_tutorial_shown") {
-                            game.show_shop_tutorial();
-                            // Mark tutorial as shown using a dummy item
-                            game.item_manager.add_dummy_item("shop_tutorial_shown");
-                        }
-                        shop_open = true; 
+                        // Open Rust documentation for current level
+                        game.execution_result = game.open_rust_docs();
                     }
                     if is_key_pressed(KeyCode::N) {
                         if !game.finished { game.finish_level(); }

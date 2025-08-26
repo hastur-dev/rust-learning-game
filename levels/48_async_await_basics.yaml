@@ -1,0 +1,76 @@
+name: "Level 48 - Async/Await Basics"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 48
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 44]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 45]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 41]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 41]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 38]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 45]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 39]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 47]
+  - [23, 46]
+  - [24, 43]
+  - [23, 42]
+  - [24, 45]
+  - [24, 36]
+  - [24, 43]
+
+items:
+  - name: "async_fn_tip"
+    item_file: "items/async_fn.rs"
+    spawn_randomly: false
+    location: [24, 46]
+  - name: "await_keyword_tip"
+    item_file: "items/await_keyword.rs"
+    spawn_randomly: false
+    location: [23, 44]
+  - name: "future_trait_tip"
+    item_file: "items/future_trait.rs"
+    spawn_randomly: false
+    location: [24, 48]
+  - name: "tokio_runtime_tip"
+    item_file: "items/tokio_runtime.rs"
+    spawn_randomly: false
+    location: [24, 41]
+  - name: "async_blocks_tip"
+    item_file: "items/async_blocks.rs"
+    spawn_randomly: false
+    location: [23, 40]
+  - name: "join_select_tip"
+    item_file: "items/join_select.rs"
+    spawn_randomly: false
+    location: [24, 38]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 46]
+
+message: "Enter asynchronous programming! Learn async/await syntax, the Future trait, and async runtimes like tokio. Build efficient concurrent programs without blocking threads."
+
+hint_message: "Async/await: async fn returns Future, await keyword waits for completion. Need runtime like tokio. Non-blocking concurrency. join! runs futures concurrently, select! races them."
