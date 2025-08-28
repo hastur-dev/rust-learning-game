@@ -1,4 +1,4 @@
-// Welcome to Rust Robot Programming Tutorial!
+ // Welcome to Rust Robot Programming Tutorial!
 // This file is automatically saved as you type.
 // You can also edit this file externally with any text editor.
 
