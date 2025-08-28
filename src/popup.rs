@@ -14,6 +14,18 @@ pub enum PopupType {
     Warning,
     Success,
     Tutorial,
+    Stdout,  // For println! output
+    Stderr,  // For eprintln! and error output
+    Panic,   // For panic! output
+    Congratulations, // For level completion
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PopupAction {
+    None,
+    Dismissed,
+    NextLevel,
+    StayOnLevel,
 }
 
 #[derive(Clone, Debug)]
@@ -81,6 +93,68 @@ impl PopupSystem {
         );
     }
     
+    pub fn show_congratulations(&mut self, level_name: String, achievement: String, next_level_hint: Option<String>) {
+        let content = if let Some(hint) = next_level_hint {
+            format!(
+                "🎉 Congratulations! 🎉\n\nYou completed: {}\n\nAchievement: {}\n\nNext up: {}\n\nPress SPACE to continue to the next level or ESC to stay here.",
+                level_name, achievement, hint
+            )
+        } else {
+            format!(
+                "🎉 Congratulations! 🎉\n\nYou completed: {}\n\nAchievement: {}\n\nPress SPACE to continue to the next level or ESC to stay here.",
+                level_name, achievement
+            )
+        };
+        
+        self.show_message(
+            "🏆 Level Complete!".to_string(),
+            content,
+            PopupType::Congratulations,
+            None // Manual close only for congratulations
+        );
+    }
+    
+    pub fn show_completion_instructions(&mut self, level_name: String, instructions: String) {
+        let content = format!(
+            "🎯 How to Complete This Level\n\nLevel: {}\n\n📝 Instructions:\n{}\n\n💡 Tip: Press Ctrl+Shift+C anytime to see these instructions again!\n\nPress any key to close this help.",
+            level_name, instructions
+        );
+        
+        self.show_message(
+            "🚀 Level Instructions".to_string(),
+            content,
+            PopupType::Info,
+            None // Manual close only
+        );
+    }
+    
+    pub fn show_println_output(&mut self, message: String) {
+        self.show_message(
+            "📝 Program Output".to_string(),
+            message,
+            PopupType::Stdout,
+            Some(4.0) // Auto-close after 4 seconds
+        );
+    }
+    
+    pub fn show_eprintln_output(&mut self, message: String) {
+        self.show_message(
+            "🔴 Error Output".to_string(),
+            message,
+            PopupType::Stderr,
+            Some(5.0) // Auto-close after 5 seconds for errors
+        );
+    }
+    
+    pub fn show_panic_output(&mut self, message: String) {
+        self.show_message(
+            "💥 PANIC".to_string(),
+            format!("Program terminated: {}", message),
+            PopupType::Panic,
+            None // Manual close for panics
+        );
+    }
+    
     pub fn update(&mut self, delta_time: f32) {
         if self.show_popup {
             self.popup_timer += delta_time;
@@ -94,14 +168,30 @@ impl PopupSystem {
         }
     }
     
-    pub fn handle_input(&mut self) -> bool {
+    pub fn handle_input(&mut self) -> PopupAction {
         if self.show_popup {
-            // Check for dismiss keys (Space, Enter, or Escape)
-            if is_key_pressed(KeyCode::Space) || 
-               is_key_pressed(KeyCode::Enter) || 
-               is_key_pressed(KeyCode::Escape) {
-                self.close();
-                return true; // Input was handled
+            if let Some(ref popup) = self.current_popup {
+                match popup.popup_type {
+                    PopupType::Congratulations => {
+                        // Special handling for congratulations popup
+                        if is_key_pressed(KeyCode::Space) {
+                            self.close();
+                            return PopupAction::NextLevel;
+                        } else if is_key_pressed(KeyCode::Escape) {
+                            self.close();
+                            return PopupAction::StayOnLevel;
+                        }
+                    },
+                    _ => {
+                        // Normal popup handling
+                        if is_key_pressed(KeyCode::Space) || 
+                           is_key_pressed(KeyCode::Enter) || 
+                           is_key_pressed(KeyCode::Escape) {
+                            self.close();
+                            return PopupAction::Dismissed;
+                        }
+                    }
+                }
             }
             
             // Check for mouse click to dismiss
@@ -119,15 +209,16 @@ impl PopupSystem {
                 if mouse_x < popup_x || mouse_x > popup_x + popup_width ||
                    mouse_y < popup_y || mouse_y > popup_y + popup_height {
                     self.close();
+                    return PopupAction::Dismissed;
                 }
                 // Always consume mouse click when popup is showing, regardless of where clicked
-                return true;
+                return PopupAction::None;
             }
             
-            return true; // Popup is showing, consume all input
+            return PopupAction::None; // Popup is showing, consume all input
         }
         
-        false // No popup, don't consume input
+        PopupAction::None // No popup, don't consume input
     }
     
     pub fn close(&mut self) {
@@ -167,7 +258,11 @@ impl PopupSystem {
             PopupType::Info => (Color::new(0.2, 0.2, 0.3, 0.95), LIGHTGRAY, BLUE),
             PopupType::Warning => (Color::new(0.3, 0.2, 0.1, 0.95), ORANGE, YELLOW),
             PopupType::Success => (Color::new(0.1, 0.3, 0.1, 0.95), LIGHTGRAY, GREEN),
+            PopupType::Stdout => (Color::new(0.1, 0.2, 0.3, 0.95), SKYBLUE, WHITE),
+            PopupType::Stderr => (Color::new(0.3, 0.1, 0.1, 0.95), RED, YELLOW),
+            PopupType::Panic => (Color::new(0.4, 0.1, 0.1, 0.95), RED, ORANGE),
             PopupType::Tutorial => (Color::new(0.25, 0.15, 0.3, 0.95), PURPLE, PINK),
+            PopupType::Congratulations => (Color::new(0.1, 0.3, 0.1, 0.95), GOLD, YELLOW),
         };
         
         // Draw popup background

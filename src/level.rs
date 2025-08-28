@@ -19,6 +19,12 @@ pub struct YamlLevelConfig {
     pub message: Option<String>, // Popup message shown at level start
     pub hint_message: Option<String>, // Hint message shown when hint button is pressed
     pub rust_docs_url: Option<String>, // URL to relevant Rust documentation
+    pub starting_code: Option<String>, // Initial code to show in editor
+    pub completion_condition: Option<String>, // Special completion conditions: "println", "error", "panic", etc.
+    pub completion_flag: Option<String>, // Detailed completion requirements (e.g., "println:Hello, Rust!")
+    pub achievement_message: Option<String>, // Message shown when level is completed
+    pub next_level_hint: Option<String>, // Hint about what the next level will teach
+    pub completion_message: Option<String>, // Instructions on how to complete the level (Ctrl+Shift+C)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -53,6 +59,12 @@ pub struct LevelSpec {
     pub message: Option<String>, // Popup message shown at level start
     pub hint_message: Option<String>, // Hint message shown when hint button is pressed
     pub rust_docs_url: Option<String>, // URL to relevant Rust documentation
+    pub starting_code: Option<String>, // Initial code to show in editor
+    pub completion_condition: Option<String>, // Special completion conditions: "println", "error", "panic", etc.
+    pub completion_flag: Option<String>, // Detailed completion requirements (e.g., "println:Hello, Rust!")
+    pub achievement_message: Option<String>, // Message shown when level is completed
+    pub next_level_hint: Option<String>, // Hint about what the next level will teach
+    pub completion_message: Option<String>, // Instructions on how to complete the level (Ctrl+Shift+C)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -210,6 +222,12 @@ impl YamlLevelConfig {
             message: self.message.clone(),
             hint_message: self.hint_message.clone(),
             rust_docs_url: self.rust_docs_url.clone(),
+            starting_code: self.starting_code.clone(),
+            completion_condition: self.completion_condition.clone(),
+            completion_flag: self.completion_flag.clone(),
+            achievement_message: self.achievement_message.clone(),
+            next_level_hint: self.next_level_hint.clone(),
+            completion_message: self.completion_message.clone(),
         })
     }
 }

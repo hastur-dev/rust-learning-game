@@ -22,15 +22,85 @@ mod game_state;
 mod menu;
 mod movement_patterns;
 mod popup;
+mod embedded_levels;
 
 use level::*;
 use item::*;
 use game_state::*;
 use menu::{MenuAction, MenuState};
+use popup::PopupAction;
 
 // Desktop-only functions
 #[cfg(not(target_arch = "wasm32"))]
-fn extract_crates_from_code(code: &str) -> HashSet<String> {
+fn extract_print_statements_from_rust_code(code: &str) -> Vec<String> {
+    let mut print_outputs = Vec::new();
+    
+    // Create a temporary Rust file with the user code wrapped in a main function
+    let _rust_code = format!(
+        r#"
+fn main() {{
+    // User robot code wrapped to capture println! output
+    {}
+}}
+"#, code
+    );
+    
+    // For now, let's simulate the output by parsing println! statements
+    // In the future, this could be enhanced to actually compile and run the code
+    let lines: Vec<&str> = code.lines().collect();
+    for line in lines {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with("//") {
+            continue;
+        }
+        
+        // Look for println! statements
+        if let Some(start) = trimmed.find("println!(") {
+            let after_paren = &trimmed[start + 9..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                let message = if param.starts_with('"') && param.ends_with('"') {
+                    param[1..param.len()-1].to_string()
+                } else {
+                    param.replace("{}", "[value]").trim_matches('"').to_string()
+                };
+                print_outputs.push(format!("stdout: {}", message));
+            }
+        }
+        
+        // Look for eprintln! statements
+        if let Some(start) = trimmed.find("eprintln!(") {
+            let after_paren = &trimmed[start + 10..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                let message = if param.starts_with('"') && param.ends_with('"') {
+                    param[1..param.len()-1].to_string()
+                } else {
+                    param.replace("{}", "[value]").trim_matches('"').to_string()
+                };
+                print_outputs.push(format!("stderr: {}", message));
+            }
+        }
+        
+        // Look for panic! statements  
+        if let Some(start) = trimmed.find("panic!(") {
+            let after_paren = &trimmed[start + 7..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                let message = if param.starts_with('"') && param.ends_with('"') {
+                    param[1..param.len()-1].to_string()
+                } else {
+                    param.replace("{}", "[value]").trim_matches('"').to_string()
+                };
+                print_outputs.push(format!("panic: {}", message));
+            }
+        }
+    }
+    
+    print_outputs
+}
+
+fn old_extract_crates_from_code(code: &str) -> HashSet<String> {
     let mut out = HashSet::new();
     let ignore: HashSet<&'static str> = [
         "std","core","alloc","crate","self","super",
@@ -134,7 +204,7 @@ fn auto_add_crates_from_robot_code(robot_code_path: &str) -> String {
         return format!("Could not read {}", robot_code_path);
     };
 
-    let mentioned = extract_crates_from_code(&code);
+    let mentioned = old_extract_crates_from_code(&code);
     if mentioned.is_empty() {
         return "No external libraries referenced in robot_code.rs".to_string();
     }
@@ -472,77 +542,6 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                 }
             }
         }
-        // Parse println!() calls
-        else if let Some(start) = trimmed.find("println!(") {
-            let after_paren = &trimmed[start + 9..];
-            if let Some(end) = after_paren.find(')') {
-                let param = after_paren[..end].trim();
-                // Extract string content from quotes
-                let message_content = if param.starts_with('"') && param.ends_with('"') {
-                    param[1..param.len()-1].to_string()
-                } else if param.contains("{}") {
-                    // Handle simple format strings like println!("Value: {}", variable)
-                    param.replace("{}", "[value]").trim_matches('"').to_string()
-                } else {
-                    param.to_string()
-                };
-                
-                calls.push(FunctionCall {
-                    function: RustFunction::Println,
-                    direction: None,
-                    coordinates: None,
-                    level_number: None,
-                    boolean_param: None,
-                    message: Some(message_content),
-                });
-            }
-        }
-        // Parse eprintln!() calls (error messages)
-        else if let Some(start) = trimmed.find("eprintln!(") {
-            let after_paren = &trimmed[start + 10..];
-            if let Some(end) = after_paren.find(')') {
-                let param = after_paren[..end].trim();
-                let message_content = if param.starts_with('"') && param.ends_with('"') {
-                    param[1..param.len()-1].to_string()
-                } else if param.contains("{}") {
-                    param.replace("{}", "[value]").trim_matches('"').to_string()
-                } else {
-                    param.to_string()
-                };
-                
-                calls.push(FunctionCall {
-                    function: RustFunction::Eprintln,
-                    direction: None,
-                    coordinates: None,
-                    level_number: None,
-                    boolean_param: None,
-                    message: Some(message_content),
-                });
-            }
-        }
-        // Parse panic!() calls (critical errors)
-        else if let Some(start) = trimmed.find("panic!(") {
-            let after_paren = &trimmed[start + 7..];
-            if let Some(end) = after_paren.find(')') {
-                let param = after_paren[..end].trim();
-                let message_content = if param.starts_with('"') && param.ends_with('"') {
-                    param[1..param.len()-1].to_string()
-                } else if param.contains("{}") {
-                    param.replace("{}", "[value]").trim_matches('"').to_string()
-                } else {
-                    param.to_string()
-                };
-                
-                calls.push(FunctionCall {
-                    function: RustFunction::Panic,
-                    direction: None,
-                    coordinates: None,
-                    level_number: None,
-                    boolean_param: None,
-                    message: Some(message_content),
-                });
-            }
-        }
     }
     
     calls
@@ -651,29 +650,9 @@ fn execute_function(game: &mut Game, call: FunctionCall) -> String {
                 "Boolean parameter required for open_door (true or false)".to_string()
             }
         },
-        RustFunction::Println => {
-            if let Some(message) = call.message {
-                // Display the message as game output
-                format!("📝 {}", message)
-            } else {
-                "No message content for println".to_string()
-            }
-        },
-        RustFunction::Eprintln => {
-            if let Some(message) = call.message {
-                // Display error message in red
-                format!("🔴 Error: {}", message)
-            } else {
-                "No message content for eprintln".to_string()
-            }
-        },
-        RustFunction::Panic => {
-            if let Some(message) = call.message {
-                // Display panic as critical error - this should halt execution
-                format!("💥 PANIC: {} - Program terminated!", message)
-            } else {
-                "💥 PANIC: Program terminated!".to_string()
-            }
+        // Print functions are handled separately in execute_rust_code
+        RustFunction::Println | RustFunction::Eprintln | RustFunction::Panic => {
+            "Print functions handled separately".to_string()
         },
     }
 }
@@ -790,6 +769,25 @@ async fn execute_rust_code(game: &mut Game) -> String {
         game.current_code.clone()
     };
     
+    // Extract and display print statements first
+    let print_outputs = extract_print_statements_from_rust_code(&code_to_execute);
+    for output in print_outputs {
+        if output.starts_with("stdout:") {
+            let message = output.strip_prefix("stdout: ").unwrap_or("").to_string();
+            game.popup_system.show_println_output(message.clone());
+            game.println_outputs.push(message);
+        } else if output.starts_with("stderr:") {
+            let message = output.strip_prefix("stderr: ").unwrap_or("").to_string();
+            game.popup_system.show_eprintln_output(message.clone());
+            game.error_outputs.push(message);
+        } else if output.starts_with("panic:") {
+            let message = output.strip_prefix("panic: ").unwrap_or("").to_string();
+            game.popup_system.show_panic_output(message.clone());
+            game.panic_occurred = true;
+            game.error_outputs.push(format!("panic: {}", message));
+        }
+    }
+    
     let calls = parse_rust_code(&code_to_execute);
     if calls.is_empty() {
         return "No valid function calls found".to_string();
@@ -830,13 +828,19 @@ fn load_yaml_levels() -> Vec<LevelSpec> {
     let mut levels = Vec::new();
     let mut rng = StdRng::seed_from_u64(0xC0FFEE);
     
-    // Load YAML levels from levels directory
+    // Try to load YAML levels from levels directory first
     let yaml_configs = load_yaml_levels_from_directory("levels");
     
-    for config in yaml_configs {
-        if let Ok(level_spec) = config.to_level_spec(&mut rng) {
-            levels.push(level_spec);
+    if !yaml_configs.is_empty() {
+        // Use external YAML files if available
+        for config in yaml_configs {
+            if let Ok(level_spec) = config.to_level_spec(&mut rng) {
+                levels.push(level_spec);
+            }
         }
+    } else {
+        // Fallback to embedded levels if no external files found
+        levels = embedded_levels::get_embedded_level_specs();
     }
     
     levels
@@ -883,7 +887,9 @@ const PADDING: f32 = 16.0;
 fn grid_origin(g: &Game) -> (f32, f32) {
     let gw = g.grid.width as f32 * TILE;
     let gh = g.grid.height as f32 * TILE;
-    let ox = (screen_width() - gw) * 0.5;
+    // Position grid to take up roughly half the screen (center-left area)
+    let available_width = screen_width() * 0.5; // Half the screen width for grid
+    let ox = (available_width - gw) * 0.5;
     let oy = (screen_height() - gh) * 0.5;
     (ox, oy)
 }
@@ -927,34 +933,17 @@ fn get_function_definition(func: RustFunction) -> &'static str {
     // Pass true to open, false to close
     // Teaches about boolean literals in Rust
 }"#,
-        RustFunction::Println => r#"macro_rules! println {
-    ($($arg:tt)*) => {{
-        // Display a message in the game
-        // Works like Rust's println! but shows in-game
-        // Example: println!("Hello, world!");
-    }};
-}"#,
-        RustFunction::Eprintln => r#"macro_rules! eprintln {
-    ($($arg:tt)*) => {{
-        // Display an error message in red text
-        // Used for error output in Rust programs
-        // Example: eprintln!("Error: Invalid input");
-    }};
-}"#,
-        RustFunction::Panic => r#"macro_rules! panic {
-    ($($arg:tt)*) => {{
-        // Terminate program with critical error message
-        // Use sparingly - only for unrecoverable errors
-        // Example: panic!("Critical failure detected");
-    }};
-}"#,
+        // Print functions are available as standard Rust macros
+        RustFunction::Println | RustFunction::Eprintln | RustFunction::Panic => {
+            "Print functions are built-in Rust macros - use println!(), eprintln!(), panic!()"
+        },
     }
 }
 
 fn draw_function_definitions(game: &Game) {
-    let def_width = 600.0;
-    let def_height = 400.0;
-    let def_x = PADDING;
+    let def_width = screen_width() * 0.25; // 1/4 of screen width
+    let def_height = screen_height() * 0.6; // Take up more vertical space
+    let def_x = screen_width() * 0.5 + PADDING; // Position on left side of right half
     let def_y = PADDING + 100.0;
     
     draw_rectangle(def_x - 10.0, def_y - 10.0, def_width + 20.0, def_height + 20.0, Color::new(0.0, 0.0, 0.0, 0.8));
@@ -971,8 +960,9 @@ fn draw_function_definitions(game: &Game) {
         let button_color = if game.selected_function_to_view == Some(*func) { DARKBLUE } else { DARKGRAY };
         let text_color = if game.selected_function_to_view == Some(*func) { YELLOW } else { WHITE };
         
-        draw_rectangle(def_x, button_y, 200.0, 25.0, button_color);
-        draw_rectangle_lines(def_x, button_y, 200.0, 25.0, 1.0, WHITE);
+        let button_width = def_width - 20.0; // Use available width minus padding
+        draw_rectangle(def_x, button_y, button_width, 25.0, button_color);
+        draw_rectangle_lines(def_x, button_y, button_width, 25.0, 1.0, WHITE);
         
         let func_name = match func {
             RustFunction::Move => "move(direction)",
@@ -981,9 +971,6 @@ fn draw_function_definitions(game: &Game) {
             RustFunction::LaserDirection => "laser::direction(dir)",
             RustFunction::LaserTile => "laser::tile(x,y)",
             RustFunction::OpenDoor => "open_door(true/false)",
-            RustFunction::Println => "println!(\"message\")",
-            RustFunction::Eprintln => "eprintln!(\"error\")",
-            RustFunction::Panic => "panic!(\"critical\")",
             _ => continue, // Skip hidden functions
         };
         
@@ -1023,8 +1010,8 @@ fn draw_function_definitions(game: &Game) {
 }
 
 fn draw_code_editor(game: &Game) {
-    let editor_width = 500.0;
-    let editor_height = 400.0;
+    let editor_width = screen_width() * 0.25; // 1/4 of screen width
+    let editor_height = screen_height() * 0.6; // Take up more vertical space
     let editor_x = screen_width() - editor_width - PADDING;
     let editor_y = PADDING + 100.0;
     
@@ -1058,9 +1045,6 @@ fn draw_code_editor(game: &Game) {
             RustFunction::LaserDirection => help_text.push_str("laser::direction(dir) "),
             RustFunction::LaserTile => help_text.push_str("laser::tile(x,y) "),
             RustFunction::OpenDoor => help_text.push_str("open_door(true/false) "),
-            RustFunction::Println => help_text.push_str("println!(\"message\") "),
-            RustFunction::Eprintln => help_text.push_str("eprintln!(\"error\") "),
-            RustFunction::Panic => help_text.push_str("panic!(\"critical\") "),
             _ => {} // Skip hidden functions
         }
     }
@@ -1113,13 +1097,13 @@ fn draw_code_editor(game: &Game) {
     draw_rectangle_lines(editor_x, button_y, 100.0, 30.0, 1.0, WHITE);
     draw_text("[ENTER] Run", editor_x + 10.0, button_y + 20.0, 16.0, WHITE);
     
-    draw_rectangle(editor_x + 110.0, button_y, 120.0, 30.0, DARKBLUE);
-    draw_rectangle_lines(editor_x + 110.0, button_y, 120.0, 30.0, 1.0, WHITE);
-    draw_text("[E] Edit in IDE", editor_x + 120.0, button_y + 20.0, 14.0, WHITE);
+    draw_rectangle(editor_x + 110.0, button_y, 150.0, 30.0, DARKBLUE);
+    draw_rectangle_lines(editor_x + 110.0, button_y, 150.0, 30.0, 1.0, WHITE);
+    draw_text("[Ctrl+Shift+E] IDE", editor_x + 120.0, button_y + 20.0, 12.0, WHITE);
     
-    draw_rectangle(editor_x + 240.0, button_y, 100.0, 30.0, Color::new(0.5, 0.1, 0.1, 1.0));
-    draw_rectangle_lines(editor_x + 240.0, button_y, 100.0, 30.0, 1.0, WHITE);
-    draw_text("[R] Reset", editor_x + 250.0, button_y + 20.0, 16.0, WHITE);
+    draw_rectangle(editor_x + 270.0, button_y, 130.0, 30.0, Color::new(0.5, 0.1, 0.1, 1.0));
+    draw_rectangle_lines(editor_x + 270.0, button_y, 130.0, 30.0, 1.0, WHITE);
+    draw_text("[Ctrl+Shift+R] Reset", editor_x + 280.0, button_y + 20.0, 12.0, WHITE);
     
     if !game.execution_result.is_empty() {
         let result_y = button_y + 40.0;
@@ -1300,7 +1284,7 @@ fn draw_game(game: &Game) {
         draw_text("TIME SLOW ACTIVE", screen_width() - 190.0, PADDING + 20.0, 16.0, YELLOW);
     }
 
-    let controls_text = "Controls: Click code editor to edit robot_code.rs | ENTER execute | E IDE hint | B docs | N finish | L reload | M menu";
+    let controls_text = "Controls: Click code editor to edit robot_code.rs | ENTER execute | Ctrl+Shift+C completion help | Ctrl+Shift+E IDE hint | Ctrl+Shift+B docs | Ctrl+Shift+N finish | Ctrl+Shift+L reload | Ctrl+Shift+M menu";
     draw_text(controls_text, PADDING, screen_height() - 18.0, 18.0, GRAY);
 
     draw_function_definitions(game);
@@ -1412,7 +1396,8 @@ async fn desktop_main() {
         match game.menu.state {
             MenuState::InGame => {
                 // Handle popup input FIRST - before any other input processing
-                let popup_handled_input = game.handle_popup_input();
+                let popup_action = game.handle_popup_input();
+                let popup_handled_input = popup_action != PopupAction::None;
                 
                 // Update popup system with delta time
                 game.update_popup_system(get_frame_time());
@@ -1440,23 +1425,26 @@ async fn desktop_main() {
                     
                     if is_mouse_button_pressed(MouseButton::Left) {
                         // Function definitions area
-                        let def_x = PADDING;
+                        let def_x = screen_width() * 0.5 + PADDING; // Match new position
                         let def_y = PADDING + 100.0;
+                        let def_width = screen_width() * 0.25;
                         let available_functions = game.get_gui_functions();
                         
                         for (i, func) in available_functions.iter().enumerate() {
                             let button_y = def_y + 50.0 + (i as f32 * 30.0);
-                            if mouse_x >= def_x && mouse_x <= def_x + 200.0 &&
+                            if mouse_x >= def_x && mouse_x <= def_x + def_width &&
                                mouse_y >= button_y && mouse_y <= button_y + 25.0 {
                                 game.selected_function_to_view = Some(*func);
                             }
                         }
                         
                         // Editor mode toggle
-                        let editor_x = screen_width() - 500.0 - PADDING;
+                        let editor_x = screen_width() - (screen_width() * 0.25) - PADDING; // Match new position
                         let editor_y = PADDING + 100.0;
-                        if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + 510.0 &&
-                           mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + 410.0 {
+                        let editor_width = screen_width() * 0.25;
+                        let editor_height = screen_height() * 0.6;
+                        if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + editor_width + 10.0 &&
+                           mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + editor_height + 10.0 {
                             game.code_editor_active = true;
                         } else if mouse_x > screen_width() / 2.0 {
                             game.code_editor_active = false;
@@ -1493,7 +1481,7 @@ async fn desktop_main() {
                             }
                         }
                         
-                        if is_key_pressed(KeyCode::R) {
+                        if is_key_pressed(KeyCode::R) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                             // Reset to default code
                             game.current_code = get_default_robot_code().to_string();
                             game.cursor_position = 0;
@@ -1511,29 +1499,33 @@ async fn desktop_main() {
                         game.robot_code_modified = false;
                     }
                     
-                    if is_key_pressed(KeyCode::E) && !game.code_editor_active {
+                    if is_key_pressed(KeyCode::E) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) && !game.code_editor_active {
                         // Open external editor hint
                         game.execution_result = format!("Edit {} with your preferred IDE/editor", game.robot_code_path);
                     }
 
-                    if is_key_pressed(KeyCode::B) { 
+                    if is_key_pressed(KeyCode::B) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) { 
                         // Open Rust documentation for current level
                         game.execution_result = game.open_rust_docs();
                     }
-                    if is_key_pressed(KeyCode::N) {
+                    if is_key_pressed(KeyCode::N) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                         if !game.finished { game.finish_level(); }
                         game.next_level();
                     }
-                    if is_key_pressed(KeyCode::L) {
+                    if is_key_pressed(KeyCode::L) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                         let idx = game.level_idx;
                         game.load_level(idx);
                         game.execution_result.clear();
                     }
-                    if is_key_pressed(KeyCode::M) {
+                    if is_key_pressed(KeyCode::M) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                         // Return to main menu
                         game.menu.state = MenuState::MainMenu;
                         game.menu.setup_main_menu();
                         shop_open = false;
+                    }
+                    if is_key_pressed(KeyCode::C) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
+                        // Show completion instructions
+                        game.show_completion_instructions();
                     }
                 } else {
                     if is_key_pressed(KeyCode::Escape) { shop_open = false; }

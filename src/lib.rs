@@ -10,6 +10,7 @@ mod game_state;
 mod menu;
 mod movement_patterns;
 mod popup;
+mod embedded_levels;
 
 use level::*;
 use game_state::*;
@@ -88,7 +89,7 @@ async fn run_game() {
     let rng = StdRng::from_entropy();
 
     // Load embedded levels for WASM
-    let levels = get_embedded_levels();
+    let levels = embedded_levels::get_embedded_level_specs();
     let mut game = Game::new(levels, rng);
     
     let mut current_level = 0;
@@ -97,7 +98,8 @@ async fn run_game() {
         clear_background(BLACK);
         
         // Handle popup input first - if popup is showing, consume input
-        let popup_handled_input = game.handle_popup_input();
+        let popup_action = game.handle_popup_input();
+        let popup_handled_input = popup_action != popup::PopupAction::None;
         
         // Update popup system with delta time
         game.update_popup_system(get_frame_time());
@@ -108,9 +110,13 @@ async fn run_game() {
                 break;
             }
 
-            if is_key_pressed(KeyCode::R) {
+            if is_key_pressed(KeyCode::R) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                 game.load_level(current_level);
                 continue;
+            }
+            
+            if is_key_pressed(KeyCode::C) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
+                game.show_completion_instructions();
             }
         }
 
@@ -129,7 +135,7 @@ async fn run_game() {
             draw_text(text, (screen_width - text_width) / 2.0, screen_height / 2.0, 30.0, GREEN);
             
             // Only handle level progression input if popup didn't handle it
-            if !popup_handled_input && is_key_pressed(KeyCode::Space) && current_level + 1 < game.levels.len() {
+            if !popup_handled_input && is_key_pressed(KeyCode::Space) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) && current_level + 1 < game.levels.len() {
                 current_level += 1;
                 game.load_level(current_level);
             }
@@ -277,98 +283,8 @@ fn draw_game_wasm(game: &Game) {
     
     // Draw controls
     let controls_y = grid_start_y + (game.grid.height as f32 + 2.0) * tile_size;
-    draw_text("Controls: WASD/Arrow Keys = Move, R = Restart, ESC = Quit", 
+    draw_text("Controls: WASD/Arrow Keys = Move, Ctrl+Shift+R = Restart, ESC = Quit", 
               10.0, controls_y, 16.0, WHITE);
 }
 
-// For WASM, we'll embed the levels as const data instead of loading from files
-fn get_embedded_levels() -> Vec<LevelSpec> {
-    vec![
-        // Basic exploration level
-        LevelSpec {
-            name: "Basic Exploration".to_string(),
-            width: 16,
-            height: 10,
-            start: (1, 1),
-            scanner_at: None,
-            blockers: vec![(5, 3), (7, 6), (12, 4), (10, 8), (3, 7)],
-            enemies: vec![],
-            items: vec![],
-            fog_of_war: true,
-            max_turns: 50,
-            income_per_square: 2,
-            message: Some("Welcome to the Rust Steam Game! Use WASD or arrow keys to explore and discover hidden areas. This is your first level - good luck!".to_string()),
-            doors: vec![],
-            hint_message: Some("Move around to explore and discover the game mechanics".to_string()),
-            rust_docs_url: Some("https://doc.rust-lang.org/book/ch01-00-getting-started.html".to_string()),
-        },
-        // Enemy encounter level
-        LevelSpec {
-            name: "Enemy Encounter".to_string(),
-            width: 18,
-            height: 12,
-            start: (1, 1),
-            scanner_at: None,
-            blockers: vec![(8, 3), (12, 7), (5, 9), (15, 4)],
-            enemies: vec![
-                level::EnemySpec {
-                    pos: (15, 8),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: None,
-                },
-                level::EnemySpec {
-                    pos: (8, 3),
-                    direction: level::EnemyDirection::Vertical,
-                    moving_positive: false,
-                    movement_pattern: None,
-                }
-            ],
-            items: vec![],
-            fog_of_war: true,
-            max_turns: 0,
-            income_per_square: 1,
-            message: Some("Danger ahead! Red enemies patrol this area. Avoid them or they'll reset your progress. Plan your moves carefully.".to_string()),
-            doors: vec![],
-            hint_message: Some("Avoid the moving enemies while exploring the level".to_string()),
-            rust_docs_url: Some("https://doc.rust-lang.org/book/ch02-00-guessing-game-tutorial.html".to_string()),
-        },
-        // Custom movement demo level
-        LevelSpec {
-            name: "Custom Movement Demo".to_string(),
-            width: 20,
-            height: 15,
-            start: (1, 1),
-            scanner_at: None,
-            blockers: vec![(10, 5), (15, 8), (5, 12), (12, 3)],
-            enemies: vec![
-                level::EnemySpec {
-                    pos: (18, 13),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: Some("random".to_string()),
-                },
-                level::EnemySpec {
-                    pos: (5, 10),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: Some("diagonal".to_string()),
-                },
-                level::EnemySpec {
-                    pos: (15, 5),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: Some("circular".to_string()),
-                }
-            ],
-            items: vec![],
-            fog_of_war: true,
-            max_turns: 0,
-            income_per_square: 1,
-            message: Some("Advanced level! Enemies here use special movement patterns: random, diagonal, and circular. Study their behavior to succeed.".to_string()),
-            doors: vec![],
-            hint_message: Some("Study the different enemy movement patterns to navigate safely".to_string()),
-            rust_docs_url: Some("https://doc.rust-lang.org/book/ch03-00-common-programming-concepts.html".to_string()),
-        }
-    ]
-}
+// Levels are now loaded from embedded_levels module for consistency between desktop and WASM

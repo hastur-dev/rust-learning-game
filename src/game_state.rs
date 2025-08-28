@@ -3,7 +3,7 @@ use crate::grid::Grid;
 use crate::robot::Robot;
 use crate::item::ItemManager;
 use crate::menu::Menu;
-use crate::popup::PopupSystem;
+use crate::popup::{PopupSystem, PopupAction};
 use rand::rngs::StdRng;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -66,6 +66,9 @@ pub struct Game {
     pub popup_system: PopupSystem,
     pub stunned_enemies: std::collections::HashMap<usize, u8>, // enemy_index -> remaining_stun_turns
     pub temporary_removed_obstacles: std::collections::HashMap<(i32, i32), u8>, // position -> remaining_turns
+    pub println_outputs: Vec<String>, // Track println outputs for completion conditions
+    pub error_outputs: Vec<String>, // Track error/eprintln outputs for completion conditions
+    pub panic_occurred: bool, // Track if panic occurred for completion conditions
 }
 
 impl Game {
@@ -104,6 +107,9 @@ impl Game {
             popup_system: PopupSystem::new(),
             stunned_enemies: std::collections::HashMap::new(),
             temporary_removed_obstacles: std::collections::HashMap::new(),
+            println_outputs: Vec::new(),
+            error_outputs: Vec::new(),
+            panic_occurred: false,
         }
     }
 
@@ -115,15 +121,12 @@ impl Game {
             RustFunction::LaserDirection,
             RustFunction::LaserTile,
             RustFunction::OpenDoor,
-            RustFunction::Println,
-            RustFunction::Eprintln,
-            RustFunction::Panic,
             RustFunction::SkipLevel,
             RustFunction::GotoLevel,
         ]
     }
     
-    // Functions displayed in GUI (excludes skip/goto commands)
+    // Functions displayed in GUI (excludes skip/goto commands and print functions)
     pub fn get_gui_functions(&self) -> Vec<RustFunction> {
         vec![
             RustFunction::Move,
@@ -132,9 +135,6 @@ impl Game {
             RustFunction::LaserDirection,
             RustFunction::LaserTile,
             RustFunction::OpenDoor,
-            RustFunction::Println,
-            RustFunction::Eprintln,
-            RustFunction::Panic,
         ]
     }
 
@@ -192,6 +192,17 @@ impl Game {
         self.finished = false;
         self.scan_armed = false;
         self.enemy_step_paused = false;
+        
+        // Reset completion tracking
+        self.println_outputs.clear();
+        self.error_outputs.clear();
+        self.panic_occurred = false;
+        
+        // Load starting code if available
+        if let Some(ref starting_code) = spec.starting_code {
+            self.current_code = starting_code.clone();
+            self.cursor_position = starting_code.len();
+        }
 
         // Initialize item manager with level items
         self.item_manager.items.clear();
@@ -217,7 +228,15 @@ impl Game {
             }
         }
 
-        // Show level message if it exists
+        // Show completion message first (instructions on how to complete)
+        if let Some(ref completion_message) = spec.completion_message {
+            self.popup_system.show_completion_instructions(
+                spec.name.clone(),
+                completion_message.clone()
+            );
+        }
+        
+        // Then show base level message if it exists (initial information/hints)
         if let Some(ref message) = spec.message {
             self.popup_system.show_level_message(message.clone());
         }
@@ -252,6 +271,54 @@ impl Game {
                 "No hint available for this level.".to_string(),
                 crate::popup::PopupType::Info,
                 Some(3.0)
+            );
+        }
+    }
+    
+    pub fn show_completion_instructions(&mut self) {
+        let current_level = &self.levels[self.level_idx];
+        if let Some(ref instructions) = current_level.completion_message {
+            self.popup_system.show_completion_instructions(
+                current_level.name.clone(),
+                instructions.clone()
+            );
+        } else {
+            // Fallback message if no completion instructions are defined
+            let fallback_message = match &current_level.completion_flag {
+                Some(flag) => {
+                    if flag.contains(':') {
+                        let parts: Vec<&str> = flag.splitn(2, ':').collect();
+                        if parts.len() == 2 {
+                            let flag_type = parts[0];
+                            let expected_value = parts[1];
+                            match flag_type {
+                                "println" => format!("Make your code print exactly: '{}'", expected_value),
+                                "println_exact" => format!("Make your code print exactly: '{}'", expected_value),
+                                "eprintln" => format!("Make your code output this error message: '{}'", expected_value),
+                                "error_exact" => format!("Make your code output exactly this error: '{}'", expected_value),
+                                "items_collected" => format!("Collect {} item(s) to complete this level", expected_value),
+                                "moves_made" => format!("Make at least {} move(s) to complete this level", expected_value),
+                                _ => "Follow the level's requirements to complete it.".to_string()
+                            }
+                        } else {
+                            "Follow the level's requirements to complete it.".to_string()
+                        }
+                    } else {
+                        match flag.as_str() {
+                            "println" => "Use println!() to display output".to_string(),
+                            "error" | "eprintln" => "Use eprintln!() to display an error message".to_string(),
+                            "panic" => "Trigger a panic in your code".to_string(),
+                            "items_collected" => "Collect all items on the level".to_string(),
+                            _ => "Follow the level's requirements to complete it.".to_string()
+                        }
+                    }
+                },
+                _ => "Collect all items and reach the goal to complete this level.".to_string()
+            };
+            
+            self.popup_system.show_completion_instructions(
+                current_level.name.clone(),
+                fallback_message
             );
         }
     }
@@ -291,8 +358,32 @@ impl Game {
         self.popup_system.update(delta_time);
     }
 
-    pub fn handle_popup_input(&mut self) -> bool {
-        self.popup_system.handle_input()
+    pub fn handle_popup_input(&mut self) -> PopupAction {
+        let action = self.popup_system.handle_input();
+        
+        // Handle popup actions
+        match action {
+            PopupAction::NextLevel => {
+                if self.level_idx + 1 < self.levels.len() {
+                    self.load_level(self.level_idx + 1);
+                } else {
+                    // Last level completed
+                    self.popup_system.show_message(
+                        "🏆 Game Complete!".to_string(),
+                        "Congratulations! You've completed all levels and mastered the basics of Rust programming!".to_string(),
+                        crate::popup::PopupType::Success,
+                        None
+                    );
+                }
+            },
+            PopupAction::StayOnLevel => {
+                // Player chose to stay on current level, just clear the finished flag
+                self.finished = false;
+            },
+            _ => {}
+        }
+        
+        action
     }
 
     pub fn draw_popups(&self) {
@@ -475,6 +566,85 @@ impl Game {
         });
     }
 
+    fn check_completion_flag(&self, completion_flag: &str) -> bool {
+        // Parse completion_flag format: "type:expected_value" or just "type"
+        if completion_flag.contains(':') {
+            let parts: Vec<&str> = completion_flag.splitn(2, ':').collect();
+            if parts.len() != 2 {
+                return false;
+            }
+            
+            let flag_type = parts[0];
+            let expected_value = parts[1];
+            
+            match flag_type {
+                "println" => {
+                    // Check if any println output contains the expected value
+                    self.println_outputs.iter().any(|output| {
+                        output.contains(expected_value)
+                    })
+                },
+                "println_exact" => {
+                    // Check for exact match in println outputs
+                    self.println_outputs.iter().any(|output| {
+                        output.trim() == expected_value
+                    })
+                },
+                "error" | "eprintln" => {
+                    // Check if any error output contains the expected value
+                    self.error_outputs.iter().any(|output| {
+                        output.contains(expected_value)
+                    })
+                },
+                "error_exact" => {
+                    // Check for exact match in error outputs
+                    self.error_outputs.iter().any(|output| {
+                        output.trim() == expected_value
+                    })
+                },
+                "items_collected" => {
+                    // Check if expected number of items collected
+                    if let Ok(expected_count) = expected_value.parse::<usize>() {
+                        self.item_manager.collected_items.len() >= expected_count
+                    } else {
+                        false
+                    }
+                },
+                "moves_made" => {
+                    // Check if expected number of moves made
+                    if let Ok(expected_moves) = expected_value.parse::<usize>() {
+                        self.turns >= expected_moves
+                    } else {
+                        false
+                    }
+                },
+                _ => false
+            }
+        } else {
+            // Simple flag without value
+            match completion_flag {
+                "println" => !self.println_outputs.is_empty(),
+                "error" | "eprintln" => !self.error_outputs.is_empty(),
+                "panic" => self.panic_occurred,
+                "items_collected" => self.item_manager.get_active_items().is_empty(),
+                _ => false
+            }
+        }
+    }
+    
+    fn show_simple_completion(&mut self, message: &str) {
+        let current_level = &self.levels[self.level_idx];
+        let achievement = current_level.achievement_message.clone()
+            .unwrap_or_else(|| message.to_string());
+        let next_hint = current_level.next_level_hint.clone();
+        
+        self.popup_system.show_congratulations(
+            current_level.name.clone(),
+            achievement,
+            next_hint
+        );
+    }
+    
     pub fn check_end_condition(&mut self) {
         if self.finished { 
             return; 
@@ -489,7 +659,54 @@ impl Game {
             return;
         }
         
-        // Check if all items have been collected
+        // Check special completion conditions first
+        let current_level = &self.levels[self.level_idx];
+        
+        // Check for detailed completion_flag first (more specific)
+        if let Some(ref completion_flag) = current_level.completion_flag {
+            if self.check_completion_flag(completion_flag) {
+                let achievement = current_level.achievement_message.clone()
+                    .unwrap_or_else(|| "You completed the level requirements!".to_string());
+                let next_hint = current_level.next_level_hint.clone();
+                
+                self.finished = true;
+                self.popup_system.show_congratulations(
+                    current_level.name.clone(),
+                    achievement,
+                    next_hint
+                );
+                return;
+            }
+        }
+        // Fallback to simple completion_condition for backward compatibility
+        else if let Some(ref condition) = current_level.completion_condition {
+            match condition.as_str() {
+                "println" => {
+                    if !self.println_outputs.is_empty() {
+                        self.finished = true;
+                        self.show_simple_completion("You successfully used println! to display output.");
+                        return;
+                    }
+                }
+                "error" | "eprintln" => {
+                    if !self.error_outputs.is_empty() {
+                        self.finished = true;
+                        self.show_simple_completion("You successfully generated an error message.");
+                        return;
+                    }
+                }
+                "panic" => {
+                    if self.panic_occurred {
+                        self.finished = true;
+                        self.show_simple_completion("You successfully triggered a panic.");
+                        return;
+                    }
+                }
+                _ => {} // Unknown condition, fall back to normal completion
+            }
+        }
+        
+        // Check if all items have been collected (normal completion)
         let items_remaining = self.item_manager.get_active_items().len() > 0;
         if items_remaining {
             // Cannot complete level until all items are grabbed
