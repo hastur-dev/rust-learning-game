@@ -1,3 +1,4 @@
+use super::types::*;
 use crate::level::LevelSpec;
 use crate::grid::Grid;
 use crate::robot::Robot;
@@ -5,71 +6,6 @@ use crate::item::ItemManager;
 use crate::menu::Menu;
 use crate::popup::{PopupSystem, PopupAction};
 use rand::rngs::StdRng;
-
-#[cfg(not(target_arch = "wasm32"))]
-use crossbeam_channel::Receiver;
-#[cfg(not(target_arch = "wasm32"))]
-use notify::Event;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum RustFunction {
-    Move,
-    Grab,
-    Scan,
-    LaserDirection,
-    LaserTile,
-    OpenDoor,
-    SkipLevel,
-    GotoLevel,
-    Println,
-    Eprintln, // Error messages
-    Panic,    // Critical errors
-}
-
-#[derive(Clone, Debug)]
-pub struct FunctionCall {
-    pub function: RustFunction,
-    pub direction: Option<(i32, i32)>, // for move, scan, and laser direction
-    pub coordinates: Option<(i32, i32)>, // for laser tile targeting
-    pub level_number: Option<usize>, // for goto_level
-    pub boolean_param: Option<bool>, // for open_door
-    pub message: Option<String>, // for println
-}
-
-#[derive(Clone, Debug)]
-pub struct Game {
-    pub level_idx: usize,
-    pub levels: Vec<LevelSpec>,
-    pub grid: Grid,
-    pub robot: Robot,
-    pub item_manager: ItemManager,
-    pub rng: StdRng,
-    pub credits: u32,
-    pub turns: usize,
-    pub max_turns: usize,
-    pub discovered_this_level: usize,
-    pub finished: bool,
-    pub scan_armed: bool,
-    pub execution_result: String,
-    pub code_editor_active: bool,
-    pub selected_function_to_view: Option<RustFunction>,
-    pub robot_code_path: String,
-    #[cfg(not(target_arch = "wasm32"))]
-    pub file_watcher_receiver: Option<Receiver<notify::Result<Event>>>,
-    pub robot_code_modified: bool,
-    pub current_code: String,
-    pub cursor_position: usize,
-    pub enemy_step_paused: bool,
-    pub time_slow_active: bool,
-    pub time_slow_duration_ms: u32,
-    pub menu: Menu,
-    pub popup_system: PopupSystem,
-    pub stunned_enemies: std::collections::HashMap<usize, u8>, // enemy_index -> remaining_stun_turns
-    pub temporary_removed_obstacles: std::collections::HashMap<(i32, i32), u8>, // position -> remaining_turns
-    pub println_outputs: Vec<String>, // Track println outputs for completion conditions
-    pub error_outputs: Vec<String>, // Track error/eprintln outputs for completion conditions
-    pub panic_occurred: bool, // Track if panic occurred for completion conditions
-}
 
 impl Game {
     pub fn new(levels: Vec<LevelSpec>, mut rng: StdRng) -> Self {
@@ -100,6 +36,8 @@ impl Game {
             robot_code_modified: false,
             current_code: String::new(),
             cursor_position: 0,
+            code_scroll_offset: 0,
+            code_lines_visible: 30, // Default number of lines visible
             enemy_step_paused: false,
             time_slow_active: false,
             time_slow_duration_ms: 500, // Default 500ms
@@ -110,6 +48,15 @@ impl Game {
             println_outputs: Vec::new(),
             error_outputs: Vec::new(),
             panic_occurred: false,
+            tutorial_state: TutorialState {
+                task_completed: [false; 5],
+                current_task: 0,
+                variables_used: Vec::new(),
+                scan_output_stored: false,
+                u32_move_used: false,
+            },
+            #[cfg(not(target_arch = "wasm32"))]
+            rust_checker: crate::rust_checker::RustChecker::new().ok(),
         }
     }
 
@@ -153,7 +100,7 @@ impl Game {
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn load_robot_code(&mut self) {
-        if let Ok(code) = super::read_robot_code(&self.robot_code_path) {
+        if let Ok(code) = crate::read_robot_code(&self.robot_code_path) {
             self.current_code = code;
             self.cursor_position = self.cursor_position.min(self.current_code.len());
         }
@@ -166,7 +113,7 @@ impl Game {
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn save_robot_code(&mut self) {
-        if let Err(e) = super::write_robot_code(&self.robot_code_path, &self.current_code) {
+        if let Err(e) = crate::write_robot_code(&self.robot_code_path, &self.current_code) {
             self.execution_result = format!("Save error: {}", e);
         }
     }
@@ -197,6 +144,17 @@ impl Game {
         self.println_outputs.clear();
         self.error_outputs.clear();
         self.panic_occurred = false;
+        
+        // Reset tutorial state for level 0
+        if idx == 0 {
+            self.tutorial_state = TutorialState {
+                task_completed: [false; 5],
+                current_task: 0,
+                variables_used: Vec::new(),
+                scan_output_stored: false,
+                u32_move_used: false,
+            };
+        }
         
         // Load starting code if available
         if let Some(ref starting_code) = spec.starting_code {
@@ -242,12 +200,6 @@ impl Game {
         }
     }
 
-    pub fn show_shop_tutorial(&mut self) {
-        self.popup_system.show_tutorial(
-            "Welcome to the Shop!\n\nHere you can spend your credits to upgrade your robot:\n• Scanner: Reveals hidden areas\n• Grabber: Increases item collection range\n• Time Slow: Slows down enemies temporarily\n\nUse your credits wisely to overcome challenging levels!".to_string()
-        );
-    }
-
     pub fn show_item_collected(&mut self, item_name: &str) {
         self.popup_system.show_item_collected(item_name.to_string());
     }
@@ -256,25 +208,6 @@ impl Game {
         self.popup_system.show_level_complete();
     }
 
-    pub fn show_hint(&mut self) {
-        let current_level = &self.levels[self.level_idx];
-        if let Some(ref hint) = current_level.hint_message {
-            self.popup_system.show_message(
-                "Hint".to_string(),
-                hint.clone(),
-                crate::popup::PopupType::Info,
-                None
-            );
-        } else {
-            self.popup_system.show_message(
-                "Hint".to_string(),
-                "No hint available for this level.".to_string(),
-                crate::popup::PopupType::Info,
-                Some(3.0)
-            );
-        }
-    }
-    
     pub fn show_completion_instructions(&mut self) {
         let current_level = &self.levels[self.level_idx];
         if let Some(ref instructions) = current_level.completion_message {
@@ -390,10 +323,6 @@ impl Game {
         self.popup_system.draw();
     }
 
-    pub fn is_popup_showing(&self) -> bool {
-        self.popup_system.is_showing()
-    }
-
     // Laser system methods
     pub fn fire_laser_direction(&mut self, direction: (i32, i32)) -> String {
         let robot_pos = self.robot.get_position();
@@ -449,61 +378,7 @@ impl Game {
             return format!("Laser hit obstacle at ({}, {})! Obstacle destroyed for 2 turns.", target.0, target.1);
         }
         
-        format!("Laser fired at ({}, {}) but hit empty space.", target.0, target.1)
-    }
-
-    fn hit_obstacle_with_laser(&mut self, obstacle_pos: (i32, i32)) {
-        // Remove obstacle temporarily
-        self.temporary_removed_obstacles.insert(obstacle_pos, 2);
-        
-        // Push back entities within 1 square
-        let directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
-        
-        // Collect entities to push back first
-        let mut entities_to_push = Vec::new();
-        
-        for &(dx, dy) in &directions {
-            let check_pos = (obstacle_pos.0 + dx, obstacle_pos.1 + dy);
-            let pos = crate::item::Pos { x: check_pos.0, y: check_pos.1 };
-            
-            // Check for enemies to push back
-            for (i, enemy) in self.grid.enemies.iter().enumerate() {
-                if enemy.pos == pos {
-                    let push_to = (check_pos.0 + dx, check_pos.1 + dy);
-                    let push_pos = crate::item::Pos { x: push_to.0, y: push_to.1 };
-                    
-                    if self.grid.in_bounds(push_pos) && !self.grid.is_blocked(push_pos) {
-                        entities_to_push.push(("enemy", i, push_pos));
-                    }
-                }
-            }
-            
-            // Check for robot to push back
-            let robot_pos = self.robot.get_position();
-            if robot_pos == check_pos {
-                let push_to = (check_pos.0 + dx, check_pos.1 + dy);
-                let push_pos = crate::item::Pos { x: push_to.0, y: push_to.1 };
-                
-                if self.grid.in_bounds(push_pos) && !self.grid.is_blocked(push_pos) {
-                    entities_to_push.push(("robot", 0, push_pos));
-                }
-            }
-        }
-        
-        // Apply the pushbacks
-        for (entity_type, index, new_pos) in entities_to_push {
-            match entity_type {
-                "enemy" => {
-                    if index < self.grid.enemies.len() {
-                        self.grid.enemies[index].pos = new_pos;
-                    }
-                }
-                "robot" => {
-                    self.robot.set_position((new_pos.x, new_pos.y));
-                }
-                _ => {}
-            }
-        }
+        "Laser fired but hit nothing at target location.".to_string()
     }
 
     pub fn skip_level(&mut self) -> String {
@@ -548,7 +423,7 @@ impl Game {
                 }
             }
         } else {
-            "No door at robot's current position.".to_string()
+            "Robot must be standing on a door to open/close it.".to_string()
         }
     }
 
@@ -566,6 +441,11 @@ impl Game {
         });
     }
 
+    fn hit_obstacle_with_laser(&mut self, pos: (i32, i32)) {
+        // Temporarily remove obstacle for 2 turns
+        self.temporary_removed_obstacles.insert(pos, 2);
+    }
+
     fn check_completion_flag(&self, completion_flag: &str) -> bool {
         // Parse completion_flag format: "type:expected_value" or just "type"
         if completion_flag.contains(':') {
@@ -578,40 +458,24 @@ impl Game {
             let expected_value = parts[1];
             
             match flag_type {
-                "println" => {
-                    // Check if any println output contains the expected value
-                    self.println_outputs.iter().any(|output| {
-                        output.contains(expected_value)
-                    })
+                "println" | "println_exact" => {
+                    // Check if any println output matches expected value
+                    self.println_outputs.iter().any(|output| output == expected_value)
                 },
-                "println_exact" => {
-                    // Check for exact match in println outputs
-                    self.println_outputs.iter().any(|output| {
-                        output.trim() == expected_value
-                    })
-                },
-                "error" | "eprintln" => {
-                    // Check if any error output contains the expected value
-                    self.error_outputs.iter().any(|output| {
-                        output.contains(expected_value)
-                    })
-                },
-                "error_exact" => {
-                    // Check for exact match in error outputs
-                    self.error_outputs.iter().any(|output| {
-                        output.trim() == expected_value
-                    })
+                "eprintln" | "error_exact" => {
+                    // Check if any error output matches expected value
+                    self.error_outputs.iter().any(|output| output == expected_value)
                 },
                 "items_collected" => {
                     // Check if expected number of items collected
                     if let Ok(expected_count) = expected_value.parse::<usize>() {
-                        self.item_manager.collected_items.len() >= expected_count
+                        self.robot.get_inventory_items().len() >= expected_count
                     } else {
                         false
                     }
                 },
                 "moves_made" => {
-                    // Check if expected number of moves made
+                    // Check if minimum number of moves made
                     if let Ok(expected_moves) = expected_value.parse::<usize>() {
                         self.turns >= expected_moves
                     } else {
@@ -621,30 +485,17 @@ impl Game {
                 _ => false
             }
         } else {
-            // Simple flag without value
+            // Simple flag types
             match completion_flag {
                 "println" => !self.println_outputs.is_empty(),
                 "error" | "eprintln" => !self.error_outputs.is_empty(),
                 "panic" => self.panic_occurred,
-                "items_collected" => self.item_manager.get_active_items().is_empty(),
+                "items_collected" => !self.robot.get_inventory_items().is_empty(),
                 _ => false
             }
         }
     }
-    
-    fn show_simple_completion(&mut self, message: &str) {
-        let current_level = &self.levels[self.level_idx];
-        let achievement = current_level.achievement_message.clone()
-            .unwrap_or_else(|| message.to_string());
-        let next_hint = current_level.next_level_hint.clone();
-        
-        self.popup_system.show_congratulations(
-            current_level.name.clone(),
-            achievement,
-            next_hint
-        );
-    }
-    
+
     pub fn check_end_condition(&mut self) {
         if self.finished { 
             return; 
@@ -666,64 +517,19 @@ impl Game {
         if let Some(ref completion_flag) = current_level.completion_flag {
             if self.check_completion_flag(completion_flag) {
                 let achievement = current_level.achievement_message.clone()
-                    .unwrap_or_else(|| "You completed the level requirements!".to_string());
+                    .unwrap_or_else(|| "Level completed!".to_string());
+                let level_name = current_level.name.clone();
                 let next_hint = current_level.next_level_hint.clone();
-                
-                self.finished = true;
-                self.popup_system.show_congratulations(
-                    current_level.name.clone(),
-                    achievement,
-                    next_hint
-                );
+                self.popup_system.show_congratulations(level_name, achievement, next_hint);
+                self.finish_level();
                 return;
             }
         }
-        // Fallback to simple completion_condition for backward compatibility
-        else if let Some(ref condition) = current_level.completion_condition {
-            match condition.as_str() {
-                "println" => {
-                    if !self.println_outputs.is_empty() {
-                        self.finished = true;
-                        self.show_simple_completion("You successfully used println! to display output.");
-                        return;
-                    }
-                }
-                "error" | "eprintln" => {
-                    if !self.error_outputs.is_empty() {
-                        self.finished = true;
-                        self.show_simple_completion("You successfully generated an error message.");
-                        return;
-                    }
-                }
-                "panic" => {
-                    if self.panic_occurred {
-                        self.finished = true;
-                        self.show_simple_completion("You successfully triggered a panic.");
-                        return;
-                    }
-                }
-                _ => {} // Unknown condition, fall back to normal completion
-            }
-        }
         
-        // Check if all items have been collected (normal completion)
-        let items_remaining = self.item_manager.get_active_items().len() > 0;
-        if items_remaining {
-            // Cannot complete level until all items are grabbed
-            return;
-        }
-        
-        // Original completion logic - all squares explored
-        let total_cells = (self.grid.width * self.grid.height) as usize;
-        let known_nonblockers = self.grid.known.iter()
-            .filter(|pos| !self.grid.blockers.contains(pos))
-            .count();
-        let blockers_count = self.grid.blockers.len();
-        
-        if known_nonblockers + blockers_count == total_cells || 
-           (self.max_turns > 0 && self.turns >= self.max_turns) {
-            self.finish_level();
+        // Fallback to basic completion condition (all items collected)
+        if self.item_manager.items.is_empty() {
             self.show_level_complete();
+            self.finish_level();
         }
     }
 }

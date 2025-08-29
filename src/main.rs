@@ -18,17 +18,21 @@ mod level;
 mod item;
 mod grid;
 mod robot;
-mod game_state;
+mod gamestate;
 mod menu;
 mod movement_patterns;
 mod popup;
 mod embedded_levels;
+mod drawing;
+mod rust_checker;
 
 use level::*;
 use item::*;
-use game_state::*;
+use gamestate::*;
 use menu::{MenuAction, MenuState};
 use popup::PopupAction;
+use drawing::*;
+use rust_checker::format_errors_for_display;
 
 // Desktop-only functions
 #[cfg(not(target_arch = "wasm32"))]
@@ -342,9 +346,40 @@ fn try_grab(game: &mut Game) -> &'static str {
     }
 }
 
-fn try_scan(game: &mut Game, dir: (i32, i32)) -> &'static str {
+fn try_scan(game: &mut Game, dir: (i32, i32)) -> String {
+    // For tutorial level (level 0), provide detailed scan information
+    if game.level_idx == 0 {
+        let positions = game.robot.get_scanner_positions(dir, game.grid.width, game.grid.height);
+        let mut obstacles = 0;
+        let mut items = 0;
+        let mut enemies = 0;
+        let tiles_scanned = positions.len();
+        
+        for pos in &positions {
+            if game.grid.is_blocked(*pos) {
+                obstacles += 1;
+            }
+            if game.item_manager.get_item_at_position(*pos).is_some() {
+                items += 1;
+            }
+            for enemy in &game.grid.enemies {
+                if enemy.pos == *pos {
+                    enemies += 1;
+                    break;
+                }
+            }
+            if game.grid.reveal(*pos) {
+                game.discovered_this_level += 1;
+            }
+        }
+        
+        return format!("Scanned {} tiles, found {} obstacles, {} items, {} enemies", 
+                      tiles_scanned, obstacles, items, enemies);
+    }
+    
+    // Original scan function for other levels
     if !game.robot.has_scanner() {
-        return "No scanner owned.";
+        return "No scanner owned.".to_string();
     }
     
     let positions = game.robot.get_scanner_positions(dir, game.grid.width, game.grid.height);
@@ -352,7 +387,7 @@ fn try_scan(game: &mut Game, dir: (i32, i32)) -> &'static str {
     
     for pos in positions {
         if game.grid.is_blocked(pos) {
-            return "Unknown Object Blocking Function";
+            return "Unknown Object Blocking Function".to_string();
         }
         if game.grid.reveal(pos) {
             revealed_any = true;
@@ -371,7 +406,7 @@ fn try_scan(game: &mut Game, dir: (i32, i32)) -> &'static str {
         }
     }
 
-    if revealed_any { "Scan complete." } else { "Scan found nothing." }
+    if revealed_any { "Scan complete.".to_string() } else { "Scan found nothing.".to_string() }
 }
 
 
@@ -666,45 +701,13 @@ fn load_external_code(file_path: &str) -> Result<String, String> {
 }
 
 fn get_default_robot_code() -> &'static str {
-    r#"// Welcome to Rust Robot Programming Tutorial!
-// This file is automatically saved as you type.
-// You can also edit this file externally with any text editor.
+    r#"// Welcome to the Rust Programming Tutorial!
+// Follow the tasks shown above to learn Rust step by step.
 
-// Display messages in the game:
-println!("Starting robot program!");
+// Task 1: Try your first print statement!
+// Uncomment the line below and run your code:
+// println!("Hello, Rust!");
 
-// Always available functions:
-move(right);
-grab();
-scan(left);
-
-// Display educational messages:
-// println!("Hello from the robot!");
-// println!("Learning Rust is fun!");
-
-// Door system (teaches boolean literals):
-// open_door(true);   // Opens door at robot position
-// open_door(false);  // Closes door at robot position
-
-// Laser system (stuns enemies, destroys obstacles):
-// laser::direction(up);
-// laser::tile(5, 3);
-
-// Example: Move in a pattern with messages
-// println!("Moving in a square pattern");
-// move(right);
-// move(down);
-// move(left);
-// move(up);
-// println!("Square pattern complete!");
-
-// Example: Scan and grab with feedback
-// println!("Scanning area and grabbing items");
-// scan(up);
-// grab();
-// move(right);
-// grab();
-// println!("Items collected!");
 "#
 }
 
@@ -769,7 +772,36 @@ async fn execute_rust_code(game: &mut Game) -> String {
         game.current_code.clone()
     };
     
-    // Extract and display print statements first
+    // First, check syntax with Cargo (desktop only)
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        if let Some(ref mut checker) = game.rust_checker {
+            match checker.check_syntax(&code_to_execute) {
+                Ok(errors) => {
+                    // Format and display syntax check results
+                    let syntax_result = format_errors_for_display(&errors);
+                    
+                    // If there are errors, show them and don't execute
+                    let has_errors = errors.iter().any(|e| e.severity == rust_checker::ErrorSeverity::Error);
+                    if has_errors {
+                        return format!("🔍 SYNTAX CHECK:\n{}\n\nFix these errors before running your code!", syntax_result);
+                    } else if !errors.is_empty() {
+                        // Show warnings but continue execution
+                        game.execution_result = format!("🔍 SYNTAX CHECK:\n{}\n\nCode executing with warnings...", syntax_result);
+                    } else {
+                        // Clean compilation, show success briefly
+                        game.execution_result = "🔍 SYNTAX CHECK: ✅ Code compiled successfully!".to_string();
+                    }
+                },
+                Err(e) => {
+                    // If syntax checking fails, fall back to basic parsing but show the error
+                    game.execution_result = format!("⚠️ Syntax checker unavailable: {}\nFalling back to basic code parsing...", e);
+                }
+            }
+        }
+    }
+    
+    // Extract and display print statements
     let print_outputs = extract_print_statements_from_rust_code(&code_to_execute);
     for output in print_outputs {
         if output.starts_with("stdout:") {
@@ -818,6 +850,9 @@ async fn execute_rust_code(game: &mut Game) -> String {
             break;
         }
     }
+    
+    // Check tutorial progress after execution
+    game.check_tutorial_progress();
     
     results.join("; ")
 }
@@ -880,460 +915,16 @@ fn shop_items(game: &Game) -> Vec<ShopItem> {
     v
 }
 
-// Drawing functions - keeping the same as original for now
-const TILE: f32 = 42.0;
-const PADDING: f32 = 16.0;
-
-fn grid_origin(g: &Game) -> (f32, f32) {
-    let gw = g.grid.width as f32 * TILE;
-    let gh = g.grid.height as f32 * TILE;
-    // Position grid to take up roughly half the screen (center-left area)
-    let available_width = screen_width() * 0.5; // Half the screen width for grid
-    let ox = (available_width - gw) * 0.5;
-    let oy = (screen_height() - gh) * 0.5;
-    (ox, oy)
-}
-
-fn tile_rect(ox: f32, oy: f32, p: Pos) -> Rect {
-    Rect { x: ox + p.x as f32 * TILE, y: oy + p.y as f32 * TILE, w: TILE - 1.0, h: TILE - 1.0 }
-}
-
-fn get_function_definition(func: RustFunction) -> &'static str {
-    match func {
-        RustFunction::Move => r#"fn move_robot(direction: Direction) -> Result<String, String> {
-    // Move robot in the specified direction
-    // Returns Ok with status message or Err if blocked
-}"#,
-        RustFunction::Grab => r#"fn grab_items() -> String {
-    // Grab all items and unknown tiles within grabber range
-    // Returns status message with number of items grabbed
-}"#,
-        RustFunction::Scan => r#"fn scan_direction(direction: Direction) -> Result<String, String> {
-    // Scan in a direction to reveal tiles (2-tile range)
-    // Always available in the new design
-}"#,
-        RustFunction::LaserDirection => r#"fn laser_direction(direction: Direction) -> String {
-    // Fire laser in specified direction until it hits something
-    // Stuns enemies for 5 turns, destroys obstacles for 2 turns
-}"#,
-        RustFunction::LaserTile => r#"fn laser_tile(x: i32, y: i32) -> String {
-    // Fire laser at specific coordinates
-    // Stuns enemies for 5 turns, destroys obstacles for 2 turns
-}"#,
-        RustFunction::SkipLevel => r#"fn skip_this_level_because_i_say_so() -> String {
-    // Skip to the next level
-    // Secret command for testing and exploration
-}"#,
-        RustFunction::GotoLevel => r#"fn goto_this_level_because_i_say_so(level: usize) -> String {
-    // Jump to a specific level number
-    // Secret command for testing and exploration
-}"#,
-        RustFunction::OpenDoor => r#"fn open_door(open: bool) -> String {
-    // Open or close a door at the robot's current position
-    // Pass true to open, false to close
-    // Teaches about boolean literals in Rust
-}"#,
-        // Print functions are available as standard Rust macros
-        RustFunction::Println | RustFunction::Eprintln | RustFunction::Panic => {
-            "Print functions are built-in Rust macros - use println!(), eprintln!(), panic!()"
-        },
-    }
-}
-
-fn draw_function_definitions(game: &Game) {
-    let def_width = screen_width() * 0.25; // 1/4 of screen width
-    let def_height = screen_height() * 0.6; // Take up more vertical space
-    let def_x = screen_width() * 0.5 + PADDING; // Position on left side of right half
-    let def_y = PADDING + 100.0;
-    
-    draw_rectangle(def_x - 10.0, def_y - 10.0, def_width + 20.0, def_height + 20.0, Color::new(0.0, 0.0, 0.0, 0.8));
-    draw_rectangle_lines(def_x - 10.0, def_y - 10.0, def_width + 20.0, def_height + 20.0, 2.0, WHITE);
-    
-    draw_text("FUNCTION DEFINITIONS", def_x, def_y, 20.0, YELLOW);
-    draw_text("Click a function name to view its implementation", def_x, def_y + 20.0, 12.0, GRAY);
-    
-    let available_functions = game.get_gui_functions();
-    let mut y_offset = 50.0;
-    
-    for func in &available_functions {
-        let button_y = def_y + y_offset;
-        let button_color = if game.selected_function_to_view == Some(*func) { DARKBLUE } else { DARKGRAY };
-        let text_color = if game.selected_function_to_view == Some(*func) { YELLOW } else { WHITE };
-        
-        let button_width = def_width - 20.0; // Use available width minus padding
-        draw_rectangle(def_x, button_y, button_width, 25.0, button_color);
-        draw_rectangle_lines(def_x, button_y, button_width, 25.0, 1.0, WHITE);
-        
-        let func_name = match func {
-            RustFunction::Move => "move(direction)",
-            RustFunction::Grab => "grab()",
-            RustFunction::Scan => "scan(direction)",
-            RustFunction::LaserDirection => "laser::direction(dir)",
-            RustFunction::LaserTile => "laser::tile(x,y)",
-            RustFunction::OpenDoor => "open_door(true/false)",
-            _ => continue, // Skip hidden functions
-        };
-        
-        draw_text(func_name, def_x + 10.0, button_y + 17.0, 16.0, text_color);
-        y_offset += 30.0;
-    }
-    
-    if let Some(func) = game.selected_function_to_view {
-        let code_y = def_y + y_offset + 10.0;
-        let code_area_height = def_height - y_offset - 20.0;
-        
-        draw_rectangle(def_x, code_y, def_width, code_area_height, Color::new(0.05, 0.05, 0.1, 0.9));
-        draw_rectangle_lines(def_x, code_y, def_width, code_area_height, 1.0, LIGHTGRAY);
-        
-        let definition = get_function_definition(func);
-        let lines: Vec<&str> = definition.lines().collect();
-        
-        for (i, line) in lines.iter().enumerate() {
-            let line_y = code_y + 20.0 + (i as f32 * 14.0);
-            if line_y < code_y + code_area_height - 10.0 {
-                let color = if line.trim().starts_with("//") {
-                    Color::new(0.5, 0.7, 0.5, 1.0)
-                } else if line.contains("fn ") || line.contains("let ") || line.contains("if ") || line.contains("for ") {
-                    Color::new(0.8, 0.6, 1.0, 1.0)
-                } else if line.contains('"') {
-                    Color::new(1.0, 0.8, 0.6, 1.0)
-                } else {
-                    WHITE
-                };
-                
-                draw_text(line, def_x + 10.0, line_y, 12.0, color);
-            }
-        }
-    } else {
-        draw_text("Select a function above to view its implementation", def_x, def_y + y_offset + 30.0, 16.0, GRAY);
-    }
-}
-
-fn draw_code_editor(game: &Game) {
-    let editor_width = screen_width() * 0.25; // 1/4 of screen width
-    let editor_height = screen_height() * 0.6; // Take up more vertical space
-    let editor_x = screen_width() - editor_width - PADDING;
-    let editor_y = PADDING + 100.0;
-    
-    let bg_color = if game.code_editor_active { 
-        Color::new(0.1, 0.1, 0.2, 0.9) 
-    } else { 
-        Color::new(0.0, 0.0, 0.0, 0.8) 
-    };
-    
-    draw_rectangle(editor_x - 10.0, editor_y - 10.0, editor_width + 20.0, editor_height + 20.0, bg_color);
-    draw_rectangle_lines(editor_x - 10.0, editor_y - 10.0, editor_width + 20.0, editor_height + 20.0, 2.0, 
-                        if game.code_editor_active { YELLOW } else { WHITE });
-    
-    let title = "ROBOT CODE EDITOR";
-    draw_text(title, editor_x, editor_y, 20.0, YELLOW);
-    
-    draw_text(&format!("File: {}", game.robot_code_path), editor_x, editor_y + 20.0, 12.0, LIGHTGRAY);
-    if game.robot_code_modified {
-        draw_text("File modified externally! Changes loaded.", editor_x, editor_y + 35.0, 12.0, YELLOW);
-    } else {
-        draw_text("Click to edit, auto-saves on changes", editor_x, editor_y + 35.0, 12.0, GRAY);
-    }
-    
-    let available_functions = game.get_gui_functions();
-    let mut help_text = "Available functions: ".to_string();
-    for func in &available_functions {
-        match func {
-            RustFunction::Move => help_text.push_str("move(up/down/left/right) "),
-            RustFunction::Grab => help_text.push_str("grab() "),
-            RustFunction::Scan => help_text.push_str("scan(up/down/left/right) "),
-            RustFunction::LaserDirection => help_text.push_str("laser::direction(dir) "),
-            RustFunction::LaserTile => help_text.push_str("laser::tile(x,y) "),
-            RustFunction::OpenDoor => help_text.push_str("open_door(true/false) "),
-            _ => {} // Skip hidden functions
-        }
-    }
-    
-    draw_text(&help_text, editor_x, editor_y + 35.0, 12.0, LIGHTGRAY);
-    
-    let input_y = editor_y + 60.0;
-    let input_height = 150.0;
-    draw_rectangle(editor_x, input_y, editor_width, input_height, Color::new(0.05, 0.05, 0.05, 0.9));
-    draw_rectangle_lines(editor_x, input_y, editor_width, input_height, 1.0, WHITE);
-    
-    // Show current code from game state
-    let code_to_display = if game.current_code.is_empty() {
-        "// Loading robot_code.rs...".to_string()
-    } else {
-        game.current_code.clone()
-    };
-    
-    let lines: Vec<&str> = code_to_display.lines().collect();
-    for (i, line) in lines.iter().take(8).enumerate() {
-        let line_y = input_y + 20.0 + (i as f32 * 16.0);
-        let display_line = if line.len() > 55 {
-            format!("{}...", &line[..52])
-        } else {
-            line.to_string()
-        };
-        let color = if game.code_editor_active { WHITE } else { LIGHTGRAY };
-        draw_text(&display_line, editor_x + 10.0, line_y, 12.0, color);
-    }
-    if lines.len() > 8 {
-        draw_text(&format!("... and {} more lines", lines.len() - 8), editor_x + 10.0, input_y + 145.0, 12.0, GRAY);
-    }
-    
-    // Show cursor when editing (simplified cursor position)
-    if game.code_editor_active {
-        let cursor_line = game.current_code[..game.cursor_position].matches('\n').count();
-        let line_start = game.current_code[..game.cursor_position].rfind('\n').map(|i| i + 1).unwrap_or(0);
-        let cursor_col = game.cursor_position - line_start;
-        
-        if cursor_line < 8 { // Only show cursor if it's in visible area
-            let cursor_x = editor_x + 10.0 + (cursor_col as f32 * 7.0); // Approximate char width
-            let cursor_y = input_y + 20.0 + (cursor_line as f32 * 16.0);
-            draw_line(cursor_x, cursor_y - 12.0, cursor_x, cursor_y + 2.0, 1.0, YELLOW);
-        }
-    }
-    
-    let button_y = input_y + input_height + 10.0;
-    
-    draw_rectangle(editor_x, button_y, 100.0, 30.0, DARKGREEN);
-    draw_rectangle_lines(editor_x, button_y, 100.0, 30.0, 1.0, WHITE);
-    draw_text("[ENTER] Run", editor_x + 10.0, button_y + 20.0, 16.0, WHITE);
-    
-    draw_rectangle(editor_x + 110.0, button_y, 150.0, 30.0, DARKBLUE);
-    draw_rectangle_lines(editor_x + 110.0, button_y, 150.0, 30.0, 1.0, WHITE);
-    draw_text("[Ctrl+Shift+E] IDE", editor_x + 120.0, button_y + 20.0, 12.0, WHITE);
-    
-    draw_rectangle(editor_x + 270.0, button_y, 130.0, 30.0, Color::new(0.5, 0.1, 0.1, 1.0));
-    draw_rectangle_lines(editor_x + 270.0, button_y, 130.0, 30.0, 1.0, WHITE);
-    draw_text("[Ctrl+Shift+R] Reset", editor_x + 280.0, button_y + 20.0, 12.0, WHITE);
-    
-    if !game.execution_result.is_empty() {
-        let result_y = button_y + 40.0;
-        draw_text("EXECUTION RESULT:", editor_x, result_y, 16.0, WHITE);
-        
-        let max_chars_per_line = 45;
-        let words: Vec<&str> = game.execution_result.split_whitespace().collect();
-        let mut current_line = String::new();
-        let mut line_count = 0;
-        
-        for word in words {
-            if current_line.len() + word.len() + 1 > max_chars_per_line {
-                draw_text(&current_line, editor_x, result_y + 20.0 + (line_count as f32 * 16.0), 14.0, GREEN);
-                current_line = word.to_string();
-                line_count += 1;
-            } else {
-                if !current_line.is_empty() {
-                    current_line.push(' ');
-                }
-                current_line.push_str(word);
-            }
-        }
-        
-        if !current_line.is_empty() {
-            draw_text(&current_line, editor_x, result_y + 20.0 + (line_count as f32 * 16.0), 14.0, GREEN);
-        }
-    }
-}
-
-fn draw_game(game: &Game) {
-    let (ox, oy) = grid_origin(game);
-
-    for y in 0..game.grid.height {
-        for x in 0..game.grid.width {
-            let p = Pos { x, y };
-            let r = tile_rect(ox, oy, p);
-
-            draw_rectangle(r.x, r.y, r.w, r.h, BLACK);
-
-            let known = game.grid.known.contains(&p);
-            if known {
-                draw_rectangle(r.x+2.0, r.y+2.0, r.w-4.0, r.h-4.0, GREEN);
-            }
-
-            if game.grid.is_blocked(p) && known {
-                // Check if it's a door
-                if game.grid.is_door(p) {
-                    let (txt, color) = if game.grid.is_door_open(p) {
-                        ("|", GREEN)  // Open door - green vertical line
-                    } else {
-                        ("█", BROWN)  // Closed door - brown block
-                    };
-                    let dim = measure_text(txt, None, 28, 1.0);
-                    draw_text(
-                        txt,
-                        r.x + (r.w - dim.width) * 0.5,
-                        r.y + (r.h + dim.height) * 0.5 - 6.0,
-                        28.0,
-                        color,
-                    );
-                } else {
-                    // Regular obstacle
-                    let txt = "?";
-                    let dim = measure_text(txt, None, 28, 1.0);
-                    draw_text(
-                        txt,
-                        r.x + (r.w - dim.width) * 0.5,
-                        r.y + (r.h + dim.height) * 0.5 - 6.0,
-                        28.0,
-                        WHITE,
-                    );
-                }
-            }
-
-            // Draw items
-            if known {
-                if let Some(_item) = game.item_manager.get_item_at_position(p) {
-                    let txt = "!";
-                    let dim = measure_text(txt, None, 28, 1.0);
-                    draw_text(
-                        txt,
-                        r.x + (r.w - dim.width) * 0.5,
-                        r.y + (r.h + dim.height) * 0.5 - 6.0,
-                        28.0,
-                        WHITE,
-                    );
-                }
-            }
-
-            // Draw enemies
-            if known {
-                for enemy in &game.grid.enemies {
-                    if enemy.pos == p {
-                        let txt = "E";
-                        let dim = measure_text(txt, None, 28, 1.0);
-                        
-                        // Determine enemy color based on movement type and state
-                        let enemy_color = if let Some(ref pattern) = enemy.movement_pattern {
-                            match pattern.as_str() {
-                                "chase" => {
-                                    // Check if actively chasing (orange) or not moving (blue)
-                                    if let Some(is_chasing) = enemy.movement_data.get("is_chasing")
-                                        .and_then(|v| v.as_bool()) {
-                                        if is_chasing {
-                                            ORANGE  // Actively chasing player
-                                        } else {
-                                            BLUE    // Not moving/searching
-                                        }
-                                    } else {
-                                        ORANGE  // Default to orange for chase enemies
-                                    }
-                                }
-                                "random" => MAGENTA,    // Random movement = magenta
-                                "diagonal" => YELLOW,   // Diagonal movement = yellow
-                                "circular" => LIME,     // Circular movement = lime green
-                                "spiral" => PINK,       // Spiral movement = pink
-                                pattern if pattern.starts_with("file:") => PURPLE, // Custom file patterns = purple
-                                _ => RED                 // Unknown patterns = red
-                            }
-                        } else {
-                            // Built-in horizontal/vertical enemies (no movement_pattern field)
-                            match enemy.direction {
-                                EnemyDirection::Horizontal => GREEN,  // Horizontal = green
-                                EnemyDirection::Vertical => DARKBLUE, // Vertical = dark blue
-                            }
-                        };
-                        
-                        draw_text(
-                            txt,
-                            r.x + (r.w - dim.width) * 0.5,
-                            r.y + (r.h + dim.height) * 0.5 - 6.0,
-                            28.0,
-                            enemy_color,
-                        );
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    // Robot circle
-    let robot_pos = game.robot.get_pos();
-    let rr = tile_rect(ox, oy, robot_pos);
-    let cx = rr.x + rr.w * 0.5;
-    let cy = rr.y + rr.h * 0.5;
-    draw_circle(cx, cy, (TILE * 0.35).min(16.0), SKYBLUE);
-
-    // UI
-    let spec = &game.levels[game.level_idx];
-    draw_text(
-        &format!("{}  (Level {}/{})", spec.name, game.level_idx + 1, game.levels.len()),
-        PADDING, PADDING + 0.0, 26.0, WHITE,
-    );
-    draw_text(
-        &format!("Credits: {}   Turns: {}{}", game.credits, game.turns, if game.max_turns>0 { format!("/{}", game.max_turns) } else { "".into() }),
-        PADDING, PADDING + 24.0, 22.0, WHITE,
-    );
-    let time_slow_status = if game.time_slow_active {
-        format!(" | Time Slow: {}ms", game.time_slow_duration_ms)
-    } else {
-        "".to_string()
-    };
-    
-    draw_text(
-        &format!("Upgrades  Grabber range={}  |  Scanner len={}{}{}", 
-                game.robot.upgrades.grabber_level, 
-                game.robot.upgrades.scanner_level, 
-                if game.robot.has_scanner() { " (owned)" } else { "" },
-                time_slow_status),
-        PADDING, PADDING + 46.0, 20.0, WHITE,
-    );
-
-    // Draw time slow indicator
-    if game.time_slow_active {
-        draw_rectangle(screen_width() - 200.0, PADDING, 180.0, 30.0, Color::new(0.0, 0.0, 0.5, 0.8));
-        draw_rectangle_lines(screen_width() - 200.0, PADDING, 180.0, 30.0, 2.0, YELLOW);
-        draw_text("TIME SLOW ACTIVE", screen_width() - 190.0, PADDING + 20.0, 16.0, YELLOW);
-    }
-
-    let controls_text = "Controls: Click code editor to edit robot_code.rs | ENTER execute | Ctrl+Shift+C completion help | Ctrl+Shift+E IDE hint | Ctrl+Shift+B docs | Ctrl+Shift+N finish | Ctrl+Shift+L reload | Ctrl+Shift+M menu";
-    draw_text(controls_text, PADDING, screen_height() - 18.0, 18.0, GRAY);
-
+fn draw_main_game_view(game: &Game) {
+    clear_background(Color::from_rgba(18, 18, 18, 255));
+    draw_game(game);
+    draw_game_info(game);
+    draw_tutorial_overlay(game);
+    draw_time_slow_indicator(game);
+    draw_controls_text();
     draw_function_definitions(game);
     draw_code_editor(game);
-
-    if game.finished {
-        let msg = "Level complete! Press N for next level.";
-        let dim = measure_text(msg, None, 28, 1.0);
-        draw_rectangle(
-            (screen_width()-dim.width-40.0)*0.5, (screen_height()-60.0)*0.5, dim.width+40.0, 60.0,
-            Color::new(0.0,0.0,0.0,0.6)
-        );
-        draw_text(msg, (screen_width()-dim.width)*0.5, (screen_height()+10.0)*0.5, 28.0, YELLOW);
-    }
-}
-
-fn handle_shop(game: &mut Game) {
-    let items = shop_items(game);
-    let mut y = PADDING + 80.0;
-    draw_rectangle(PADDING-10.0, y-26.0, 520.0, (items.len() as f32)*26.0 + 56.0, Color::new(0.0,0.0,0.0,0.6));
-    draw_text("SHOP — press number to buy, ESC to close", PADDING, y, 20.0, YELLOW);
-    y += 22.0;
-
-    for (i, it) in items.iter().enumerate() {
-        draw_text(
-            &format!("[{}] {} — {} credits", i+1, it.name, it.cost),
-            PADDING, y + (i as f32)*22.0, 20.0, WHITE,
-        );
-    }
-    draw_text(&format!("Credits: {}", game.credits), PADDING, y + (items.len() as f32)*22.0 + 22.0, 20.0, WHITE);
-
-    for (i, it) in items.iter().enumerate() {
-        let keycode = match i {
-            0 => KeyCode::Key1,
-            1 => KeyCode::Key2,
-            2 => KeyCode::Key3,
-            3 => KeyCode::Key4,
-            4 => KeyCode::Key5,
-            5 => KeyCode::Key6,
-            6 => KeyCode::Key7,
-            7 => KeyCode::Key8,
-            8 => KeyCode::Key9,
-            _ => continue,
-        };
-        if is_key_pressed(keycode) && game.credits >= it.cost {
-            (it.apply)(game);
-            game.credits -= it.cost;
-        }
-    }
+    draw_level_complete_overlay(game);
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -1402,8 +993,7 @@ async fn desktop_main() {
                 // Update popup system with delta time
                 game.update_popup_system(get_frame_time());
 
-                clear_background(Color::from_rgba(18, 18, 18, 255));
-                draw_game(&game);
+                draw_main_game_view(&game);
 
                 // Shop functionality removed - replaced with Rust docs
                 
@@ -1425,8 +1015,8 @@ async fn desktop_main() {
                     
                     if is_mouse_button_pressed(MouseButton::Left) {
                         // Function definitions area
-                        let def_x = screen_width() * 0.5 + PADDING; // Match new position
-                        let def_y = PADDING + 100.0;
+                        let def_x = screen_width() * 0.5 + 16.0; // Match PADDING constant
+                        let def_y = 16.0 + 100.0; // Match PADDING constant
                         let def_width = screen_width() * 0.25;
                         let available_functions = game.get_gui_functions();
                         
@@ -1438,14 +1028,19 @@ async fn desktop_main() {
                             }
                         }
                         
-                        // Editor mode toggle
-                        let editor_x = screen_width() - (screen_width() * 0.25) - PADDING; // Match new position
-                        let editor_y = PADDING + 100.0;
+                        // Editor click handling
+                        let editor_x = screen_width() - (screen_width() * 0.25) - 16.0; // Match PADDING constant
+                        let editor_y = 16.0 + 100.0; // Match PADDING constant
                         let editor_width = screen_width() * 0.25;
                         let editor_height = screen_height() * 0.6;
+                        
                         if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + editor_width + 10.0 &&
                            mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + editor_height + 10.0 {
                             game.code_editor_active = true;
+                            
+                            // Position cursor at click location
+                            let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+                            game.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
                         } else if mouse_x > screen_width() / 2.0 {
                             game.code_editor_active = false;
                         }
@@ -1481,10 +1076,37 @@ async fn desktop_main() {
                             }
                         }
                         
+                        // Arrow key navigation
+                        if is_key_pressed(KeyCode::Up) {
+                            game.move_cursor_up();
+                        }
+                        if is_key_pressed(KeyCode::Down) {
+                            game.move_cursor_down();
+                        }
+                        if is_key_pressed(KeyCode::Left) {
+                            game.move_cursor_left();
+                        }
+                        if is_key_pressed(KeyCode::Right) {
+                            game.move_cursor_right();
+                        }
+                        
+                        // Page Up/Down for scrolling
+                        if is_key_pressed(KeyCode::PageUp) {
+                            for _ in 0..10 {
+                                game.scroll_up();
+                            }
+                        }
+                        if is_key_pressed(KeyCode::PageDown) {
+                            for _ in 0..10 {
+                                game.scroll_down();
+                            }
+                        }
+                        
                         if is_key_pressed(KeyCode::R) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                             // Reset to default code
                             game.current_code = get_default_robot_code().to_string();
                             game.cursor_position = 0;
+                            game.code_scroll_offset = 0;
                             code_modified = true;
                         }
                         
@@ -1492,11 +1114,6 @@ async fn desktop_main() {
                         if code_modified {
                             game.save_robot_code();
                         }
-                    }
-                    
-                    if is_key_pressed(KeyCode::Enter) && !game.code_editor_active {
-                        game.execution_result = execute_rust_code(&mut game).await;
-                        game.robot_code_modified = false;
                     }
                     
                     if is_key_pressed(KeyCode::E) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) && !game.code_editor_active {
