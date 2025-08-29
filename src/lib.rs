@@ -10,6 +10,7 @@ mod game_state;
 mod menu;
 mod movement_patterns;
 mod popup;
+mod embedded_levels;
 
 use level::*;
 use game_state::*;
@@ -87,8 +88,12 @@ async fn run_game() {
 
     let rng = StdRng::from_entropy();
 
-    // Load embedded levels for WASM
-    let levels = get_embedded_levels();
+    // Load embedded levels for WASM (from YAML data)
+    let levels = embedded_levels::load_embedded_levels()
+        .expect("Failed to load embedded levels")
+        .into_iter()
+        .map(|config| config.to_level_spec(&mut StdRng::from_entropy()).unwrap())
+        .collect();
     let mut game = Game::new(levels, rng);
     
     let mut current_level = 0;

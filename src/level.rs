@@ -157,12 +157,30 @@ impl YamlLevelConfig {
                         item.location.map(|(x, y)| (x as i32, y as i32))
                     };
                     
-                    // Load item capabilities from file
+                    // Load item capabilities from file or embedded data
                     let capabilities = if Path::new(&item.item_file).exists() {
-                        // In a real implementation, you'd parse the Rust file
-                        // For now, we'll create a simple HashMap
+                        // External file exists - use it
                         let mut caps = HashMap::new();
                         caps.insert("file_path".to_string(), serde_yaml::Value::String(item.item_file.clone()));
+                        caps
+                    } else if let Some(embedded_content) = crate::embedded_levels::get_embedded_item_content(&item.item_file) {
+                        // Use embedded item data as fallback
+                        let mut caps = HashMap::new();
+                        caps.insert("file_path".to_string(), serde_yaml::Value::String(item.item_file.clone()));
+                        // Parse embedded content for capabilities
+                        for line in embedded_content.lines() {
+                            if line.starts_with("// CAPABILITY: ") {
+                                let capability_def = &line[15..]; // Skip "// CAPABILITY: "
+                                if let Some((key, value)) = capability_def.split_once(" = ") {
+                                    // Try to parse as number first, then string
+                                    if let Ok(num_val) = value.parse::<i64>() {
+                                        caps.insert(key.to_string(), serde_yaml::Value::Number(serde_yaml::Number::from(num_val)));
+                                    } else {
+                                        caps.insert(key.to_string(), serde_yaml::Value::String(value.to_string()));
+                                    }
+                                }
+                            }
+                        }
                         caps
                     } else {
                         HashMap::new()

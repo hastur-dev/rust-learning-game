@@ -22,6 +22,7 @@ mod game_state;
 mod menu;
 mod movement_patterns;
 mod popup;
+mod embedded_levels;
 
 use level::*;
 use item::*;
@@ -706,12 +707,43 @@ fn load_yaml_levels() -> Vec<LevelSpec> {
     let mut levels = Vec::new();
     let mut rng = StdRng::seed_from_u64(0xC0FFEE);
     
-    // Load YAML levels from levels directory
+    // Try to load YAML levels from levels directory first
     let yaml_configs = load_yaml_levels_from_directory("levels");
     
-    for config in yaml_configs {
-        if let Ok(level_spec) = config.to_level_spec(&mut rng) {
-            levels.push(level_spec);
+    if !yaml_configs.is_empty() {
+        // External levels found - use them
+        for config in yaml_configs {
+            if let Ok(level_spec) = config.to_level_spec(&mut rng) {
+                levels.push(level_spec);
+            }
+        }
+    } else {
+        // No external levels found - use embedded levels as fallback
+        match embedded_levels::load_embedded_levels() {
+            Ok(embedded_configs) => {
+                for config in embedded_configs {
+                    if let Ok(level_spec) = config.to_level_spec(&mut rng) {
+                        levels.push(level_spec);
+                    }
+                }
+            },
+            Err(_) => {
+                // If embedded levels also fail, create a minimal fallback level
+                levels.push(LevelSpec {
+                    name: "Emergency Fallback Level".to_string(),
+                    width: 10,
+                    height: 8,
+                    start: (1, 1),
+                    scanner_at: None,
+                    blockers: vec![(5, 3), (7, 5)],
+                    enemies: vec![],
+                    items: vec![],
+                    fog_of_war: true,
+                    max_turns: 0,
+                    income_per_square: 1,
+                    message: Some("Welcome! This is a fallback level because no level files were found.".to_string()),
+                });
+            }
         }
     }
     
@@ -1177,19 +1209,6 @@ async fn desktop_main() {
     let mut shop_open = false;
 
     loop {
-        // Handle menu input and updates
-        let menu_action = game.menu.handle_input();
-        game.menu.update(menu_action.clone());
-
-        // Handle menu actions
-        match menu_action {
-            MenuAction::StartGame => {
-                game.load_level(0);
-            },
-            MenuAction::Exit => break,
-            _ => {}
-        }
-
         // Draw based on current menu state
         match game.menu.state {
             MenuState::InGame => {
@@ -1330,7 +1349,20 @@ async fn desktop_main() {
 
                 game.check_end_condition();
             },
-            _ => {
+            MenuState::MainMenu | MenuState::Settings => {
+                // Handle menu input and updates only when in menu states
+                let menu_action = game.menu.handle_input();
+                game.menu.update(menu_action.clone());
+
+                // Handle menu actions
+                match menu_action {
+                    MenuAction::StartGame => {
+                        game.load_level(0);
+                    },
+                    MenuAction::Exit => break,
+                    _ => {}
+                }
+
                 // Draw menu
                 game.menu.draw();
             }
