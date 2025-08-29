@@ -1177,19 +1177,6 @@ async fn desktop_main() {
     let mut shop_open = false;
 
     loop {
-        // Handle menu input and updates
-        let menu_action = game.menu.handle_input();
-        game.menu.update(menu_action.clone());
-
-        // Handle menu actions
-        match menu_action {
-            MenuAction::StartGame => {
-                game.load_level(0);
-            },
-            MenuAction::Exit => break,
-            _ => {}
-        }
-
         // Draw based on current menu state
         match game.menu.state {
             MenuState::InGame => {
@@ -1330,7 +1317,20 @@ async fn desktop_main() {
 
                 game.check_end_condition();
             },
-            _ => {
+            MenuState::MainMenu | MenuState::Settings => {
+                // Handle menu input and updates only when in menu states
+                let menu_action = game.menu.handle_input();
+                game.menu.update(menu_action.clone());
+
+                // Handle menu actions
+                match menu_action {
+                    MenuAction::StartGame => {
+                        game.load_level(0);
+                    },
+                    MenuAction::Exit => break,
+                    _ => {}
+                }
+
                 // Draw menu
                 game.menu.draw();
             }
