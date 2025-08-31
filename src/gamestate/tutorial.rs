@@ -12,7 +12,7 @@ impl Game {
             1 => "Task 2/5: Error Messages\n\nGreat! Now let's learn about error messages. Try using:\neprintln!(\"This is an error message!\");\n\nError messages are useful for debugging and showing warnings.".to_string(),
             2 => "Task 3/5: Variables in Print Statements\n\nExcellent! Now let's create a variable and print it. Try:\nlet my_message = \"Variables are powerful!\";\nprintln!(\"{}\", my_message);\n\nVariables store data we can reuse.".to_string(),
             3 => "Task 4/5: Mutable Variables and Scan Function\n\nAwesome! Let's learn about mutable variables by using the scan function:\nlet mut scan_result = scan(up);\nprintln!(\"Scan found: {}\", scan_result);\n\nThe 'mut' keyword lets us change variable values.".to_string(),
-            4 => "Task 5/5: Data Types and Movement\n\nPerfect! Now let's learn about the u32 integer type by using it for movement:\nlet steps: u32 = 3;\nfor _i in 0..steps {\n    move(right);\n}\n\nu32 is an unsigned 32-bit integer (0 to 4,294,967,295).".to_string(),
+            4 => "Task 5/5: Data Types and Movement\n\nPerfect! Now let's learn about the u32 integer type by using it for movement:\nlet steps: u32 = 3;\nfor _i in 0..steps {\n    move_bot(\"right\");\n}\n\nu32 is an unsigned 32-bit integer (0 to 4,294,967,295).".to_string(),
             _ => "Tutorial Complete! You've learned the basics of Rust programming!".to_string(),
         }
     }
@@ -25,6 +25,13 @@ impl Game {
         match self.tutorial_state.current_task {
             0 => {
                 // Task 1: Any println output completes
+                // Debug: Show what println outputs we have (commented out)
+                // if self.level_idx == 0 {
+                //     let debug_msg = format!("DEBUG: println_outputs = {:?}, task_completed[0] = {}", 
+                //                           self.println_outputs, self.tutorial_state.task_completed[0]);
+                //     self.execution_result = debug_msg;
+                // }
+                
                 if !self.println_outputs.is_empty() && !self.tutorial_state.task_completed[0] {
                     self.tutorial_state.task_completed[0] = true;
                     self.tutorial_state.current_task = 1;
@@ -113,7 +120,7 @@ impl Game {
         // Check if code contains u32 type annotation and movement
         let code = &self.current_code;
         let has_u32 = code.contains(": u32");
-        let has_move = code.contains("move(");
+        let has_move = code.contains("move_bot(") || code.contains("move("); // Support both new and legacy
         let has_loop = code.contains("for ") || code.contains("while ");
         has_u32 && has_move && (has_loop || self.turns >= 3)
     }

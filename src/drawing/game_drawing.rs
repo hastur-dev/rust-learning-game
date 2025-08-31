@@ -2,9 +2,9 @@ use macroquad::prelude::*;
 use crate::gamestate::Game;
 use crate::item::Pos;
 use crate::level::EnemyDirection;
+use crate::font_scaling::*;
 
 const TILE: f32 = 42.0;
-const PADDING: f32 = 16.0;
 
 pub fn grid_origin(g: &Game) -> (f32, f32) {
     let gw = g.grid.width as f32 * TILE;
@@ -43,23 +43,27 @@ pub fn draw_game(game: &Game) {
                     } else {
                         ("█", BROWN)  // Closed door - brown block
                     };
-                    let dim = measure_text(txt, None, 28, 1.0);
-                    draw_text(
+                    let font_size = 28.0;
+                    let scaled_font_size = scale_font_size(font_size);
+                    let dim = measure_text(txt, None, scaled_font_size as u16, 1.0);
+                    draw_scaled_text(
                         txt,
                         r.x + (r.w - dim.width) * 0.5,
-                        r.y + (r.h + dim.height) * 0.5 - 6.0,
-                        28.0,
+                        r.y + (r.h + dim.height) * 0.5 - scale_size(6.0),
+                        font_size,
                         color,
                     );
                 } else {
                     // Regular obstacle
                     let txt = "?";
-                    let dim = measure_text(txt, None, 28, 1.0);
-                    draw_text(
+                    let font_size = 28.0;
+                    let scaled_font_size = scale_font_size(font_size);
+                    let dim = measure_text(txt, None, scaled_font_size as u16, 1.0);
+                    draw_scaled_text(
                         txt,
                         r.x + (r.w - dim.width) * 0.5,
-                        r.y + (r.h + dim.height) * 0.5 - 6.0,
-                        28.0,
+                        r.y + (r.h + dim.height) * 0.5 - scale_size(6.0),
+                        font_size,
                         WHITE,
                     );
                 }
@@ -69,12 +73,14 @@ pub fn draw_game(game: &Game) {
             if known {
                 if let Some(_item) = game.item_manager.get_item_at_position(p) {
                     let txt = "!";
-                    let dim = measure_text(txt, None, 28, 1.0);
-                    draw_text(
+                    let font_size = 28.0;
+                    let scaled_font_size = scale_font_size(font_size);
+                    let dim = measure_text(txt, None, scaled_font_size as u16, 1.0);
+                    draw_scaled_text(
                         txt,
                         r.x + (r.w - dim.width) * 0.5,
-                        r.y + (r.h + dim.height) * 0.5 - 6.0,
-                        28.0,
+                        r.y + (r.h + dim.height) * 0.5 - scale_size(6.0),
+                        font_size,
                         WHITE,
                     );
                 }
@@ -85,7 +91,9 @@ pub fn draw_game(game: &Game) {
                 for enemy in &game.grid.enemies {
                     if enemy.pos == p {
                         let txt = "E";
-                        let dim = measure_text(txt, None, 28, 1.0);
+                        let font_size = 28.0;
+                        let scaled_font_size = scale_font_size(font_size);
+                        let dim = measure_text(txt, None, scaled_font_size as u16, 1.0);
                         
                         // Determine enemy color based on movement type and state
                         let enemy_color = if let Some(ref pattern) = enemy.movement_pattern {
@@ -118,11 +126,11 @@ pub fn draw_game(game: &Game) {
                             }
                         };
                         
-                        draw_text(
+                        draw_scaled_text(
                             txt,
                             r.x + (r.w - dim.width) * 0.5,
-                            r.y + (r.h + dim.height) * 0.5 - 6.0,
-                            28.0,
+                            r.y + (r.h + dim.height) * 0.5 - scale_size(6.0),
+                            font_size,
                             enemy_color,
                         );
                         break;
@@ -145,18 +153,20 @@ pub fn draw_tutorial_overlay(game: &Game) {
     if game.level_idx == 0 && game.tutorial_state.current_task < 5 {
         let tutorial_message = game.get_tutorial_task_message();
         if !tutorial_message.is_empty() {
+            let scale = ScaledMeasurements::new();
             // Draw tutorial background
-            let tutorial_y = PADDING + 70.0;
+            let tutorial_y = scale.padding + scale_size(70.0);
             let lines: Vec<&str> = tutorial_message.lines().collect();
-            let height = (lines.len() as f32 * 16.0) + 20.0;
+            let line_height = scale_size(16.0);
+            let height = (lines.len() as f32 * line_height) + scale_size(20.0);
             
-            draw_rectangle(PADDING - 10.0, tutorial_y - 10.0, 500.0, height, Color::new(0.0, 0.2, 0.4, 0.9));
-            draw_rectangle_lines(PADDING - 10.0, tutorial_y - 10.0, 500.0, height, 2.0, SKYBLUE);
+            draw_rectangle(scale.padding - scale_size(10.0), tutorial_y - scale_size(10.0), scale_size(500.0), height, Color::new(0.0, 0.2, 0.4, 0.9));
+            draw_rectangle_lines(scale.padding - scale_size(10.0), tutorial_y - scale_size(10.0), scale_size(500.0), height, scale_size(2.0), SKYBLUE);
             
             // Draw tutorial text
             for (i, line) in lines.iter().enumerate() {
                 let color = if line.starts_with("Task") { YELLOW } else { WHITE };
-                draw_text(line, PADDING, tutorial_y + (i as f32 * 16.0), 14.0, color);
+                draw_scaled_text(line, scale.padding, tutorial_y + (i as f32 * line_height), 14.0, color);
             }
         }
     }
@@ -165,20 +175,27 @@ pub fn draw_tutorial_overlay(game: &Game) {
 pub fn draw_time_slow_indicator(game: &Game) {
     // Draw time slow indicator
     if game.time_slow_active {
-        draw_rectangle(screen_width() - 200.0, PADDING, 180.0, 30.0, Color::new(0.0, 0.0, 0.5, 0.8));
-        draw_rectangle_lines(screen_width() - 200.0, PADDING, 180.0, 30.0, 2.0, YELLOW);
-        draw_text("TIME SLOW ACTIVE", screen_width() - 190.0, PADDING + 20.0, 16.0, YELLOW);
+        let scale = ScaledMeasurements::new();
+        let rect_width = scale_size(180.0);
+        let rect_height = scale_size(30.0);
+        draw_rectangle(screen_width() - scale_size(200.0), scale.padding, rect_width, rect_height, Color::new(0.0, 0.0, 0.5, 0.8));
+        draw_rectangle_lines(screen_width() - scale_size(200.0), scale.padding, rect_width, rect_height, scale_size(2.0), YELLOW);
+        draw_scaled_text("TIME SLOW ACTIVE", screen_width() - scale_size(190.0), scale.padding + scale_size(20.0), 16.0, YELLOW);
     }
 }
 
 pub fn draw_level_complete_overlay(game: &Game) {
     if game.finished {
         let msg = "Level complete! Press N for next level.";
-        let dim = measure_text(msg, None, 28, 1.0);
+        let font_size = 28.0;
+        let scaled_font_size = scale_font_size(font_size);
+        let dim = measure_text(msg, None, scaled_font_size as u16, 1.0);
+        let rect_padding = scale_size(40.0);
+        let rect_height = scale_size(60.0);
         draw_rectangle(
-            (screen_width()-dim.width-40.0)*0.5, (screen_height()-60.0)*0.5, dim.width+40.0, 60.0,
+            (screen_width()-dim.width-rect_padding)*0.5, (screen_height()-rect_height)*0.5, dim.width+rect_padding, rect_height,
             Color::new(0.0,0.0,0.0,0.6)
         );
-        draw_text(msg, (screen_width()-dim.width)*0.5, (screen_height()+10.0)*0.5, 28.0, YELLOW);
+        draw_scaled_text(msg, (screen_width()-dim.width)*0.5, (screen_height()+scale_size(10.0))*0.5, font_size, YELLOW);
     }
 }

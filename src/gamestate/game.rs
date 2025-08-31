@@ -36,6 +36,8 @@ impl Game {
             robot_code_modified: false,
             current_code: String::new(),
             cursor_position: 0,
+            selection_start: None,
+            selection_end: None,
             code_scroll_offset: 0,
             code_lines_visible: 30, // Default number of lines visible
             enemy_step_paused: false,
@@ -57,6 +59,14 @@ impl Game {
             },
             #[cfg(not(target_arch = "wasm32"))]
             rust_checker: crate::rust_checker::RustChecker::new().ok(),
+            key_backspace_held_time: 0.0,
+            key_space_held_time: 0.0,
+            key_repeat_initial_delay: 0.5, // Wait 0.5 seconds before starting to repeat
+            key_repeat_interval: 0.05,     // Repeat every 50ms after initial delay
+            cached_font_size: 0.0,
+            cached_char_width: 0.0,
+            cached_line_height: 0.0,
+            needs_font_refresh: true,      // Initially needs refresh
         }
     }
 
@@ -89,6 +99,12 @@ impl Game {
         self.finished = true;
         let reward = self.discovered_this_level as u32;
         self.credits += reward;
+        
+        // Mark current level as completed and unlock next level
+        self.menu.progress.mark_level_completed(self.level_idx);
+        if self.level_idx + 1 < self.levels.len() {
+            self.menu.progress.unlock_level(self.level_idx + 1);
+        }
     }
 
     pub fn next_level(&mut self) {
@@ -140,13 +156,9 @@ impl Game {
         self.scan_armed = false;
         self.enemy_step_paused = false;
         
-        // Reset completion tracking
-        self.println_outputs.clear();
-        self.error_outputs.clear();
-        self.panic_occurred = false;
-        
-        // Reset tutorial state for level 0
-        if idx == 0 {
+        // Reset tutorial state and outputs for level 0 only when starting fresh
+        if idx == 0 && (self.level_idx != 0 || self.tutorial_state.current_task >= 5) {
+            // Only reset when coming from a different level or tutorial is complete
             self.tutorial_state = TutorialState {
                 task_completed: [false; 5],
                 current_task: 0,
@@ -154,6 +166,14 @@ impl Game {
                 scan_output_stored: false,
                 u32_move_used: false,
             };
+            self.println_outputs.clear();
+            self.error_outputs.clear();
+            self.panic_occurred = false;
+        } else if idx != 0 {
+            // Clear outputs for non-tutorial levels
+            self.println_outputs.clear();
+            self.error_outputs.clear();
+            self.panic_occurred = false;
         }
         
         // Load starting code if available

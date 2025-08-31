@@ -25,6 +25,7 @@ mod popup;
 mod embedded_levels;
 mod drawing;
 mod rust_checker;
+mod font_scaling;
 
 use level::*;
 use item::*;
@@ -32,6 +33,30 @@ use gamestate::*;
 use menu::{MenuAction, MenuState};
 use popup::PopupAction;
 use drawing::*;
+
+// Reset robot_code.rs to default content
+fn reset_robot_code(game: &mut Game) {
+    let default_code = r#"// Write your robot control code here
+// Available functions:
+// robot.move_up(), robot.move_down(), robot.move_left(), robot.move_right()
+// robot.scan() -> returns what's at the robot's current position
+// println!() for debugging output
+
+fn main() {
+    println!("Robot starting...");
+    
+    // Your code here
+    
+}
+"#;
+    
+    game.current_code = default_code.to_string();
+    game.cursor_position = default_code.len();
+    
+    // Save the default code to robot_code.rs file
+    println!("Robot code reset to default");
+    game.save_robot_code();
+}
 use rust_checker::format_errors_for_display;
 
 // Desktop-only functions
@@ -347,51 +372,114 @@ fn try_grab(game: &mut Game) -> &'static str {
 }
 
 fn try_scan(game: &mut Game, dir: (i32, i32)) -> String {
-    // For tutorial level (level 0), provide detailed scan information
+    // For tutorial level (level 0), use detailed scanning with same reveal logic
     if game.level_idx == 0 {
-        let positions = game.robot.get_scanner_positions(dir, game.grid.width, game.grid.height);
+        let robot_pos = game.robot.get_position();
+        let mut tiles_revealed = 0;
         let mut obstacles = 0;
         let mut items = 0;
         let mut enemies = 0;
-        let tiles_scanned = positions.len();
+        let target_reveals = 5;
         
-        for pos in &positions {
-            if game.grid.is_blocked(*pos) {
-                obstacles += 1;
+        // Scan in the specified direction, looking for unrevealed tiles
+        let mut distance = 1;
+        loop {
+            let scan_pos = crate::item::Pos {
+                x: robot_pos.0 + (dir.0 * distance),
+                y: robot_pos.1 + (dir.1 * distance)
+            };
+            
+            // Check if position is within grid bounds
+            if !game.grid.in_bounds(scan_pos) {
+                break;
             }
-            if game.item_manager.get_item_at_position(*pos).is_some() {
+            
+            // Check for obstacle - stop scanning if we hit one
+            if game.grid.is_blocked(scan_pos) {
+                obstacles += 1;
+                break; // Stop scanning when we hit an obstacle
+            }
+            
+            // Count items at this position
+            if game.item_manager.get_item_at_position(scan_pos).is_some() {
                 items += 1;
             }
+            
+            // Count enemies at this position
             for enemy in &game.grid.enemies {
-                if enemy.pos == *pos {
+                if enemy.pos == scan_pos {
                     enemies += 1;
                     break;
                 }
             }
-            if game.grid.reveal(*pos) {
+            
+            // Try to reveal the tile - only count if it was previously unrevealed
+            if game.grid.reveal(scan_pos) {
                 game.discovered_this_level += 1;
+                tiles_revealed += 1;
+                
+                // Stop when we've revealed our target number of tiles
+                if tiles_revealed >= target_reveals {
+                    break;
+                }
+            }
+            
+            distance += 1;
+            
+            // Safety check to avoid infinite loops
+            if distance > 100 {
+                break;
             }
         }
         
-        return format!("Scanned {} tiles, found {} obstacles, {} items, {} enemies", 
-                      tiles_scanned, obstacles, items, enemies);
+        return format!("Scanned and revealed {} new tiles, found {} obstacles, {} items, {} enemies", 
+                      tiles_revealed, obstacles, items, enemies);
     }
     
-    // Original scan function for other levels
+    // Enhanced scan function for other levels - reveal 5 unrevealed tiles in direction
     if !game.robot.has_scanner() {
         return "No scanner owned.".to_string();
     }
     
-    let positions = game.robot.get_scanner_positions(dir, game.grid.width, game.grid.height);
-    let mut revealed_any = false;
+    let robot_pos = game.robot.get_position();
+    let mut tiles_revealed = 0;
+    let target_reveals = 5;
     
-    for pos in positions {
-        if game.grid.is_blocked(pos) {
-            return "Unknown Object Blocking Function".to_string();
+    // Scan in the specified direction, looking for unrevealed tiles
+    // Continue until we've revealed 5 tiles or hit an obstacle or boundary
+    let mut distance = 1;
+    loop {
+        let scan_pos = crate::item::Pos {
+            x: robot_pos.0 + (dir.0 * distance),
+            y: robot_pos.1 + (dir.1 * distance)
+        };
+        
+        // Check if position is within grid bounds
+        if !game.grid.in_bounds(scan_pos) {
+            break;
         }
-        if game.grid.reveal(pos) {
-            revealed_any = true;
+        
+        // Check for obstacle - stop scanning if we hit one
+        if game.grid.is_blocked(scan_pos) {
+            break; // Stop scanning when we hit an obstacle
+        }
+        
+        // Try to reveal the tile - only count if it was previously unrevealed
+        if game.grid.reveal(scan_pos) {
             game.discovered_this_level += 1;
+            tiles_revealed += 1;
+            
+            // Stop when we've revealed our target number of tiles
+            if tiles_revealed >= target_reveals {
+                break;
+            }
+        }
+        
+        distance += 1;
+        
+        // Safety check to avoid infinite loops (shouldn't be needed but good practice)
+        if distance > 100 {
+            break;
         }
     }
     
@@ -406,7 +494,11 @@ fn try_scan(game: &mut Game, dir: (i32, i32)) -> String {
         }
     }
 
-    if revealed_any { "Scan complete.".to_string() } else { "Scan found nothing.".to_string() }
+    if tiles_revealed > 0 { 
+        format!("Scan complete. Revealed {} new tiles in that direction.", tiles_revealed) 
+    } else { 
+        "Scan complete. No new tiles to reveal in that direction.".to_string() 
+    }
 }
 
 
@@ -422,9 +514,10 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
             continue;
         }
         
-        // Parse move() calls
-        if let Some(start) = trimmed.find("move(") {
-            let after_paren = &trimmed[start + 5..];
+        // Parse move_bot() calls (also support legacy move() for backward compatibility)
+        if let Some(start) = trimmed.find("move_bot(").or_else(|| trimmed.find("move(")) {
+            let paren_offset = if trimmed[start..].starts_with("move_bot(") { 9 } else { 5 };
+            let after_paren = &trimmed[start + paren_offset..];
             if let Some(end) = after_paren.find(')') {
                 let param = after_paren[..end].trim();
                 let dir = match param {
@@ -473,6 +566,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
             let after_paren = &trimmed[start + 5..];
             if let Some(end) = after_paren.find(')') {
                 let param = after_paren[..end].trim();
+                
                 let dir = match param {
                     "up" | "Up" | "\"up\"" | "\"Up\"" => Some((0, -1)),
                     "down" | "Down" | "\"down\"" | "\"Down\"" => Some((0, 1)),
@@ -803,7 +897,13 @@ async fn execute_rust_code(game: &mut Game) -> String {
     
     // Extract and display print statements
     let print_outputs = extract_print_statements_from_rust_code(&code_to_execute);
-    for output in print_outputs {
+    
+    // Debug: Show extracted print outputs (commented out)
+    // if game.level_idx == 0 {
+    //     game.execution_result = format!("DEBUG: Extracted {} print outputs: {:?}", print_outputs.len(), print_outputs);
+    // }
+    
+    for output in &print_outputs {
         if output.starts_with("stdout:") {
             let message = output.strip_prefix("stdout: ").unwrap_or("").to_string();
             game.popup_system.show_println_output(message.clone());
@@ -821,13 +921,15 @@ async fn execute_rust_code(game: &mut Game) -> String {
     }
     
     let calls = parse_rust_code(&code_to_execute);
-    if calls.is_empty() {
+    if calls.is_empty() && print_outputs.is_empty() {
         return "No valid function calls found".to_string();
     }
     
     let mut results = Vec::new();
-    for call in calls {
-        let result = execute_function(game, call);
+    
+    // Handle robot function calls if any
+    for call in &calls {
+        let result = execute_function(game, call.clone());
         results.push(result.clone());
         
         // Add delay if time slow is active
@@ -851,8 +953,16 @@ async fn execute_rust_code(game: &mut Game) -> String {
         }
     }
     
+    // If we only had print statements (no robot function calls), provide feedback
+    if calls.is_empty() && !print_outputs.is_empty() {
+        results.push("Print statements executed successfully!".to_string());
+    }
+    
     // Check tutorial progress after execution
     game.check_tutorial_progress();
+    
+    // Check for level completion after execution
+    game.check_end_condition();
     
     results.join("; ")
 }
@@ -915,7 +1025,7 @@ fn shop_items(game: &Game) -> Vec<ShopItem> {
     v
 }
 
-fn draw_main_game_view(game: &Game) {
+fn draw_main_game_view(game: &mut Game) {
     clear_background(Color::from_rgba(18, 18, 18, 255));
     draw_game(game);
     draw_game_info(game);
@@ -963,6 +1073,9 @@ async fn desktop_main() {
     
     let mut game = Game::new(levels, rng);
     
+    // Set total levels count in menu
+    game.menu.set_total_levels(game.levels.len());
+    
     // Initialize robot code
     game.load_robot_code();
     game.file_watcher_receiver = setup_file_watcher(&game.robot_code_path);
@@ -970,14 +1083,34 @@ async fn desktop_main() {
     let mut shop_open = false;
 
     loop {
+        // Check for screen size changes and update menu layout if needed
+        game.menu.check_screen_resize();
+        
         // Handle menu input and updates
         let menu_action = game.menu.handle_input();
         game.menu.update(menu_action.clone());
+        
+        // Update global font multiplier when settings change
+        font_scaling::set_user_font_multiplier(game.menu.settings.font_size_multiplier);
+        
+        // Invalidate font cache to ensure cursor positioning updates
+        game.invalidate_font_cache();
 
         // Handle menu actions
         match menu_action {
             MenuAction::StartGame => {
+                println!("Starting new game...");
+                // Reset to level 0 and clear robot code
+                game.level_idx = 0;
                 game.load_level(0);
+                reset_robot_code(&mut game);
+            },
+            MenuAction::SelectLevel(level) => {
+                println!("Loading level {}...", level);
+                // Jump to selected level and reset robot code
+                game.level_idx = level;
+                game.load_level(level);
+                reset_robot_code(&mut game);
             },
             MenuAction::Exit => break,
             _ => {}
@@ -993,7 +1126,7 @@ async fn desktop_main() {
                 // Update popup system with delta time
                 game.update_popup_system(get_frame_time());
 
-                draw_main_game_view(&game);
+                draw_main_game_view(&mut game);
 
                 // Shop functionality removed - replaced with Rust docs
                 
@@ -1050,8 +1183,16 @@ async fn desktop_main() {
                     if game.code_editor_active {
                         let mut code_modified = false;
                         
+                        // Update key press timers
+                        game.update_key_press_timers(get_frame_time());
+                        
                         while let Some(character) = get_char_pressed() {
-                            if character.is_ascii() && !character.is_control() {
+                            if character.is_ascii() && !character.is_control() && character != ' ' {
+                                // Delete selection first if it exists
+                                if game.delete_selection() {
+                                    code_modified = true;
+                                }
+                                
                                 game.current_code.insert(game.cursor_position, character);
                                 game.cursor_position += 1;
                                 code_modified = true;
@@ -1062,32 +1203,55 @@ async fn desktop_main() {
                             if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
                                 game.execution_result = execute_rust_code(&mut game).await;
                             } else {
+                                // Delete selection first if it exists
+                                if game.delete_selection() {
+                                    code_modified = true;
+                                }
+                                
                                 game.current_code.insert(game.cursor_position, '\n');
                                 game.cursor_position += 1;
                                 code_modified = true;
                             }
                         }
                         
-                        if is_key_pressed(KeyCode::Backspace) {
-                            if game.cursor_position > 0 {
+                        // Handle backspace - both initial press and continuous hold
+                        if is_key_pressed(KeyCode::Backspace) || game.should_repeat_backspace() {
+                            // Delete selection first if it exists, otherwise delete single character
+                            if game.delete_selection() {
+                                code_modified = true;
+                            } else if game.cursor_position > 0 {
                                 game.cursor_position -= 1;
                                 game.current_code.remove(game.cursor_position);
                                 code_modified = true;
                             }
                         }
                         
-                        // Arrow key navigation
+                        // Handle space - both initial press and continuous hold
+                        if is_key_pressed(KeyCode::Space) || game.should_repeat_space() {
+                            // Delete selection first if it exists
+                            if game.delete_selection() {
+                                code_modified = true;
+                            }
+                            
+                            game.current_code.insert(game.cursor_position, ' ');
+                            game.cursor_position += 1;
+                            code_modified = true;
+                        }
+                        
+                        // Arrow key navigation with selection support
+                        let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+                        
                         if is_key_pressed(KeyCode::Up) {
-                            game.move_cursor_up();
+                            game.move_cursor_up_with_selection(shift_held);
                         }
                         if is_key_pressed(KeyCode::Down) {
-                            game.move_cursor_down();
+                            game.move_cursor_down_with_selection(shift_held);
                         }
                         if is_key_pressed(KeyCode::Left) {
-                            game.move_cursor_left();
+                            game.move_cursor_left_with_selection(shift_held);
                         }
                         if is_key_pressed(KeyCode::Right) {
-                            game.move_cursor_right();
+                            game.move_cursor_right_with_selection(shift_held);
                         }
                         
                         // Page Up/Down for scrolling
@@ -1128,6 +1292,7 @@ async fn desktop_main() {
                     if is_key_pressed(KeyCode::N) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                         if !game.finished { game.finish_level(); }
                         game.next_level();
+                        reset_robot_code(&mut game); // Reset robot code for next level
                     }
                     if is_key_pressed(KeyCode::L) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                         let idx = game.level_idx;
@@ -1143,6 +1308,10 @@ async fn desktop_main() {
                     if is_key_pressed(KeyCode::C) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                         // Show completion instructions
                         game.show_completion_instructions();
+                    }
+                    if is_key_pressed(KeyCode::S) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
+                        // Open settings menu from in-game
+                        game.menu.open_settings_from_game();
                     }
                 } else {
                     if is_key_pressed(KeyCode::Escape) { shop_open = false; }

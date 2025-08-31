@@ -95,56 +95,44 @@ edition = "2021"
     }
     
     fn wrap_user_code(&self, user_code: &str) -> String {
-        // Create a wrapper that provides the game's available functions as stubs
-        let wrapper = format!(r#"// Auto-generated wrapper for syntax checking
-#![allow(unused_variables)]
-#![allow(dead_code)]
-#![allow(unused_imports)]
+        // Comprehensive wrapper supporting full Rust language
+        format!(r#"// Comprehensive Rust syntax checker
+#![allow(unused_variables, dead_code, unused_imports, unused_mut, unused_parens)]
+#![allow(unused_assignments, unused_must_use, unreachable_code, path_statements)]
 
-// Game function stubs for syntax checking
-fn move_robot(direction: &str) -> Result<String, String> {{
-    Ok("Move executed".to_string())
-}}
+// Standard library prelude for full language support
+use std::{{
+    collections::HashMap,
+    fmt::Display,
+    ops::Range,
+}};
 
-fn scan(direction: &str) -> String {{
-    "Scan complete".to_string()
-}}
-
-fn grab() -> String {{
-    "Grab executed".to_string()
-}}
-
-fn open_door(open: bool) -> String {{
-    "Door operation complete".to_string()
-}}
+// Game function stubs
+fn move_bot(direction: &str) -> String {{ String::new() }}
+fn r#move(direction: &str) -> String {{ String::new() }}
+fn scan(direction: &str) -> String {{ String::new() }}
+fn grab() -> String {{ String::new() }}
+fn open_door(open: bool) -> String {{ String::new() }}
 
 mod laser {{
-    pub fn direction(dir: &str) -> String {{
-        "Laser fired".to_string()
-    }}
-    
-    pub fn tile(x: i32, y: i32) -> String {{
-        "Laser fired at coordinates".to_string()
-    }}
+    pub fn direction(dir: &str) -> String {{ String::new() }}
+    pub fn tile(x: i32, y: i32) -> String {{ String::new() }}
 }}
 
-fn skip_this_level_because_i_say_so() -> String {{
-    "Level skipped".to_string()
-}}
+// Direction constants commonly used in game code
+const UP: &str = "up";
+const DOWN: &str = "down"; 
+const LEFT: &str = "left";
+const RIGHT: &str = "right";
 
-fn goto_this_level_because_i_say_so(level: usize) -> String {{
-    "Jumped to level".to_string()
-}}
-
-// User's code wrapped in main function
 fn main() {{
-    // User code starts here
-{}
-    // User code ends here
+    // Execute user code in a block to isolate it
+    {{
+        {}
+    }};
+    // Explicit unit return to avoid expression issues
 }}
-"#, user_code);
-        
-        wrapper
+"#, user_code)
     }
     
     fn parse_cargo_output(&self, output: &[u8]) -> Result<Vec<CompilerError>, String> {

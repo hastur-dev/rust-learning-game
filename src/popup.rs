@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use crate::font_scaling::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -265,33 +266,36 @@ impl PopupSystem {
             PopupType::Congratulations => (Color::new(0.1, 0.3, 0.1, 0.95), GOLD, YELLOW),
         };
         
+        let scale = ScaledMeasurements::new();
+        
         // Draw popup background
         draw_rectangle(popup_x, popup_y, popup_width, popup_height, bg_color);
         
         // Draw border
-        draw_rectangle_lines(popup_x, popup_y, popup_width, popup_height, 3.0, border_color);
+        draw_rectangle_lines(popup_x, popup_y, popup_width, popup_height, scale_size(3.0), border_color);
         
         // Draw title
         let title_size = 28.0;
-        let title_metrics = measure_text(&popup.title, None, title_size as u16, 1.0);
+        let scaled_title_size = scale_font_size(title_size);
+        let title_metrics = measure_text(&popup.title, None, scaled_title_size as u16, 1.0);
         let title_x = popup_x + (popup_width - title_metrics.width) / 2.0;
-        let title_y = popup_y + 40.0;
-        draw_text(&popup.title, title_x, title_y, title_size, title_color);
+        let title_y = popup_y + scale_size(40.0);
+        draw_scaled_text(&popup.title, title_x, title_y, title_size, title_color);
         
         // Draw content
         let content_size = 20.0;
-        let content_margin = 20.0;
+        let content_margin = scale_size(20.0);
         let content_x = popup_x + content_margin;
-        let content_y = title_y + 50.0;
+        let content_y = title_y + scale_size(50.0);
         let content_width = popup_width - (content_margin * 2.0);
         
         // Word wrap the content
-        let wrapped_lines = wrap_text(&popup.content, content_width, content_size);
-        let line_height = content_size + 5.0;
+        let wrapped_lines = wrap_text(&popup.content, content_width, scale_font_size(content_size));
+        let line_height = scale_font_size(content_size) + scale_size(5.0);
         
         for (i, line) in wrapped_lines.iter().enumerate() {
             let line_y = content_y + (i as f32 * line_height);
-            draw_text(line, content_x, line_y, content_size, WHITE);
+            draw_scaled_text(line, content_x, line_y, content_size, WHITE);
         }
         
         // Draw instructions at bottom
@@ -303,10 +307,11 @@ impl PopupSystem {
         };
         
         let instruction_size = 16.0;
-        let instruction_metrics = measure_text(&instruction_text, None, instruction_size as u16, 1.0);
+        let scaled_instruction_size = scale_font_size(instruction_size);
+        let instruction_metrics = measure_text(&instruction_text, None, scaled_instruction_size as u16, 1.0);
         let instruction_x = popup_x + (popup_width - instruction_metrics.width) / 2.0;
-        let instruction_y = popup_y + popup_height - 25.0;
-        draw_text(&instruction_text, instruction_x, instruction_y, instruction_size, LIGHTGRAY);
+        let instruction_y = popup_y + popup_height - scale_size(25.0);
+        draw_scaled_text(&instruction_text, instruction_x, instruction_y, instruction_size, LIGHTGRAY);
     }
 }
 

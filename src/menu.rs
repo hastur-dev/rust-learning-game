@@ -1,9 +1,14 @@
 use macroquad::prelude::*;
+use crate::font_scaling::*;
+use serde::{Serialize, Deserialize};
+use std::fs;
+use std::path::Path;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum MenuState {
     MainMenu,
     Settings,
+    LevelSelect,
     InGame,
 }
 
@@ -12,7 +17,11 @@ pub enum MenuAction {
     None,
     StartGame,
     OpenSettings,
+    OpenLevelSelect,
+    OpenCommunityLevels,
+    SelectLevel(usize),
     BackToMain,
+    BackToGame,  // New action for returning to game from settings
     Exit,
     IncreaseResolution,
     DecreaseResolution,
@@ -21,6 +30,8 @@ pub enum MenuAction {
     DecreaseSfxVolume,
     IncreaseMusicVolume,
     DecreaseMusicVolume,
+    IncreaseFontSize,
+    DecreaseFontSize,
 }
 
 #[derive(Clone, Debug)]
@@ -68,13 +79,87 @@ impl MenuButton {
         draw_rectangle(self.x, self.y, self.width, self.height, bg_color);
         draw_rectangle_lines(self.x, self.y, self.width, self.height, 2.0, WHITE);
 
-        // Center text in button
+        // Center text in button - use default multiplier for menu buttons
         let text_size = 24.0;
-        let text_dimensions = measure_text(&self.text, None, text_size as u16, 1.0);
+        let scaled_text_size = scale_font_size(text_size);
+        let text_dimensions = measure_text(&self.text, None, scaled_text_size as u16, 1.0);
         let text_x = self.x + (self.width - text_dimensions.width) / 2.0;
         let text_y = self.y + (self.height + text_dimensions.height) / 2.0;
 
-        draw_text(&self.text, text_x, text_y, text_size, text_color);
+        draw_scaled_text(&self.text, text_x, text_y, text_size, text_color);
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PlayerProgress {
+    pub max_level_unlocked: usize, // Highest level the player has reached
+    pub completed_levels: Vec<bool>, // Track which levels have been completed
+}
+
+impl Default for PlayerProgress {
+    fn default() -> Self {
+        Self {
+            max_level_unlocked: 0, // Start with only level 0 unlocked
+            completed_levels: Vec::new(),
+        }
+    }
+}
+
+impl PlayerProgress {
+    const SAVE_FILE: &'static str = "player_progress.json";
+    
+    pub fn load_or_default() -> Self {
+        if Path::new(Self::SAVE_FILE).exists() {
+            match fs::read_to_string(Self::SAVE_FILE) {
+                Ok(contents) => {
+                    match serde_json::from_str::<PlayerProgress>(&contents) {
+                        Ok(progress) => progress,
+                        Err(_) => {
+                            // If file is corrupted, create new progress and save it
+                            let default = Self::default();
+                            let _ = default.save();
+                            default
+                        }
+                    }
+                }
+                Err(_) => Self::default(),
+            }
+        } else {
+            // Create new save file
+            let default = Self::default();
+            let _ = default.save();
+            default
+        }
+    }
+    
+    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let json = serde_json::to_string_pretty(self)?;
+        fs::write(Self::SAVE_FILE, json)?;
+        Ok(())
+    }
+    
+    pub fn unlock_level(&mut self, level: usize) {
+        if level > self.max_level_unlocked {
+            self.max_level_unlocked = level;
+            let _ = self.save();
+        }
+    }
+    
+    pub fn mark_level_completed(&mut self, level: usize) {
+        // Ensure the completed_levels vec is large enough
+        while self.completed_levels.len() <= level {
+            self.completed_levels.push(false);
+        }
+        self.completed_levels[level] = true;
+        let _ = self.save();
+    }
+    
+    pub fn is_level_unlocked(&self, level: usize) -> bool {
+        level <= self.max_level_unlocked
+    }
+    
+    pub fn is_level_completed(&self, level: usize) -> bool {
+        level < self.completed_levels.len() && self.completed_levels[level]
     }
 }
 
@@ -85,6 +170,7 @@ pub struct GameSettings {
     pub fullscreen: bool,
     pub sfx_volume: f32,
     pub music_volume: f32,
+    pub font_size_multiplier: f32,
 }
 
 impl Default for GameSettings {
@@ -95,6 +181,7 @@ impl Default for GameSettings {
             fullscreen: false,
             sfx_volume: 0.7,
             music_volume: 0.5,
+            font_size_multiplier: 1.0,
         }
     }
 }
@@ -104,7 +191,12 @@ pub struct Menu {
     pub state: MenuState,
     pub buttons: Vec<MenuButton>,
     pub settings: GameSettings,
+    pub progress: PlayerProgress,
     pub scroll_offset: f32,
+    pub opened_from_game: bool,  // Track if settings were opened from in-game
+    pub last_screen_width: f32,
+    pub last_screen_height: f32,
+    pub total_levels: usize, // Total number of levels available
 }
 
 impl Menu {
@@ -113,7 +205,12 @@ impl Menu {
             state: MenuState::MainMenu,
             buttons: Vec::new(),
             settings: GameSettings::default(),
+            progress: PlayerProgress::load_or_default(),
             scroll_offset: 0.0,
+            opened_from_game: false,
+            last_screen_width: screen_width(),
+            last_screen_height: screen_height(),
+            total_levels: 0, // Will be set when game starts
         };
         menu.setup_main_menu();
         menu
@@ -141,24 +238,42 @@ impl Menu {
         self.buttons.clear();
         
         let screen_center_x = screen_width() / 2.0;
-        let button_width = 300.0;
-        let button_height = 60.0;
-        let button_spacing = 80.0;
+        let button_width = scale_size(300.0);
+        let button_height = scale_size(60.0);
+        let button_spacing = scale_size(80.0);
         let start_y = screen_height() / 2.0;
 
         self.buttons.push(MenuButton::new(
-            "Normal Start".to_string(),
+            "Start Learning".to_string(),
             screen_center_x - button_width / 2.0,
-            start_y,
+            start_y - button_spacing * 1.0,
             button_width,
             button_height,
             MenuAction::StartGame,
         ));
 
         self.buttons.push(MenuButton::new(
+            "Load Level".to_string(),
+            screen_center_x - button_width / 2.0,
+            start_y,
+            button_width,
+            button_height,
+            MenuAction::OpenLevelSelect,
+        ));
+
+        self.buttons.push(MenuButton::new(
+            "Community Levels".to_string(),
+            screen_center_x - button_width / 2.0,
+            start_y + button_spacing * 1.0,
+            button_width,
+            button_height,
+            MenuAction::OpenCommunityLevels,
+        ));
+
+        self.buttons.push(MenuButton::new(
             "Settings".to_string(),
             screen_center_x - button_width / 2.0,
-            start_y + button_spacing,
+            start_y + button_spacing * 2.0,
             button_width,
             button_height,
             MenuAction::OpenSettings,
@@ -167,21 +282,27 @@ impl Menu {
         self.buttons.push(MenuButton::new(
             "Exit".to_string(),
             screen_center_x - button_width / 2.0,
-            start_y + button_spacing * 2.0,
+            start_y + button_spacing * 3.0,
             button_width,
             button_height,
             MenuAction::Exit,
         ));
     }
 
+    pub fn open_settings_from_game(&mut self) {
+        self.opened_from_game = true;
+        self.state = MenuState::Settings;
+        self.setup_settings_menu();
+    }
+
     pub fn setup_settings_menu(&mut self) {
         self.buttons.clear();
         
         let screen_center_x = screen_width() / 2.0;
-        let button_width = 400.0;
-        let button_height = 50.0;
-        let button_spacing = 70.0;
-        let start_y = screen_height() / 2.0 - 100.0;
+        let button_width = scale_size(400.0);
+        let button_height = scale_size(50.0);
+        let button_spacing = scale_size(70.0);
+        let start_y = screen_height() / 2.0 - scale_size(100.0);
 
         // Resolution buttons
         self.buttons.push(MenuButton::new(
@@ -226,17 +347,119 @@ impl Menu {
             MenuAction::IncreaseMusicVolume,
         ));
 
-        // Back button
+        // Font size control
         self.buttons.push(MenuButton::new(
-            "Back to Main".to_string(),
+            format!("Font Size: {:.0}% (Click: +10%, Right-Click: -10%)", 
+                   self.settings.font_size_multiplier * 100.0),
             screen_center_x - button_width / 2.0,
-            start_y + button_spacing * 4.5,
+            start_y + button_spacing * 4.0,
+            button_width,
+            button_height,
+            MenuAction::IncreaseFontSize,
+        ));
+
+        // Back button - context-aware
+        let (back_text, back_action) = if self.opened_from_game {
+            ("Back to Game".to_string(), MenuAction::BackToGame)
+        } else {
+            ("Back to Main".to_string(), MenuAction::BackToMain)
+        };
+        
+        self.buttons.push(MenuButton::new(
+            back_text,
+            screen_center_x - button_width / 2.0,
+            start_y + button_spacing * 5.0,
+            button_width,
+            button_height,
+            back_action,
+        ));
+    }
+
+
+    pub fn check_screen_resize(&mut self) {
+        let current_width = screen_width();
+        let current_height = screen_height();
+        
+        // Check if screen size has changed
+        if (current_width - self.last_screen_width).abs() > 1.0 || 
+           (current_height - self.last_screen_height).abs() > 1.0 {
+            
+            // Update tracked screen size
+            self.last_screen_width = current_width;
+            self.last_screen_height = current_height;
+            
+            // Refresh the appropriate menu
+            match self.state {
+                MenuState::MainMenu => self.setup_main_menu(),
+                MenuState::Settings => self.setup_settings_menu(),
+                MenuState::LevelSelect => self.setup_level_select_menu(),
+                MenuState::InGame => {}, // No menu to refresh
+            }
+        }
+    }
+
+    pub fn setup_level_select_menu(&mut self) {
+        self.buttons.clear();
+        
+        let screen_center_x = screen_width() / 2.0;
+        let button_width = scale_size(300.0);
+        let button_height = scale_size(40.0);
+        let button_spacing = scale_size(45.0);
+        let buttons_per_row = 3;
+        let row_spacing = scale_size(70.0);
+        
+        let start_y = screen_height() * 0.2;
+        
+        // Create level buttons for unlocked levels
+        let mut row = 0;
+        let mut col = 0;
+        
+        for level in 0..=self.progress.max_level_unlocked {
+            if level >= self.total_levels {
+                break; // Don't show levels that don't exist
+            }
+            
+            let x_offset = (col as f32 - (buttons_per_row as f32 - 1.0) / 2.0) * (button_width + scale_size(20.0));
+            let x = screen_center_x + x_offset;
+            let y = start_y + row as f32 * row_spacing;
+            
+            let level_name = if level < self.total_levels && level < 50 { // Reasonable upper limit
+                format!("Level {} {}", level + 1, if self.progress.is_level_completed(level) { "✓" } else { "" })
+            } else {
+                format!("Level {}", level + 1)
+            };
+            
+            self.buttons.push(MenuButton::new(
+                level_name,
+                x - button_width / 2.0,
+                y,
+                button_width,
+                button_height,
+                MenuAction::SelectLevel(level),
+            ));
+            
+            col += 1;
+            if col >= buttons_per_row {
+                col = 0;
+                row += 1;
+            }
+        }
+        
+        // Add back button at the bottom
+        let back_y = start_y + (row + 2) as f32 * row_spacing;
+        self.buttons.push(MenuButton::new(
+            "Back to Main Menu".to_string(),
+            screen_center_x - button_width / 2.0,
+            back_y,
             button_width,
             button_height,
             MenuAction::BackToMain,
         ));
     }
-
+    
+    pub fn set_total_levels(&mut self, count: usize) {
+        self.total_levels = count;
+    }
 
     pub fn handle_input(&mut self) -> MenuAction {
         let (mouse_x, mouse_y) = mouse_position();
@@ -259,6 +482,7 @@ impl Menu {
                         MenuAction::IncreaseResolution => MenuAction::DecreaseResolution,
                         MenuAction::IncreaseSfxVolume => MenuAction::DecreaseSfxVolume,
                         MenuAction::IncreaseMusicVolume => MenuAction::DecreaseMusicVolume,
+                        MenuAction::IncreaseFontSize => MenuAction::DecreaseFontSize,
                         MenuAction::ToggleFullscreen => MenuAction::ToggleFullscreen,
                         _ => button.action.clone(),
                     };
@@ -270,6 +494,13 @@ impl Menu {
         if is_key_pressed(KeyCode::Escape) {
             match self.state {
                 MenuState::MainMenu => return MenuAction::Exit,
+                MenuState::Settings => {
+                    if self.opened_from_game {
+                        return MenuAction::BackToGame;
+                    } else {
+                        return MenuAction::BackToMain;
+                    }
+                },
                 _ => return MenuAction::BackToMain,
             }
         }
@@ -284,11 +515,25 @@ impl Menu {
             },
             MenuAction::OpenSettings => {
                 self.state = MenuState::Settings;
+                self.opened_from_game = false;  // Ensure flag is false when opened from main menu
                 self.setup_settings_menu();
+            },
+            MenuAction::OpenLevelSelect => {
+                self.state = MenuState::LevelSelect;
+                self.setup_level_select_menu();
+            },
+            MenuAction::SelectLevel(_) => {
+                // Level selection is handled by the main game loop
+                self.state = MenuState::InGame;
             },
             MenuAction::BackToMain => {
                 self.state = MenuState::MainMenu;
+                self.opened_from_game = false;  // Reset context flag
                 self.setup_main_menu();
+            },
+            MenuAction::BackToGame => {
+                self.state = MenuState::InGame;
+                self.opened_from_game = false;  // Reset context flag
             },
             MenuAction::IncreaseResolution => {
                 let resolutions = Self::get_available_resolutions();
@@ -332,6 +577,14 @@ impl Menu {
                 self.settings.music_volume = (self.settings.music_volume - 0.1).max(0.0);
                 self.setup_settings_menu(); // Refresh the menu
             },
+            MenuAction::IncreaseFontSize => {
+                self.settings.font_size_multiplier = (self.settings.font_size_multiplier + 0.1).min(2.0);
+                self.setup_settings_menu(); // Refresh the menu
+            },
+            MenuAction::DecreaseFontSize => {
+                self.settings.font_size_multiplier = (self.settings.font_size_multiplier - 0.1).max(0.5);
+                self.setup_settings_menu(); // Refresh the menu
+            },
             _ => {}
         }
     }
@@ -342,6 +595,7 @@ impl Menu {
         match self.state {
             MenuState::MainMenu => self.draw_main_menu(),
             MenuState::Settings => self.draw_settings_menu(),
+            MenuState::LevelSelect => self.draw_level_select_menu(),
             MenuState::InGame => {}, // Game drawing handled elsewhere
         }
     }
@@ -353,21 +607,23 @@ impl Menu {
         // Draw banner
         let banner_text = "Welcome to Robo Wars Crab Edition";
         let banner_size = 48.0;
-        let banner_dimensions = measure_text(banner_text, None, banner_size as u16, 1.0);
+        let scaled_banner_size = scale_font_size(banner_size);
+        let banner_dimensions = measure_text(banner_text, None, scaled_banner_size as u16, 1.0);
         let banner_x = (screen_width() - banner_dimensions.width) / 2.0;
         let banner_y = screen_height() / 3.0;
 
         // Banner shadow
-        draw_text(banner_text, banner_x + 2.0, banner_y + 2.0, banner_size, Color::new(0.0, 0.0, 0.0, 0.5));
+        draw_scaled_text(banner_text, banner_x + scale_size(2.0), banner_y + scale_size(2.0), banner_size, Color::new(0.0, 0.0, 0.0, 0.5));
         // Banner text
-        draw_text(banner_text, banner_x, banner_y, banner_size, GOLD);
+        draw_scaled_text(banner_text, banner_x, banner_y, banner_size, GOLD);
 
         // Draw subtitle
         let subtitle = "Program your robot to explore and conquer!";
         let subtitle_size = 20.0;
-        let subtitle_dimensions = measure_text(subtitle, None, subtitle_size as u16, 1.0);
+        let scaled_subtitle_size = scale_font_size(subtitle_size);
+        let subtitle_dimensions = measure_text(subtitle, None, scaled_subtitle_size as u16, 1.0);
         let subtitle_x = (screen_width() - subtitle_dimensions.width) / 2.0;
-        draw_text(subtitle, subtitle_x, banner_y + 60.0, subtitle_size, LIGHTGRAY);
+        draw_scaled_text(subtitle, subtitle_x, banner_y + scale_size(60.0), subtitle_size, LIGHTGRAY);
 
         // Draw buttons
         for button in &self.buttons {
@@ -375,7 +631,7 @@ impl Menu {
         }
 
         // Draw version info
-        draw_text("Version 2.0 - YAML Edition", 10.0, screen_height() - 10.0, 16.0, DARKGRAY);
+        draw_scaled_text("Version 2.0 - YAML Edition", scale_size(10.0), screen_height() - scale_size(10.0), 16.0, DARKGRAY);
     }
 
     fn draw_settings_menu(&self) {
@@ -385,16 +641,18 @@ impl Menu {
         // Draw title
         let title = "Settings";
         let title_size = 36.0;
-        let title_dimensions = measure_text(title, None, title_size as u16, 1.0);
+        let scaled_title_size = scale_font_size(title_size);
+        let title_dimensions = measure_text(title, None, scaled_title_size as u16, 1.0);
         let title_x = (screen_width() - title_dimensions.width) / 2.0;
-        draw_text(title, title_x, 100.0, title_size, WHITE);
+        draw_scaled_text(title, title_x, scale_size(100.0), title_size, WHITE);
 
         // Draw instructions
         let instructions = "Left Click: Increase/Next | Right Click: Decrease/Previous";
         let inst_size = 18.0;
-        let inst_dimensions = measure_text(instructions, None, inst_size as u16, 1.0);
+        let scaled_inst_size = scale_font_size(inst_size);
+        let inst_dimensions = measure_text(instructions, None, scaled_inst_size as u16, 1.0);
         let inst_x = (screen_width() - inst_dimensions.width) / 2.0;
-        draw_text(instructions, inst_x, 140.0, inst_size, YELLOW);
+        draw_scaled_text(instructions, inst_x, scale_size(140.0), inst_size, YELLOW);
 
         // Draw buttons
         for button in &self.buttons {
@@ -402,10 +660,38 @@ impl Menu {
         }
 
         // Draw footer notes
-        draw_text("Note: Window resolution changes require restart to take effect", 50.0, screen_height() - 70.0, 14.0, GRAY);
-        draw_text("Volume and fullscreen changes apply immediately", 50.0, screen_height() - 50.0, 14.0, GRAY);
+        draw_scaled_text("Note: Window resolution changes require restart to take effect", scale_size(50.0), screen_height() - scale_size(70.0), 14.0, GRAY);
+        draw_scaled_text("Volume and fullscreen changes apply immediately", scale_size(50.0), screen_height() - scale_size(50.0), 14.0, GRAY);
     }
 
+    fn draw_level_select_menu(&self) {
+        // Draw background
+        self.draw_background();
+
+        // Draw title
+        let title = "Level Select";
+        let title_size = 36.0;
+        let scaled_title_size = scale_font_size(title_size);
+        let title_dimensions = measure_text(title, None, scaled_title_size as u16, 1.0);
+        let title_x = (screen_width() - title_dimensions.width) / 2.0;
+        draw_scaled_text(title, title_x, scale_size(100.0), title_size, WHITE);
+
+        // Draw progress info
+        let progress_text = format!("Progress: {} levels unlocked", self.progress.max_level_unlocked + 1);
+        let progress_size = 18.0;
+        let scaled_progress_size = scale_font_size(progress_size);
+        let progress_dimensions = measure_text(&progress_text, None, scaled_progress_size as u16, 1.0);
+        let progress_x = (screen_width() - progress_dimensions.width) / 2.0;
+        draw_scaled_text(&progress_text, progress_x, scale_size(140.0), progress_size, YELLOW);
+
+        // Draw buttons
+        for button in &self.buttons {
+            button.draw();
+        }
+
+        // Draw instructions
+        draw_scaled_text("Select a level to jump directly to it", scale_size(50.0), screen_height() - scale_size(50.0), 14.0, GRAY);
+    }
 
     fn draw_background(&self) {
         // Draw a simple grid pattern

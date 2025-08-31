@@ -68,6 +68,8 @@ pub struct Game {
     pub robot_code_modified: bool,
     pub current_code: String,
     pub cursor_position: usize,
+    pub selection_start: Option<usize>, // Start of text selection (None = no selection)
+    pub selection_end: Option<usize>,   // End of text selection (None = no selection)
     pub code_scroll_offset: usize, // Top line displayed in editor
     pub code_lines_visible: usize, // Number of lines visible in editor
     pub enemy_step_paused: bool,
@@ -83,4 +85,14 @@ pub struct Game {
     pub tutorial_state: TutorialState, // Tutorial system for progressive learning
     #[cfg(not(target_arch = "wasm32"))]
     pub rust_checker: Option<crate::rust_checker::RustChecker>, // Cargo integration for syntax checking
+    // Continuous key press support
+    pub key_backspace_held_time: f32,
+    pub key_space_held_time: f32,
+    pub key_repeat_initial_delay: f32, // Delay before key starts repeating (in seconds)
+    pub key_repeat_interval: f32,      // Interval between repeats (in seconds)
+    // Font measurement caching for cursor positioning
+    pub cached_font_size: f32,         // Currently cached font size for editor
+    pub cached_char_width: f32,        // Width of 'M' character at cached font size
+    pub cached_line_height: f32,       // Line height at cached font size
+    pub needs_font_refresh: bool,      // Flag to indicate font measurements need refresh
 }
