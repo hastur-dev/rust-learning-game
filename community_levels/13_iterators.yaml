@@ -1,0 +1,69 @@
+name: "Level 13 - Iterators"
+grid_size: "25x17"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 13
+enemies:
+  - start_location: [23, 15]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [14, 9]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [19, 14]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [10, 12]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [7, 6]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [16, 3]
+    movement_pattern: "circular"
+    moving_positive: false
+
+doors:
+  - [15, 13]
+  - [21, 11]
+  - [12, 16]
+  - [18, 7]
+  - [8, 10]
+  - [5, 14]
+
+items:
+  - name: "iterator_creation_tip"
+    item_file: "items/iterator_creation.rs"
+    spawn_randomly: false
+    location: [12, 11]
+  - name: "iterator_adaptors_tip"
+    item_file: "items/iterator_adaptors.rs"
+    spawn_randomly: false
+    location: [19, 9]
+  - name: "consuming_adaptors_tip"
+    item_file: "items/consuming_adaptors.rs"
+    spawn_randomly: false
+    location: [23, 13]
+  - name: "collect_tip"
+    item_file: "items/collect.rs"
+    spawn_randomly: false
+    location: [10, 15]
+  - name: "filter_map_tip"
+    item_file: "items/filter_map.rs"
+    spawn_randomly: false
+    location: [16, 5]
+  - name: "iterator_performance_tip"
+    item_file: "items/iterator_performance.rs"
+    spawn_randomly: false
+    location: [7, 14]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [17, 15]
+
+message: "Unlock the power of functional programming with Iterators! Learn lazy evaluation, iterator adaptors (map, filter, enumerate), and consuming adaptors (collect, fold, reduce). Master zero-cost abstractions!"
+
+hint_message: "Iterators: .iter() for &T, .into_iter() for T, .iter_mut() for &mut T. Adaptors: map(), filter(), enumerate() are lazy. Consumers: collect(), fold(), for_each() trigger evaluation."

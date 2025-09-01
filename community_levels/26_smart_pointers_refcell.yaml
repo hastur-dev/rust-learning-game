@@ -1,0 +1,76 @@
+name: "Level 26 - Smart Pointers - RefCell<T>"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 26
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 22]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 23]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [23, 20]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [20, 19]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 16]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [16, 23]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [12, 17]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 25]
+  - [23, 24]
+  - [24, 21]
+  - [23, 20]
+  - [21, 23]
+  - [18, 20]
+  - [14, 21]
+
+items:
+  - name: "refcell_basics_tip"
+    item_file: "items/refcell_basics.rs"
+    spawn_randomly: false
+    location: [24, 24]
+  - name: "interior_mutability_tip"
+    item_file: "items/interior_mutability.rs"
+    spawn_randomly: false
+    location: [23, 22]
+  - name: "borrow_borrow_mut_tip"
+    item_file: "items/borrow_borrow_mut.rs"
+    spawn_randomly: false
+    location: [24, 26]
+  - name: "runtime_borrow_checking_tip"
+    item_file: "items/runtime_borrow_checking.rs"
+    spawn_randomly: false
+    location: [23, 20]
+  - name: "rc_refcell_tip"
+    item_file: "items/rc_refcell.rs"
+    spawn_randomly: false
+    location: [23, 18]
+  - name: "refcell_panics_tip"
+    item_file: "items/refcell_panics.rs"
+    spawn_randomly: false
+    location: [20, 20]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 24]
+
+message: "Achieve interior mutability with RefCell<T>! RefCell allows you to mutate data even when there are immutable references to it, by moving borrow checking to runtime. Powerful but requires careful use!"
+
+hint_message: "RefCell<T>: Interior mutability pattern. borrow() returns Ref<T>, borrow_mut() returns RefMut<T>. Runtime borrow checking - panics on violations. Combine with Rc for shared mutable data."

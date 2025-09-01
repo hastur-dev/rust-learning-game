@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 use crate::font_scaling::*;
+use crate::progressive_loader::{LoadingProgress, LoadingStage};
 use serde::{Serialize, Deserialize};
 use std::fs;
 use std::path::Path;
@@ -542,7 +543,7 @@ impl Menu {
                 let (width, height) = resolutions[next_index];
                 self.settings.window_width = width;
                 self.settings.window_height = height;
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseResolution => {
                 let resolutions = Self::get_available_resolutions();
@@ -555,45 +556,62 @@ impl Menu {
                 let (width, height) = resolutions[prev_index];
                 self.settings.window_width = width;
                 self.settings.window_height = height;
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::ToggleFullscreen => {
                 self.settings.fullscreen = !self.settings.fullscreen;
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::IncreaseSfxVolume => {
                 self.settings.sfx_volume = (self.settings.sfx_volume + 0.1).min(1.0);
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseSfxVolume => {
                 self.settings.sfx_volume = (self.settings.sfx_volume - 0.1).max(0.0);
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::IncreaseMusicVolume => {
                 self.settings.music_volume = (self.settings.music_volume + 0.1).min(1.0);
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseMusicVolume => {
                 self.settings.music_volume = (self.settings.music_volume - 0.1).max(0.0);
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::IncreaseFontSize => {
                 self.settings.font_size_multiplier = (self.settings.font_size_multiplier + 0.1).min(2.0);
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseFontSize => {
                 self.settings.font_size_multiplier = (self.settings.font_size_multiplier - 0.1).max(0.5);
-                self.setup_settings_menu(); // Refresh the menu
+                // Menu will be refreshed at end of update method
             },
             _ => {}
+        }
+        
+        // Refresh menu if we're in Settings to ensure buttons stay visible
+        if matches!(self.state, MenuState::Settings) {
+            self.setup_settings_menu();
         }
     }
 
     pub fn draw(&self) {
+        self.draw_with_loading_progress(None);
+    }
+    
+    pub fn draw_with_loading_progress(&self, loading_progress: Option<&LoadingProgress>) {
         clear_background(Color::new(0.05, 0.05, 0.1, 1.0));
 
         match self.state {
-            MenuState::MainMenu => self.draw_main_menu(),
+            MenuState::MainMenu => {
+                self.draw_main_menu();
+                if let Some(progress) = loading_progress {
+                    // Only show loading progress if not complete
+                    if !matches!(progress.stage, LoadingStage::Complete) || progress.progress < 1.0 {
+                        self.draw_loading_progress(progress);
+                    }
+                }
+            },
             MenuState::Settings => self.draw_settings_menu(),
             MenuState::LevelSelect => self.draw_level_select_menu(),
             MenuState::InGame => {}, // Game drawing handled elsewhere
@@ -731,5 +749,75 @@ impl Menu {
         draw_circle(br_x, br_y, 15.0, crab_color);
         draw_circle(br_x - 15.0, br_y - 10.0, 5.0, crab_color); // Left eye
         draw_circle(br_x + 15.0, br_y - 10.0, 5.0, crab_color); // Right eye
+    }
+    
+    fn draw_loading_progress(&self, progress: &LoadingProgress) {
+        let bar_width = scale_size(400.0);
+        let bar_height = scale_size(20.0);
+        let bar_x = (screen_width() - bar_width) / 2.0;
+        let bar_y = screen_height() - scale_size(150.0);
+        
+        // Draw loading text
+        let stage_text = match progress.stage {
+            LoadingStage::Initialization => "⚙️ Initializing...",
+            LoadingStage::CoreAssets => "📦 Loading core assets...",
+            LoadingStage::LearningLevels => "🎓 Loading learning levels...",
+            LoadingStage::CommunityLevels => "🌍 Loading community levels...",
+            LoadingStage::FontCache => "🔤 Optimizing fonts...",
+            LoadingStage::Complete => "✅ Complete!",
+        };
+        
+        let text_size = 16.0;
+        let scaled_text_size = scale_font_size(text_size);
+        let text_dimensions = measure_text(stage_text, None, scaled_text_size as u16, 1.0);
+        let text_x = (screen_width() - text_dimensions.width) / 2.0;
+        
+        draw_scaled_text(stage_text, text_x, bar_y - scale_size(30.0), text_size, YELLOW);
+        
+        // Draw current item being processed
+        if !progress.current_item.is_empty() {
+            let item_size = 12.0;
+            let scaled_item_size = scale_font_size(item_size);
+            let item_dimensions = measure_text(&progress.current_item, None, scaled_item_size as u16, 1.0);
+            let item_x = (screen_width() - item_dimensions.width) / 2.0;
+            
+            draw_scaled_text(&progress.current_item, item_x, bar_y - scale_size(10.0), item_size, LIGHTGRAY);
+        }
+        
+        // Draw progress bar background
+        draw_rectangle(bar_x, bar_y, bar_width, bar_height, Color::new(0.2, 0.2, 0.2, 0.8));
+        draw_rectangle_lines(bar_x, bar_y, bar_width, bar_height, scale_size(2.0), WHITE);
+        
+        // Draw progress bar fill
+        let fill_width = bar_width * progress.progress;
+        let fill_color = match progress.stage {
+            LoadingStage::Complete => GREEN,
+            _ => Color::new(0.2, 0.6, 1.0, 0.8), // Blue
+        };
+        
+        if fill_width > 0.0 {
+            draw_rectangle(bar_x, bar_y, fill_width, bar_height, fill_color);
+        }
+        
+        // Draw progress percentage
+        let percent_text = format!("{}%", (progress.progress * 100.0) as i32);
+        let percent_size = 14.0;
+        let scaled_percent_size = scale_font_size(percent_size);
+        let percent_dimensions = measure_text(&percent_text, None, scaled_percent_size as u16, 1.0);
+        let percent_x = bar_x + (bar_width - percent_dimensions.width) / 2.0;
+        let percent_y = bar_y + (bar_height + percent_dimensions.height) / 2.0;
+        
+        draw_scaled_text(&percent_text, percent_x, percent_y, percent_size, WHITE);
+        
+        // Draw item count if available
+        if progress.total_items > 0 {
+            let count_text = format!("{}/{} items", progress.completed_items, progress.total_items);
+            let count_size = 12.0;
+            let scaled_count_size = scale_font_size(count_size);
+            let count_dimensions = measure_text(&count_text, None, scaled_count_size as u16, 1.0);
+            let count_x = (screen_width() - count_dimensions.width) / 2.0;
+            
+            draw_scaled_text(&count_text, count_x, bar_y + bar_height + scale_size(15.0), count_size, GRAY);
+        }
     }
 }

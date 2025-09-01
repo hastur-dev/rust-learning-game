@@ -1,0 +1,77 @@
+name: "Level 19 - Modules & Crates"
+grid_size: "25x19"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 19
+enemies:
+  - start_location: [23, 17]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [20, 15]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 16]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [16, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [13, 12]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 9]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [9, 16]
+    movement_pattern: "horizontal"
+    moving_positive: true
+
+doors:
+  - [21, 18]
+  - [23, 17]
+  - [18, 18]
+  - [23, 13]
+  - [14, 16]
+  - [11, 18]
+  - [7, 14]
+
+items:
+  - name: "module_definition_tip"
+    item_file: "items/module_definition.rs"
+    spawn_randomly: false
+    location: [18, 17]
+  - name: "module_tree_tip"
+    item_file: "items/module_tree.rs"
+    spawn_randomly: false
+    location: [23, 15]
+  - name: "use_keyword_tip"
+    item_file: "items/use_keyword.rs"
+    spawn_randomly: false
+    location: [23, 19]
+  - name: "pub_visibility_tip"
+    item_file: "items/pub_visibility.rs"
+    spawn_randomly: false
+    location: [16, 18]
+  - name: "crate_paths_tip"
+    item_file: "items/crate_paths.rs"
+    spawn_randomly: false
+    location: [22, 11]
+  - name: "super_self_tip"
+    item_file: "items/super_self.rs"
+    spawn_randomly: false
+    location: [13, 18]
+  - name: "external_crates_tip"
+    item_file: "items/external_crates.rs"
+    spawn_randomly: false
+    location: [7, 16]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [23, 17]
+
+message: "Organize your code with Modules and Crates! Learn the module system, visibility rules (pub), path syntax (crate::, super::, self::), and how to structure large projects. Master the use keyword for imports."
+
+hint_message: "Modules: 'mod name { }' creates module. pub makes items public. Paths: crate:: (root), super:: (parent), self:: (current). use brings items into scope. External crates in Cargo.toml."

@@ -61,12 +61,15 @@ impl Game {
             rust_checker: crate::rust_checker::RustChecker::new().ok(),
             key_backspace_held_time: 0.0,
             key_space_held_time: 0.0,
+            key_char_held_time: 0.0,
+            last_char_pressed: None,
             key_repeat_initial_delay: 0.5, // Wait 0.5 seconds before starting to repeat
             key_repeat_interval: 0.05,     // Repeat every 50ms after initial delay
             cached_font_size: 0.0,
             cached_char_width: 0.0,
             cached_line_height: 0.0,
             needs_font_refresh: true,      // Initially needs refresh
+            commands_logs_tab: CommandsLogsTab::Commands, // Default to Commands tab
         }
     }
 
@@ -176,10 +179,16 @@ impl Game {
             self.panic_occurred = false;
         }
         
-        // Load starting code if available
+        // Load starting code if available, otherwise ensure current_code has content
         if let Some(ref starting_code) = spec.starting_code {
             self.current_code = starting_code.clone();
             self.cursor_position = starting_code.len();
+        } else {
+            // Ensure current_code is not empty if no starting code is provided
+            if self.current_code.is_empty() {
+                self.current_code = "// Start typing your Rust code here...\n".to_string();
+            }
+            self.cursor_position = self.cursor_position.min(self.current_code.len());
         }
 
         // Initialize item manager with level items

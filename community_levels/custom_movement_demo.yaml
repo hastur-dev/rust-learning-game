@@ -1,0 +1,31 @@
+name: "Custom Movement Pattern Demo"
+grid_size: "20x15"
+obstacles: 8
+start_position: [1, 1]
+fog_of_war: true
+max_turns: 0
+income_per_square: 1
+
+enemies:
+  # Built-in random movement
+  - start_location: [18, 13]
+    movement_pattern: "random"
+    
+  # Built-in diagonal movement
+  - start_location: [5, 10]
+    movement_pattern: "diagonal"
+    moving_positive: true
+    
+  # Built-in circular movement
+  - start_location: [15, 5]
+    movement_pattern: "circular"
+    
+  # Custom spiral movement pattern
+  - start_location: [10, 7]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+    
+  # Custom guard area movement pattern
+  - start_location: [8, 12]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+
+items: []

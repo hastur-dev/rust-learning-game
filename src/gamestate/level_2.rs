@@ -8,9 +8,9 @@ impl Game {
         }
         
         match self.tutorial_state.current_task {
-            0 => "Task 1/5: Learning Print Statements\n\nIn Rust, we use println!() to display text.\n In this game we capture the print statement and turn it into popups.\n Try typing:\nprintln!(\"Hello, Rust!\");\n\nThen hit [SHIFT+ENTER] Run to execute your code.".to_string(),
-            1 => "Task 2/5: Error Messages\n\nGreat! Now let's learn about error messages.\n We use this to be able to tell ourselfs that something went wrong in the code, but in this game it's a red popup.\n Try using:\neprintln!(\"This is an error message!\");\n\nError messages are useful for debugging and showing warnings.".to_string(),
-            2 => "Task 3/5: Variables in Print Statements\n\nExcellent! Now let's create a variable and print it.\n Variables are pretty much anything, but we're going to show you that you can create one and pass it into anything else we've already shown you.\n Try:\nlet my_message = \"Variables are powerful!\";\nprintln!(\"{}\", my_message);\n\nVariables store data we can reuse.".to_string(),
+            0 => "Task 1/5: Now we're going to learn about functions.\n these are things to store your code inside of that you might have already seen with the fn main()\n these functions allow you to store your code into an easily reachable place so that they can be used later. So lets make a function and call it inside of main\n fn move_5_times() {\n for i in 0..5 {\n move_bot(\"down\")n\ }\n}".to_string(),
+            1 => "Task 2/5: Blockers\n fn move_5_times() {\n for i in 0..5 {\n scan("down")\n if scan == obstacle {\n move_bot(\"right\")\n }\n move_bot(\"down\")n\ }\n}".to_string(),
+            2 => "Task 3/5: Structs\n ".to_string(),
             3 => "Task 4/5: Mutable Variables and Scan Function\n\nAwesome! Let's learn about mutable variables by using the scan function. \n variables by themselves have to be defined in the code, but mutable variables don't basically if you have a user input or a message then you want to make that a mutable variable.\n this will tell rust that your variable exists, but you don't know what it is yet.\n\nlet mut scan_result = scan(\"right\");\nprintln!(\"Scan found: {}\", scan_result);\n\nThe 'mut' keyword lets us change variable values.".to_string(),
             4 => "Task 5/5: Data Types and Movement\n\nPerfect! Now let's learn about the u32 integer type and data types in general. \n sometimes we want to make sure that a variable is something specific by design, so we have data types to define what that specific thing is. \n learn more about this at the rust website by hitting CTRL+SHIFT+B to open your web browser to teh documentation for this language \n now lets learn it by using it for movement:\nlet steps: u32 = 3;\nfor _i in 0..steps {\n    move_bot(\"right\");\n}\n\nu32 is an unsigned 32-bit integer (0 to 4,294,967,295).".to_string(),
             _ => "Congratulations! You've correctly gone through the first few steps of learning the rust programming language!\n Next we'll teach you more about functions and loops\n Continue onwards by hitting CTRL+SHIFT+N to start the next level".to_string(),
@@ -18,8 +18,8 @@ impl Game {
     }
     
     pub fn check_tutorial_progress(&mut self) {
-        if self.level_idx != 0 || self.tutorial_state.current_task >= 5 {
-            return; // Only for level 1 and if not completed
+        if self.level_idx != 1 || self.tutorial_state.current_task >= 5 {
+            return; // Only for level 2 and if not completed
         }
         
         match self.tutorial_state.current_task {
@@ -37,7 +37,7 @@ impl Game {
                     self.tutorial_state.current_task = 1;
                     self.popup_system.show_message(
                         "Task 1 Complete! ✓".to_string(),
-                        "Great job! You've successfully used println!() to display text. This is one of the most fundamental operations in programming.".to_string(),
+                        "Great! You might have hit a blocker or the wall when attempting to move downward\n those are obstacles that are there to add complexity to some of the tasks.\n Lets write some code to check if we're hitting one of those obstacles so that our robot knows to move around it..".to_string(),
                         crate::popup::PopupType::Success,
                         Some(4.0)
                     );
@@ -50,7 +50,7 @@ impl Game {
                     self.tutorial_state.current_task = 2;
                     self.popup_system.show_message(
                         "Task 2 Complete! ✓".to_string(),
-                        "Excellent! You've learned about error messages with eprintln!(). This is essential for debugging and showing warnings.".to_string(),
+                        "You did it again!\n Now we've learned how to dodge nonsense.\n A useful skill in life that we can now use in rust. So lets move onto the next point, Structs!\n we want to be able to scan the area and collect what's around the level we're currently on. So we'll move around the level and store the information about the level in something called a Struct".to_string(),
                         crate::popup::PopupType::Success,
                         Some(4.0)
                     );

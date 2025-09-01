@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 use ::rand::{rngs::StdRng, SeedableRng};
 use std::collections::HashSet;
+use log::{info, warn, error, debug, trace};
 
 // Desktop-only imports
 #[cfg(not(target_arch = "wasm32"))]
@@ -26,6 +27,8 @@ mod embedded_levels;
 mod drawing;
 mod rust_checker;
 mod font_scaling;
+mod cache;
+mod progressive_loader;
 
 use level::*;
 use item::*;
@@ -33,6 +36,7 @@ use gamestate::*;
 use menu::{MenuAction, MenuState};
 use popup::PopupAction;
 use drawing::*;
+use progressive_loader::{ProgressiveLoader, LoadingProgress, LoadingStage};
 
 // Reset robot_code.rs to default content
 fn reset_robot_code(game: &mut Game) {
@@ -973,19 +977,20 @@ fn load_yaml_levels() -> Vec<LevelSpec> {
     let mut levels = Vec::new();
     let mut rng = StdRng::seed_from_u64(0xC0FFEE);
     
-    // Try to load YAML levels from levels directory first
-    let yaml_configs = load_yaml_levels_from_directory("levels");
-    
-    if !yaml_configs.is_empty() {
-        // Use external YAML files if available
-        for config in yaml_configs {
-            if let Ok(level_spec) = config.to_level_spec(&mut rng) {
-                levels.push(level_spec);
-            }
+    // Always load embedded learning levels first
+    let learning_configs = embedded_levels::get_embedded_learning_levels();
+    for config in learning_configs {
+        if let Ok(level_spec) = config.to_level_spec(&mut rng) {
+            levels.push(level_spec);
         }
-    } else {
-        // Fallback to embedded levels if no external files found
-        levels = embedded_levels::get_embedded_level_specs();
+    }
+    
+    // Then try to load community levels from community_levels directory
+    let community_configs = load_yaml_levels_from_directory("community_levels");
+    for config in community_configs {
+        if let Ok(level_spec) = config.to_level_spec(&mut rng) {
+            levels.push(level_spec);
+        }
     }
     
     levels
@@ -1066,23 +1071,56 @@ fn main() {
 // Desktop-specific main logic
 #[cfg(not(target_arch = "wasm32"))]
 async fn desktop_main() {
+    // Initialize logging
+    env_logger::Builder::from_default_env()
+        .filter_level(log::LevelFilter::Debug)
+        .init();
+    
+    info!("Starting Rust Steam Game...");
+    
     let rng = StdRng::seed_from_u64(0xC0FFEE);
     
-    // Load levels - first try YAML, then fallback to built-in
-    let levels = load_yaml_levels();
+    // Initialize progressive loader
+    let mut loader = ProgressiveLoader::new();
     
-    let mut game = Game::new(levels, rng);
+    // Start with minimal embedded levels for immediate play
+    info!("Loading core embedded levels for immediate play...");
+    let core_levels = embedded_levels::get_embedded_level_specs();
+    info!("Loaded {} core levels", core_levels.len());
     
-    // Set total levels count in menu
-    game.menu.set_total_levels(game.levels.len());
+    let mut game = Game::new(core_levels.clone(), rng);
+    info!("Game initialized successfully");
+    
+    // Set initial levels count in menu
+    game.menu.set_total_levels(core_levels.len());
+    
+    // Start progressive loading in background
+    loader.start_loading();
     
     // Initialize robot code
     game.load_robot_code();
     game.file_watcher_receiver = setup_file_watcher(&game.robot_code_path);
     
     let mut shop_open = false;
+    let mut loading_progress: Option<LoadingProgress> = None;
 
     loop {
+        // Check for progressive loading updates
+        if let Some(progress) = loader.get_latest_progress() {
+            // Clear loading progress once complete to stop checking
+            if matches!(progress.stage, LoadingStage::Complete) && progress.progress >= 1.0 {
+                loading_progress = None;
+            } else {
+                loading_progress = Some(progress.clone());
+            }
+            
+            // Update game with newly loaded levels when available
+            if let Some(new_levels) = loader.get_loaded_levels() {
+                info!("Updating game with {} total levels", new_levels.len());
+                game.levels = new_levels;
+                game.menu.set_total_levels(game.levels.len());
+            }
+        }
         // Check for screen size changes and update menu layout if needed
         game.menu.check_screen_resize();
         
@@ -1145,12 +1183,33 @@ async fn desktop_main() {
                     
                     // Mouse handling
                     let (mouse_x, mouse_y) = mouse_position();
+                    trace!("Mouse position: ({:.2}, {:.2})", mouse_x, mouse_y);
                     
                     if is_mouse_button_pressed(MouseButton::Left) {
-                        // Function definitions area
+                        debug!("Left mouse button pressed at ({:.2}, {:.2})", mouse_x, mouse_y);
+                        
+                        // Tab click handling (above function definitions area)
                         let def_x = screen_width() * 0.5 + 16.0; // Match PADDING constant
                         let def_y = 16.0 + 100.0; // Match PADDING constant
                         let def_width = screen_width() * 0.25;
+                        let tab_height = 40.0;
+                        let tab_y = def_y - 16.0 - tab_height; // Above the main area
+                        let tab_width = (def_width + 32.0) / 2.0; // Split into two tabs
+                        
+                        // Commands tab click
+                        if mouse_x >= def_x - 16.0 && mouse_x <= def_x - 16.0 + tab_width &&
+                           mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
+                            game.commands_logs_tab = gamestate::types::CommandsLogsTab::Commands;
+                            debug!("Switched to Commands tab");
+                        }
+                        // Logs tab click
+                        else if mouse_x >= def_x - 16.0 + tab_width && mouse_x <= def_x - 16.0 + (def_width + 32.0) &&
+                                mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
+                            game.commands_logs_tab = gamestate::types::CommandsLogsTab::Logs;
+                            debug!("Switched to Logs tab");
+                        }
+                        
+                        // Function definitions area
                         let available_functions = game.get_gui_functions();
                         
                         for (i, func) in available_functions.iter().enumerate() {
@@ -1167,14 +1226,32 @@ async fn desktop_main() {
                         let editor_width = screen_width() * 0.25;
                         let editor_height = screen_height() * 0.6;
                         
+                        debug!("Editor bounds: x={:.2}, y={:.2}, w={:.2}, h={:.2}", editor_x, editor_y, editor_width, editor_height);
+                        
                         if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + editor_width + 10.0 &&
                            mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + editor_height + 10.0 {
+                            debug!("Click detected in editor area, activating editor");
                             game.code_editor_active = true;
                             
                             // Position cursor at click location
                             let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
-                            game.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
+                            debug!("Calling position_cursor_at_click with bounds: {:?}", editor_bounds);
+                            
+                            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                game.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
+                            })) {
+                                Ok(_) => debug!("Cursor positioning completed successfully"),
+                                Err(e) => {
+                                    error!("Panic caught in position_cursor_at_click: {:?}", e);
+                                    // Set safe defaults
+                                    game.cursor_position = 0;
+                                    if game.current_code.is_empty() {
+                                        game.current_code = "// Start typing your Rust code here...\n".to_string();
+                                    }
+                                }
+                            }
                         } else if mouse_x > screen_width() / 2.0 {
+                            debug!("Click outside editor area, deactivating editor");
                             game.code_editor_active = false;
                         }
                     }
@@ -1186,8 +1263,29 @@ async fn desktop_main() {
                         // Update key press timers
                         game.update_key_press_timers(get_frame_time());
                         
+                        // Handle character input - both initial press and continuous hold
+                        let mut current_char_pressed = None;
                         while let Some(character) = get_char_pressed() {
                             if character.is_ascii() && !character.is_control() && character != ' ' {
+                                current_char_pressed = Some(character);
+                                
+                                // Delete selection first if it exists
+                                if game.delete_selection() {
+                                    code_modified = true;
+                                }
+                                
+                                game.current_code.insert(game.cursor_position, character);
+                                game.cursor_position += 1;
+                                code_modified = true;
+                            }
+                        }
+                        
+                        // Update character key timing
+                        game.update_char_key_timing(current_char_pressed, get_frame_time());
+                        
+                        // Handle continuous character repeat
+                        if game.should_repeat_char() {
+                            if let Some(character) = game.last_char_pressed {
                                 // Delete selection first if it exists
                                 if game.delete_selection() {
                                     code_modified = true;
@@ -1235,6 +1333,22 @@ async fn desktop_main() {
                             
                             game.current_code.insert(game.cursor_position, ' ');
                             game.cursor_position += 1;
+                            code_modified = true;
+                        }
+                        
+                        // Handle tab key - insert 4 spaces for indentation
+                        if is_key_pressed(KeyCode::Tab) {
+                            // Delete selection first if it exists
+                            if game.delete_selection() {
+                                code_modified = true;
+                            }
+                            
+                            // Insert 4 spaces for tab
+                            let tab_spaces = "    "; // 4 spaces
+                            for (i, space) in tab_spaces.chars().enumerate() {
+                                game.current_code.insert(game.cursor_position + i, space);
+                            }
+                            game.cursor_position += tab_spaces.len();
                             code_modified = true;
                         }
                         
@@ -1320,8 +1434,8 @@ async fn desktop_main() {
                 game.check_end_condition();
             },
             _ => {
-                // Draw menu
-                game.menu.draw();
+                // Draw menu with loading progress
+                game.menu.draw_with_loading_progress(loading_progress.as_ref());
             }
         }
 

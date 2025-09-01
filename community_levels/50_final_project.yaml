@@ -1,0 +1,92 @@
+name: "Level 50 - Final Project"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 50
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 46]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 47]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 43]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 43]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 40]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 47]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 41]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [20, 19]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [16, 16]
+    movement_pattern: "horizontal"
+    moving_positive: true
+
+doors:
+  - [23, 49]
+  - [23, 48]
+  - [24, 45]
+  - [23, 44]
+  - [24, 47]
+  - [24, 38]
+  - [24, 45]
+  - [20, 18]
+  - [16, 19]
+
+items:
+  - name: "project_planning_tip"
+    item_file: "items/project_planning.rs"
+    spawn_randomly: false
+    location: [24, 48]
+  - name: "architecture_design_tip"
+    item_file: "items/architecture_design.rs"
+    spawn_randomly: false
+    location: [23, 46]
+  - name: "error_handling_project_tip"
+    item_file: "items/error_handling_project.rs"
+    spawn_randomly: false
+    location: [24, 50]
+  - name: "testing_strategy_tip"
+    item_file: "items/testing_strategy.rs"
+    spawn_randomly: false
+    location: [24, 43]
+  - name: "documentation_tip"
+    item_file: "items/documentation.rs"
+    spawn_randomly: false
+    location: [23, 42]
+  - name: "performance_optimization_tip"
+    item_file: "items/performance_optimization.rs"
+    spawn_randomly: false
+    location: [24, 40]
+  - name: "deployment_tip"
+    item_file: "items/deployment.rs"
+    spawn_randomly: false
+    location: [20, 18]
+  - name: "congratulations_tip"
+    item_file: "items/congratulations.rs"
+    spawn_randomly: false
+    location: [16, 18]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 48]
+
+message: "Congratulations! You've mastered Rust fundamentals! This final level challenges you to apply everything you've learned. Plan and build a complete project using advanced Rust concepts, best practices, and real-world patterns."
+
+hint_message: "Final Project: Combine all concepts learned. Plan architecture, handle errors gracefully, write comprehensive tests, document your code, optimize performance. You're now a Rust programmer!"

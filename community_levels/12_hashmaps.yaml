@@ -1,0 +1,65 @@
+name: "Level 12 - HashMaps"
+grid_size: "24x16"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 12
+enemies:
+  - start_location: [22, 14]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [13, 8]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [18, 13]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [9, 11]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [6, 5]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [14, 12]
+  - [20, 10]
+  - [11, 15]
+  - [17, 6]
+  - [7, 9]
+
+items:
+  - name: "hashmap_creation_tip"
+    item_file: "items/hashmap_creation.rs"
+    spawn_randomly: false
+    location: [11, 10]
+  - name: "hashmap_access_tip"
+    item_file: "items/hashmap_access.rs"
+    spawn_randomly: false
+    location: [18, 8]
+  - name: "hashmap_update_tip"
+    item_file: "items/hashmap_update.rs"
+    spawn_randomly: false
+    location: [22, 12]
+  - name: "hashmap_iteration_tip"
+    item_file: "items/hashmap_iteration.rs"
+    spawn_randomly: false
+    location: [9, 14]
+  - name: "hashmap_ownership_tip"
+    item_file: "items/hashmap_ownership.rs"
+    spawn_randomly: false
+    location: [15, 4]
+  - name: "hashmap_entry_tip"
+    item_file: "items/hashmap_entry.rs"
+    spawn_randomly: false
+    location: [6, 13]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [16, 14]
+
+message: "Learn key-value storage with HashMap<K, V>! HashMaps provide fast lookups using hash tables. Master insertion, access, updates, and the powerful Entry API for complex operations."
+
+hint_message: "HashMaps: HashMap::new(), insert(key, value), get(&key) returns Option<&V>. Entry API: entry(key).or_insert(default) for complex updates. Keys must implement Hash + Eq traits."

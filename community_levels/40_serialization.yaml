@@ -1,0 +1,76 @@
+name: "Level 40 - Serialization"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 40
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 36]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 37]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 33]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 33]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 30]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 37]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 31]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 39]
+  - [23, 38]
+  - [24, 35]
+  - [23, 34]
+  - [24, 37]
+  - [24, 28]
+  - [24, 35]
+
+items:
+  - name: "serde_basics_tip"
+    item_file: "items/serde_basics.rs"
+    spawn_randomly: false
+    location: [24, 38]
+  - name: "json_serialization_tip"
+    item_file: "items/json_serialization.rs"
+    spawn_randomly: false
+    location: [23, 36]
+  - name: "custom_serialization_tip"
+    item_file: "items/custom_serialization.rs"
+    spawn_randomly: false
+    location: [24, 40]
+  - name: "bincode_tip"
+    item_file: "items/bincode.rs"
+    spawn_randomly: false
+    location: [24, 33]
+  - name: "yaml_toml_tip"
+    item_file: "items/yaml_toml.rs"
+    spawn_randomly: false
+    location: [23, 32]
+  - name: "derive_macros_tip"
+    item_file: "items/derive_macros.rs"
+    spawn_randomly: false
+    location: [24, 30]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 38]
+
+message: "Convert data to and from different formats! Master the serde ecosystem for JSON, YAML, TOML, and binary serialization. Learn derive macros and custom serialization strategies."
+
+hint_message: "Serialization: serde crate with Serialize/Deserialize derives. serde_json for JSON, bincode for binary. Use #[serde(rename)] for field mapping. Custom serializers for complex types."

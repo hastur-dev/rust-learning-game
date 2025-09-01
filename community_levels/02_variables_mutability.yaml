@@ -1,0 +1,28 @@
+name: "Level 2 - Variables & Mutability"
+grid_size: "14x9"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 4
+
+items:
+  - name: "variables_tip"
+    item_file: "items/variables.rs"
+    spawn_randomly: false
+    location: [7, 4]
+  - name: "mutability_tip"
+    item_file: "items/mutability.rs"
+    spawn_randomly: false
+    location: [12, 7]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [10, 2]
+
+message: "Master Rust Variables & Mutability! 🔒 Navigate around obstacles to collect items about variables. Learn why Rust makes variables immutable by default - it prevents bugs and enables fearless concurrency. TO WIN: Collect both 'variables_tip' and 'mutability_tip' items, then grab the goal. This teaches memory safety without runtime cost!"
+
+hint_message: "RUST SYNTAX: 'let x = 5;' creates immutable variable (cannot change). 'let mut y = 10; y = 15;' creates mutable variable. Immutability by default prevents data races and makes code easier to reason about. Press B to see full documentation!"
+
+rust_docs_url: "https://doc.rust-lang.org/book/ch03-01-variables-and-mutability.html"

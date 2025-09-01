@@ -1,0 +1,76 @@
+name: "Level 42 - Trait Objects"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 42
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 38]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 39]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 35]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 35]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 32]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 39]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 33]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 41]
+  - [23, 40]
+  - [24, 37]
+  - [23, 36]
+  - [24, 39]
+  - [24, 30]
+  - [24, 37]
+
+items:
+  - name: "dyn_keyword_tip"
+    item_file: "items/dyn_keyword.rs"
+    spawn_randomly: false
+    location: [24, 40]
+  - name: "dynamic_dispatch_tip"
+    item_file: "items/dynamic_dispatch.rs"
+    spawn_randomly: false
+    location: [23, 38]
+  - name: "object_safety_tip"
+    item_file: "items/object_safety.rs"
+    spawn_randomly: false
+    location: [24, 42]
+  - name: "boxed_traits_tip"
+    item_file: "items/boxed_traits.rs"
+    spawn_randomly: false
+    location: [24, 35]
+  - name: "trait_object_casts_tip"
+    item_file: "items/trait_object_casts.rs"
+    spawn_randomly: false
+    location: [23, 34]
+  - name: "heterogeneous_collections_tip"
+    item_file: "items/heterogeneous_collections.rs"
+    spawn_randomly: false
+    location: [24, 32]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 40]
+
+message: "Achieve runtime polymorphism with trait objects! Use dyn Trait for dynamic dispatch, store different types in collections, and understand object safety rules. Master Box<dyn Trait> patterns."
+
+hint_message: "Trait objects: dyn Trait enables runtime polymorphism. Box<dyn Trait> for owned, &dyn Trait for borrowed. Object-safe traits only (no generics, Self-sized). Use for heterogeneous collections."

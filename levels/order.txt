@@ -4,10 +4,8 @@
 # Lines starting with # are comments and will be ignored
 
 01_hello_rust
-02_variables_mutability
+02_functions_and_loops
 03_data_types
 04_functions
 05_control_flow
 06_ownership_basics
-time_slow_demo
-treasure_hunt

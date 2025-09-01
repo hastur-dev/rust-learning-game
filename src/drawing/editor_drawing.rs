@@ -162,23 +162,14 @@ pub fn draw_code_editor(game: &mut Game) {
         
         // Show cursor if it's in the visible area
         if cursor_line >= start_line && cursor_line < start_line + max_visible_lines {
-            let visible_line = cursor_line - start_line;
-            
-            // Calculate accurate cursor X position by measuring the text up to cursor position
-            let current_line = if cursor_line < lines.len() {
-                lines[cursor_line]
-            } else {
-                ""
-            };
-            let text_before_cursor = &current_line[..cursor_col.min(current_line.len())];
-            let cursor_offset = measure_text(text_before_cursor, None, 12, 1.0).width;
-            let cursor_x = text_x + cursor_offset;
-            let cursor_y = input_y + 12.0 + (visible_line as f32 * line_height);
+            // Use the new precise position calculation method
+            let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+            let (cursor_x, cursor_y) = game.get_text_position(cursor_line, cursor_col, editor_bounds);
             
             // Draw blinking cursor
             let time = get_time() as f32;
             if (time * 2.0) % 2.0 < 1.0 { // Blink every 0.5 seconds
-                draw_line(cursor_x, cursor_y - 10.0, cursor_x, cursor_y + 2.0, 2.0, YELLOW);
+                draw_line(cursor_x, cursor_y - scale_size(10.0), cursor_x, cursor_y + scale_size(2.0), scale_size(2.0), YELLOW);
             }
         }
     }

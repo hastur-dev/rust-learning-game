@@ -1,0 +1,76 @@
+name: "Level 23 - References in Structs"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 23
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 19]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 20]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [20, 20]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [17, 16]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [23, 13]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [13, 20]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [9, 14]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [23, 22]
+  - [23, 21]
+  - [22, 20]
+  - [23, 17]
+  - [18, 20]
+  - [15, 20]
+  - [11, 18]
+
+items:
+  - name: "struct_lifetimes_tip"
+    item_file: "items/struct_lifetimes.rs"
+    spawn_randomly: false
+    location: [22, 21]
+  - name: "struct_lifetime_params_tip"
+    item_file: "items/struct_lifetime_params.rs"
+    spawn_randomly: false
+    location: [23, 19]
+  - name: "impl_lifetimes_tip"
+    item_file: "items/impl_lifetimes.rs"
+    spawn_randomly: false
+    location: [24, 23]
+  - name: "method_lifetimes_tip"
+    item_file: "items/method_lifetimes.rs"
+    spawn_randomly: false
+    location: [20, 20]
+  - name: "lifetime_elision_structs_tip"
+    item_file: "items/lifetime_elision_structs.rs"
+    spawn_randomly: false
+    location: [23, 15]
+  - name: "borrowing_struct_fields_tip"
+    item_file: "items/borrowing_struct_fields.rs"
+    spawn_randomly: false
+    location: [17, 20]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 21]
+
+message: "Store references in structs safely! When structs hold references, they need lifetime parameters to ensure the referenced data lives long enough. Master struct lifetime annotations and impl blocks."
+
+hint_message: "Struct lifetimes: struct Name<'a> { field: &'a Type }. impl blocks need lifetimes too: impl<'a> Name<'a>. All references in struct must be valid for struct's lifetime."

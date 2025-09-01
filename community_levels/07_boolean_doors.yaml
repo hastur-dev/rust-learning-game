@@ -1,0 +1,31 @@
+name: "Level 7 - Boolean Doors"
+grid_size: "15x10"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+# Door positions that require boolean literals to open/close
+doors:
+  - [7, 3]   # Door blocking main path
+  - [4, 6]   # Door blocking alternate path
+  - [11, 4]  # Door near goal
+  
+obstacles: 8
+
+# Simple items to collect
+items:
+  - name: "boolean_tip"
+    item_file: "items/boolean_literals.rs"
+    spawn_randomly: false
+    location: [13, 8]
+  - name: "goal_item" 
+    item_file: "items/goal.rs"
+    spawn_randomly: false
+    location: [13, 2]
+
+message: "Boolean Doors Challenge! 🚪 Learn boolean literals by controlling doors. Navigate to collect items by opening/closing doors strategically. TO WIN: Stand on door tiles and use open_door(true) to open or open_door(false) to close them. Collect 'boolean_tip' item first, then reach 'goal_item'. Master true/false literals!"
+
+hint_message: "DOOR CONTROLS: Move onto a door tile (brown █), then use 'open_door(true);' to open it (becomes green |) or 'open_door(false);' to close it. Boolean literals in Rust are lowercase: true/false (not True/False like Python). These are the only two boolean values!"
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/primitives/literals.html"

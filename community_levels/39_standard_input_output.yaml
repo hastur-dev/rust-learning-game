@@ -1,0 +1,76 @@
+name: "Level 39 - Standard Input/Output"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 39
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 35]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 36]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 32]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 32]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [23, 29]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 36]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 30]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [23, 38]
+  - [23, 37]
+  - [24, 34]
+  - [23, 33]
+  - [24, 36]
+  - [24, 27]
+  - [24, 34]
+
+items:
+  - name: "stdin_tip"
+    item_file: "items/stdin.rs"
+    spawn_randomly: false
+    location: [24, 37]
+  - name: "stdout_stderr_tip"
+    item_file: "items/stdout_stderr.rs"
+    spawn_randomly: false
+    location: [23, 35]
+  - name: "read_line_tip"
+    item_file: "items/read_line.rs"
+    spawn_randomly: false
+    location: [24, 39]
+  - name: "buffered_stdin_tip"
+    item_file: "items/buffered_stdin.rs"
+    spawn_randomly: false
+    location: [24, 32]
+  - name: "flush_output_tip"
+    item_file: "items/flush_output.rs"
+    spawn_randomly: false
+    location: [23, 31]
+  - name: "interactive_programs_tip"
+    item_file: "items/interactive_programs.rs"
+    spawn_randomly: false
+    location: [24, 29]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 37]
+
+message: "Interact with users through standard I/O! Master stdin, stdout, and stderr. Learn buffered reading, flushing output, and building interactive command-line programs."
+
+hint_message: "Standard I/O: stdin().read_line() for input, println! for stdout, eprintln! for stderr. Use io::stdout().flush() to force output. BufReader for efficient line reading."

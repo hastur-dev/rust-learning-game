@@ -1,0 +1,76 @@
+name: "Level 49 - Testing"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 49
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 45]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 46]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 42]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 42]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [23, 39]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 46]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 40]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [23, 48]
+  - [23, 47]
+  - [24, 44]
+  - [23, 43]
+  - [24, 46]
+  - [24, 37]
+  - [24, 44]
+
+items:
+  - name: "unit_tests_tip"
+    item_file: "items/unit_tests.rs"
+    spawn_randomly: false
+    location: [24, 47]
+  - name: "assert_macros_tip"
+    item_file: "items/assert_macros.rs"
+    spawn_randomly: false
+    location: [23, 45]
+  - name: "integration_tests_tip"
+    item_file: "items/integration_tests.rs"
+    spawn_randomly: false
+    location: [24, 49]
+  - name: "test_organization_tip"
+    item_file: "items/test_organization.rs"
+    spawn_randomly: false
+    location: [24, 42]
+  - name: "mocking_testing_tip"
+    item_file: "items/mocking_testing.rs"
+    spawn_randomly: false
+    location: [23, 41]
+  - name: "property_testing_tip"
+    item_file: "items/property_testing.rs"
+    spawn_randomly: false
+    location: [24, 39]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 47]
+
+message: "Ensure code quality with comprehensive testing! Master unit tests, integration tests, assert macros, and test organization. Learn property-based testing and mocking strategies."
+
+hint_message: "Testing: #[test] attribute for unit tests, #[cfg(test)] for test modules. assert!, assert_eq!, assert_ne! macros. Integration tests in tests/ directory. cargo test runs all tests."

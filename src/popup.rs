@@ -97,12 +97,12 @@ impl PopupSystem {
     pub fn show_congratulations(&mut self, level_name: String, achievement: String, next_level_hint: Option<String>) {
         let content = if let Some(hint) = next_level_hint {
             format!(
-                "🎉 Congratulations! 🎉\n\nYou completed: {}\n\nAchievement: {}\n\nNext up: {}\n\nPress SPACE to continue to the next level or ESC to stay here.",
+                "🎉 Congratulations! 🎉\n\nYou completed: {}\n\nAchievement: {}\n\nNext up: {}\n\nPress CTRL+SHIFT+N to continue to the next level or ESC to stay here.",
                 level_name, achievement, hint
             )
         } else {
             format!(
-                "🎉 Congratulations! 🎉\n\nYou completed: {}\n\nAchievement: {}\n\nPress SPACE to continue to the next level or ESC to stay here.",
+                "🎉 Congratulations! 🎉\n\nYou completed: {}\n\nAchievement: {}\n\nPress CTRL+SHIFT+N to continue to the next level or ESC to stay here.",
                 level_name, achievement
             )
         };
@@ -134,7 +134,7 @@ impl PopupSystem {
             "📝 Program Output".to_string(),
             message,
             PopupType::Stdout,
-            Some(4.0) // Auto-close after 4 seconds
+            None // Consider this for auto close by putting in Some(#.#) that will set a timer. Right now it's not needed.
         );
     }
     
@@ -143,7 +143,7 @@ impl PopupSystem {
             "🔴 Error Output".to_string(),
             message,
             PopupType::Stderr,
-            Some(5.0) // Auto-close after 5 seconds for errors
+            None // Consider this for auto close by putting in Some(#.#) that will set a timer. Right now it's not needed.
         );
     }
     
@@ -193,28 +193,32 @@ impl PopupSystem {
                         }
                     }
                 }
-            }
-            
-            // Check for mouse click to dismiss
-            if is_mouse_button_pressed(MouseButton::Left) {
-                let screen_width = screen_width();
-                let screen_height = screen_height();
-                let popup_width = (screen_width * 0.6).min(600.0);
-                let popup_height = (screen_height * 0.4).min(300.0);
-                let popup_x = (screen_width - popup_width) / 2.0;
-                let popup_y = (screen_height - popup_height) / 2.0;
                 
-                let (mouse_x, mouse_y) = mouse_position();
-                
-                // Check if click is outside popup area
-                if mouse_x < popup_x || mouse_x > popup_x + popup_width ||
-                   mouse_y < popup_y || mouse_y > popup_y + popup_height {
-                    self.close();
-                    return PopupAction::Dismissed;
+                // Check for mouse click to dismiss
+                if is_mouse_button_pressed(MouseButton::Left) {
+                    let screen_width = screen_width();
+                    let screen_height = screen_height();
+                    let (popup_width, popup_height) = calculate_popup_dimensions(
+                        &popup.title, 
+                        &popup.content, 
+                        screen_width, 
+                        screen_height
+                    );
+                    let popup_x = (screen_width - popup_width) / 2.0;
+                    let popup_y = (screen_height - popup_height) / 2.0;
+                    
+                    let (mouse_x, mouse_y) = mouse_position();
+                    
+                    // Check if click is outside popup area
+                    if mouse_x < popup_x || mouse_x > popup_x + popup_width ||
+                       mouse_y < popup_y || mouse_y > popup_y + popup_height {
+                        self.close();
+                        return PopupAction::Dismissed;
+                    }
+                    // Always consume mouse click when popup is showing, regardless of where clicked
+                    return PopupAction::None;
                 }
-                // Always consume mouse click when popup is showing, regardless of where clicked
-                return PopupAction::None;
-            }
+            } // End of if let Some(ref popup) = self.current_popup
             
             return PopupAction::None; // Popup is showing, consume all input
         }
@@ -248,9 +252,13 @@ impl PopupSystem {
         // Semi-transparent overlay
         draw_rectangle(0.0, 0.0, screen_width, screen_height, Color::new(0.0, 0.0, 0.0, 0.5));
         
-        // Popup dimensions
-        let popup_width = (screen_width * 0.6).min(600.0);
-        let popup_height = (screen_height * 0.4).min(300.0);
+        // Calculate dynamic popup dimensions based on content
+        let (popup_width, popup_height) = calculate_popup_dimensions(
+            &popup.title, 
+            &popup.content, 
+            screen_width, 
+            screen_height
+        );
         let popup_x = (screen_width - popup_width) / 2.0;
         let popup_y = (screen_height - popup_height) / 2.0;
         
@@ -348,6 +356,64 @@ fn wrap_text(text: &str, max_width: f32, font_size: f32) -> Vec<String> {
     }
     
     lines
+}
+
+// Calculate optimal popup dimensions based on content
+fn calculate_popup_dimensions(title: &str, content: &str, screen_width: f32, screen_height: f32) -> (f32, f32) {
+    let min_width = scale_size(400.0);
+    let max_width = screen_width * 0.85; // Maximum 85% of screen width
+    let min_height = scale_size(200.0);
+    let max_height = screen_height * 0.85; // Maximum 85% of screen height
+    
+    // Calculate title dimensions
+    let title_size = 28.0;
+    let scaled_title_size = scale_font_size(title_size);
+    let title_metrics = measure_text(title, None, scaled_title_size as u16, 1.0);
+    let title_width = title_metrics.width;
+    
+    // Calculate content dimensions with progressive width testing
+    let content_size = 20.0;
+    let content_margin = scale_size(20.0);
+    let line_height = scale_font_size(content_size) + scale_size(5.0);
+    
+    // Start with a reasonable width and expand if needed
+    let mut test_width = (min_width).max(title_width + scale_size(80.0)); // Title + padding
+    let mut final_width = test_width;
+    let mut final_height = min_height;
+    
+    // Test different widths to find optimal layout
+    for width_factor in [0.6, 0.7, 0.8, 0.85] {
+        test_width = (screen_width * width_factor).min(max_width);
+        let content_width = test_width - (content_margin * 2.0);
+        
+        if content_width > scale_size(300.0) { // Minimum reasonable content width
+            let wrapped_lines = wrap_text(content, content_width, scale_font_size(content_size));
+            
+            // Calculate required height
+            let title_area_height = scale_size(90.0); // Title + spacing
+            let content_area_height = wrapped_lines.len() as f32 * line_height;
+            let instruction_area_height = scale_size(60.0); // Instructions + spacing
+            
+            let required_height = title_area_height + content_area_height + instruction_area_height;
+            
+            // If this layout fits within screen bounds, use it
+            if required_height <= max_height {
+                final_width = test_width;
+                final_height = required_height.max(min_height);
+                break;
+            }
+        }
+    }
+    
+    // Ensure minimum dimensions
+    final_width = final_width.max(min_width);
+    final_height = final_height.max(min_height);
+    
+    // Ensure maximum dimensions
+    final_width = final_width.min(max_width);
+    final_height = final_height.min(max_height);
+    
+    (final_width, final_height)
 }
 
 impl Default for PopupSystem {

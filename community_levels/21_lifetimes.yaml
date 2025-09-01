@@ -1,0 +1,76 @@
+name: "Level 21 - Lifetimes"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 21
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [22, 17]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 18]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [18, 20]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [15, 14]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [23, 11]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [11, 18]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [7, 12]
+    movement_pattern: "vertical"
+    moving_positive: false
+
+doors:
+  - [23, 20]
+  - [23, 19]
+  - [20, 20]
+  - [23, 15]
+  - [16, 18]
+  - [13, 20]
+  - [9, 16]
+
+items:
+  - name: "lifetime_concept_tip"
+    item_file: "items/lifetime_concept.rs"
+    spawn_randomly: false
+    location: [20, 19]
+  - name: "borrow_checker_tip"
+    item_file: "items/borrow_checker.rs"
+    spawn_randomly: false
+    location: [23, 17]
+  - name: "lifetime_elision_tip"
+    item_file: "items/lifetime_elision.rs"
+    spawn_randomly: false
+    location: [24, 21]
+  - name: "dangling_references_tip"
+    item_file: "items/dangling_references.rs"
+    spawn_randomly: false
+    location: [18, 20]
+  - name: "lifetime_bounds_tip"
+    item_file: "items/lifetime_bounds.rs"
+    spawn_randomly: false
+    location: [23, 13]
+  - name: "static_lifetime_tip"
+    item_file: "items/static_lifetime.rs"
+    spawn_randomly: false
+    location: [15, 20]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 19]
+
+message: "Enter the most challenging concept in Rust: Lifetimes! Every reference has a lifetime - the scope for which it's valid. The borrow checker ensures references don't outlive the data they point to."
+
+hint_message: "Lifetimes prevent dangling references. Borrow checker ensures borrowed data lives long enough. 'static lifetime lasts entire program. Most lifetimes are inferred (lifetime elision)."

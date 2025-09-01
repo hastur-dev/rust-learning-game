@@ -88,6 +88,8 @@ pub struct Game {
     // Continuous key press support
     pub key_backspace_held_time: f32,
     pub key_space_held_time: f32,
+    pub key_char_held_time: f32,       // For any character key currently held
+    pub last_char_pressed: Option<char>, // Track which character is being held
     pub key_repeat_initial_delay: f32, // Delay before key starts repeating (in seconds)
     pub key_repeat_interval: f32,      // Interval between repeats (in seconds)
     // Font measurement caching for cursor positioning
@@ -95,4 +97,12 @@ pub struct Game {
     pub cached_char_width: f32,        // Width of 'M' character at cached font size
     pub cached_line_height: f32,       // Line height at cached font size
     pub needs_font_refresh: bool,      // Flag to indicate font measurements need refresh
+    // Commands/Logs tab system
+    pub commands_logs_tab: CommandsLogsTab, // Current active tab for commands area
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommandsLogsTab {
+    Commands,
+    Logs,
 }

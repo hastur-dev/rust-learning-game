@@ -1,0 +1,76 @@
+name: "Level 34 - Custom Error Types"
+grid_size: "25x20"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+
+obstacles: 34
+enemies:
+  - start_location: [23, 18]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [24, 30]
+    movement_pattern: "vertical"
+    moving_positive: true
+  - start_location: [22, 31]
+    movement_pattern: "circular"
+    moving_positive: false
+  - start_location: [24, 27]
+    movement_pattern: "horizontal"
+    moving_positive: true
+  - start_location: [24, 27]
+    movement_pattern: "vertical"
+    moving_positive: false
+  - start_location: [23, 24]
+    movement_pattern: "circular"
+    moving_positive: true
+  - start_location: [24, 31]
+    movement_pattern: "horizontal"
+    moving_positive: false
+  - start_location: [20, 25]
+    movement_pattern: "vertical"
+    moving_positive: true
+
+doors:
+  - [23, 33]
+  - [23, 32]
+  - [24, 29]
+  - [23, 28]
+  - [24, 31]
+  - [24, 22]
+  - [22, 29]
+
+items:
+  - name: "error_trait_tip"
+    item_file: "items/error_trait.rs"
+    spawn_randomly: false
+    location: [24, 32]
+  - name: "display_debug_tip"
+    item_file: "items/display_debug.rs"
+    spawn_randomly: false
+    location: [23, 30]
+  - name: "error_enums_tip"
+    item_file: "items/error_enums.rs"
+    spawn_randomly: false
+    location: [24, 34]
+  - name: "error_context_tip"
+    item_file: "items/error_context.rs"
+    spawn_randomly: false
+    location: [24, 27]
+  - name: "error_conversion_tip"
+    item_file: "items/error_conversion.rs"
+    spawn_randomly: false
+    location: [23, 26]
+  - name: "thiserror_tip"
+    item_file: "items/thiserror.rs"
+    spawn_randomly: false
+    location: [24, 24]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [24, 32]
+
+message: "Create meaningful error types! Implement the Error trait, use enums for multiple error variants, and provide useful context. Learn about error conversion and libraries like thiserror for ergonomic error handling."
+
+hint_message: "Custom errors: Implement Error + Display + Debug. Use enums for variants. From trait enables ? operator conversions. thiserror crate simplifies error creation with derives."
