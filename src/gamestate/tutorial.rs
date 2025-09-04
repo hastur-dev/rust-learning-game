@@ -1,11 +1,25 @@
 use super::types::Game;
 
 impl Game {
-    // Tutorial system methods
+    // Unified tutorial system methods - routes to appropriate level
     pub fn get_tutorial_task_message(&self) -> String {
-        if self.level_idx != 0 {
-            return String::new(); // Only for level 1
+        match self.level_idx {
+            0 => self.get_level_1_task_message(),
+            1 => self.get_level_2_task_message(),
+            _ => String::new(), // No tutorial for other levels yet
         }
+    }
+    
+    pub fn check_tutorial_progress(&mut self) {
+        match self.level_idx {
+            0 => self.check_level_1_progress(),
+            1 => self.check_level_2_progress(),
+            _ => {}, // No tutorial for other levels yet
+        }
+    }
+    
+    // Level 1 specific methods
+    fn get_level_1_task_message(&self) -> String {
         
         match self.tutorial_state.current_task {
             0 => "Task 1/5: Learning Print Statements\n\nIn Rust, we use println!() to display text.\n In this game we capture the print statement and turn it into popups.\n Try typing:\nprintln!(\"Hello, Rust!\");\n\nThen hit [SHIFT+ENTER] Run to execute your code.".to_string(),
@@ -17,9 +31,9 @@ impl Game {
         }
     }
     
-    pub fn check_tutorial_progress(&mut self) {
-        if self.level_idx != 0 || self.tutorial_state.current_task >= 5 {
-            return; // Only for level 1 and if not completed
+    fn check_level_1_progress(&mut self) {
+        if self.tutorial_state.current_task >= 5 {
+            return; // Level 1 completed
         }
         
         match self.tutorial_state.current_task {

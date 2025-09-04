@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 use ::rand::{rngs::StdRng, SeedableRng};
 use std::collections::HashSet;
 use log::{info, warn, error, debug, trace};
+use std::env;
 
 // Desktop-only imports
 #[cfg(not(target_arch = "wasm32"))]
@@ -29,6 +30,7 @@ mod rust_checker;
 mod font_scaling;
 mod cache;
 mod progressive_loader;
+mod coordinate_system;
 
 use level::*;
 use item::*;
@@ -63,6 +65,78 @@ fn main() {
 }
 use rust_checker::format_errors_for_display;
 
+// Helper function to parse println/eprintln messages with variable substitution
+fn parse_println_message(param: &str, code: &str) -> String {
+    // Simple string literal case
+    if param.starts_with('"') && param.ends_with('"') {
+        return param[1..param.len()-1].to_string();
+    }
+    
+    // Format string with variables case (e.g., "Hello {}", name)
+    if let Some(comma_pos) = param.find(',') {
+        let format_part = param[..comma_pos].trim();
+        let vars_part = param[comma_pos + 1..].trim();
+        
+        if format_part.starts_with('"') && format_part.ends_with('"') {
+            let mut message = format_part[1..format_part.len()-1].to_string();
+            
+            // Extract variable names (simple parsing - works for basic cases)
+            let variables: Vec<&str> = vars_part.split(',').map(|v| v.trim()).collect();
+            
+            // Try to resolve variable values from the code
+            for var_name in variables {
+                if let Some(value) = extract_variable_value(var_name, code) {
+                    // Replace the first {} with the variable value
+                    if let Some(pos) = message.find("{}") {
+                        message.replace_range(pos..pos+2, &value);
+                    }
+                }
+            }
+            
+            return message;
+        }
+    }
+    
+    // Fallback for complex cases
+    param.replace("{}", "[value]").trim_matches('"').to_string()
+}
+
+// Helper function to extract variable values from code
+fn extract_variable_value(var_name: &str, code: &str) -> Option<String> {
+    for line in code.lines() {
+        let trimmed = line.trim();
+        
+        // Look for variable assignments like: let var_name = "value";
+        if let Some(let_pos) = trimmed.find("let") {
+            let after_let = &trimmed[let_pos + 3..].trim();
+            
+            if after_let.starts_with(&format!("{} =", var_name)) ||
+               after_let.starts_with(&format!("mut {} =", var_name)) {
+                
+                if let Some(eq_pos) = after_let.find('=') {
+                    let value_part = after_let[eq_pos + 1..].trim();
+                    
+                    // Handle string literals
+                    if value_part.starts_with('"') {
+                        if let Some(end_quote) = value_part[1..].find('"') {
+                            return Some(value_part[1..end_quote+1].to_string());
+                        }
+                    }
+                    
+                    // Handle simple values (numbers, etc.)
+                    if let Some(semicolon) = value_part.find(';') {
+                        return Some(value_part[..semicolon].trim().to_string());
+                    } else {
+                        return Some(value_part.to_string());
+                    }
+                }
+            }
+        }
+    }
+    
+    None
+}
+
 // Desktop-only functions
 #[cfg(not(target_arch = "wasm32"))]
 fn extract_print_statements_from_rust_code(code: &str) -> Vec<String> {
@@ -92,11 +166,8 @@ fn main() {{
             let after_paren = &trimmed[start + 9..];
             if let Some(end) = after_paren.find(')') {
                 let param = after_paren[..end].trim();
-                let message = if param.starts_with('"') && param.ends_with('"') {
-                    param[1..param.len()-1].to_string()
-                } else {
-                    param.replace("{}", "[value]").trim_matches('"').to_string()
-                };
+                let message = parse_println_message(param, &code);
+                debug!("Parsed println message: '{}' from param: '{}'", message, param);
                 print_outputs.push(format!("stdout: {}", message));
             }
         }
@@ -106,11 +177,8 @@ fn main() {{
             let after_paren = &trimmed[start + 10..];
             if let Some(end) = after_paren.find(')') {
                 let param = after_paren[..end].trim();
-                let message = if param.starts_with('"') && param.ends_with('"') {
-                    param[1..param.len()-1].to_string()
-                } else {
-                    param.replace("{}", "[value]").trim_matches('"').to_string()
-                };
+                let message = parse_println_message(param, &code);
+                debug!("Parsed eprintln message: '{}' from param: '{}'", message, param);
                 print_outputs.push(format!("stderr: {}", message));
             }
         }
@@ -1071,10 +1139,26 @@ fn main() {
 // Desktop-specific main logic
 #[cfg(not(target_arch = "wasm32"))]
 async fn desktop_main() {
-    // Initialize logging
+    // Parse command line arguments
+    let args: Vec<String> = env::args().collect();
+    let enable_all_logs = args.contains(&"--all-logs".to_string());
+    
+    // Initialize logging with appropriate level based on command line args
+    let log_level = if enable_all_logs {
+        log::LevelFilter::Debug  // Show all debug logs when --all-logs is specified
+    } else {
+        log::LevelFilter::Info   // Only show info and higher by default
+    };
+    
     env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Debug)
+        .filter_level(log_level)
         .init();
+    
+    if enable_all_logs {
+        info!("All logs enabled, including detailed coordinate tracking and debug messages");
+    } else {
+        info!("Normal logging mode - use --all-logs for detailed debug information");
+    }
     
     info!("Starting Rust Steam Game...");
     
@@ -1089,6 +1173,10 @@ async fn desktop_main() {
     info!("Loaded {} core levels", core_levels.len());
     
     let mut game = Game::new(core_levels.clone(), rng);
+    
+    // Enable coordinate logs if --all-logs flag is present
+    game.enable_coordinate_logs = enable_all_logs;
+    
     info!("Game initialized successfully");
     
     // Set initial levels count in menu
@@ -1184,6 +1272,9 @@ async fn desktop_main() {
                     // Mouse handling
                     let (mouse_x, mouse_y) = mouse_position();
                     trace!("Mouse position: ({:.2}, {:.2})", mouse_x, mouse_y);
+                    
+                    // Update window coordinates for precise mouse tracking
+                    game.update_window_coordinates();
                     
                     if is_mouse_button_pressed(MouseButton::Left) {
                         debug!("Left mouse button pressed at ({:.2}, {:.2})", mouse_x, mouse_y);

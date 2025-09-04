@@ -70,6 +70,10 @@ impl Game {
             cached_line_height: 0.0,
             needs_font_refresh: true,      // Initially needs refresh
             commands_logs_tab: CommandsLogsTab::Commands, // Default to Commands tab
+            coordinate_transformer: crate::coordinate_system::CoordinateTransformer::new(), // Initialize coordinate transformer
+            enable_coordinate_logs: false, // Default to disabled, enabled via --all-logs command line flag
+            last_window_update_time: 0.0, // Initialize timer
+            last_mouse_click_time: 0.0,   // Initialize click timer
         }
     }
 

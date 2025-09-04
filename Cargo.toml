@@ -10,6 +10,7 @@ crate-type = ["cdylib", "rlib"]
 name = "robo_grid_explorer_gui"
 path = "src/main.rs"
 
+
 [dependencies]
 macroquad = "0.4"
 rand = "0.8"
@@ -24,6 +25,9 @@ env_logger = "0.10"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 notify = "6.0"
 crossbeam-channel = "0.5"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser", "windef", "minwindef", "processthreadsapi"] }
 
 # WASM-specific dependencies
 [target.'cfg(target_arch = "wasm32")'.dependencies]

@@ -4,9 +4,95 @@ use crate::font_scaling::*;
 use log::{debug, warn, error};
 
 impl Game {
+    // Update window position for coordinate transformations (throttled to 1x per second, more during rapid clicking)
+    pub fn update_window_coordinates(&mut self) {
+        let current_time = macroquad::prelude::get_time();
+        
+        // Adaptive throttling: if there's been recent clicking, be more conservative
+        let time_since_last_click = current_time - self.last_mouse_click_time;
+        let update_interval = if time_since_last_click < 1.0 {
+            5.0 // If recent clicking, wait 5 seconds between window updates
+        } else {
+            1.0 // Normal interval of 1 second
+        };
+        
+        // Only update window coordinates at the determined interval to reduce overhead
+        if current_time - self.last_window_update_time >= update_interval {
+            // Wrap window update in safety catch to prevent crashes
+            let update_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.coordinate_transformer.update_window_info();
+            }));
+            
+            match update_result {
+                Ok(_) => {
+                    self.last_window_update_time = current_time;
+                    if self.enable_coordinate_logs {
+                        if let Some(window_info) = self.coordinate_transformer.get_window_info() {
+                            debug!("Updated window info: {:?}", window_info);
+                        } else {
+                            debug!("Window info update failed");
+                        }
+                    }
+                }
+                Err(_) => {
+                    warn!("Window coordinate update panicked - skipping this update");
+                    // Don't update the timer so we can try again later
+                }
+            }
+        }
+    }
+    
     // some cursor and scrolling helpers, but the scroll doesn't work
     pub fn position_cursor_at_click(&mut self, click_x: f32, click_y: f32, editor_bounds: (f32, f32, f32, f32)) {
-        debug!("position_cursor_at_click called: click=({:.2}, {:.2}), bounds={:?}", click_x, click_y, editor_bounds);
+        let current_time = macroquad::prelude::get_time();
+        
+        // Rate limit clicks to prevent rapid-fire clicking from causing issues
+        let click_delay = 0.05; // Minimum 50ms between clicks
+        if current_time - self.last_mouse_click_time < click_delay {
+            debug!("Click rate limited - too soon after last click");
+            return;
+        }
+        
+        self.last_mouse_click_time = current_time;
+        debug!("position_cursor_at_click called: macroquad_coordinates=({:.2}, {:.2}), bounds={:?}", click_x, click_y, editor_bounds);
+        
+        // Get precise mouse position using the coordinate transformer with safety wrapper
+        debug!("Attempting to get precise mouse position...");
+        
+        let precise_pos_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.coordinate_transformer.get_precise_mouse_position_in_editor(editor_bounds, self.enable_coordinate_logs)
+        }));
+        
+        let precise_pos_option = match precise_pos_result {
+            Ok(pos) => pos,
+            Err(_) => {
+                warn!("Coordinate transformation panicked - falling back to macroquad coordinates");
+                None
+            }
+        };
+        
+        if let Some(precise_pos) = precise_pos_option {
+            if self.enable_coordinate_logs {
+                debug!("Using precise coordinates: editor=({:.2}, {:.2})", precise_pos.x, precise_pos.y);
+            }
+            
+            // The precise_pos is already in editor coordinates, but we need window coordinates for existing logic
+            // So we convert editor coordinates back to window coordinates
+            let actual_click_x = precise_pos.x + editor_bounds.0; // Add editor offset to get window coordinates
+            let actual_click_y = precise_pos.y + editor_bounds.1;
+            if self.enable_coordinate_logs {
+                debug!("Converted to window coordinates: ({:.2}, {:.2})", actual_click_x, actual_click_y);
+            }
+            
+            self.position_cursor_at_click_internal(actual_click_x, actual_click_y, editor_bounds);
+        } else {
+            warn!("Precise coordinate transformation failed, falling back to macroquad coordinates");
+            self.position_cursor_at_click_internal(click_x, click_y, editor_bounds);
+        }
+    }
+    
+    fn position_cursor_at_click_internal(&mut self, click_x: f32, click_y: f32, editor_bounds: (f32, f32, f32, f32)) {
+        debug!("position_cursor_at_click_internal called: click=({:.2}, {:.2}), bounds={:?}", click_x, click_y, editor_bounds);
         
         // make sure it isn't empty
         if self.current_code.is_empty() {

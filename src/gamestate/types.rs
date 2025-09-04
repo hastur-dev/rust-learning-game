@@ -99,6 +99,13 @@ pub struct Game {
     pub needs_font_refresh: bool,      // Flag to indicate font measurements need refresh
     // Commands/Logs tab system
     pub commands_logs_tab: CommandsLogsTab, // Current active tab for commands area
+    // Coordinate transformation system
+    pub coordinate_transformer: crate::coordinate_system::CoordinateTransformer, // Global/window mouse coordinate handling
+    // Debug flags
+    pub enable_coordinate_logs: bool, // Enable detailed coordinate transformation logs
+    // Window tracking timer
+    pub last_window_update_time: f64, // Time of last window coordinate update (for throttling)
+    pub last_mouse_click_time: f64,   // Time of last mouse click (for click rate limiting)
 }
 
 #[derive(Debug, Clone, PartialEq)]

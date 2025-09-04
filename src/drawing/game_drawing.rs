@@ -149,8 +149,9 @@ pub fn draw_game(game: &Game) {
 }
 
 pub fn draw_tutorial_overlay(game: &Game) {
-    // Draw tutorial task for level 1
-    if game.level_idx == 0 && game.tutorial_state.current_task < 5 {
+    // Draw tutorial task for learning levels (level 1 and level 2)
+    if (game.level_idx == 0 && game.tutorial_state.current_task < 5) || 
+       (game.level_idx == 1 && game.tutorial_state.current_task < 4) {
         let tutorial_message = game.get_tutorial_task_message();
         if !tutorial_message.is_empty() {
             let scale = ScaledMeasurements::new();

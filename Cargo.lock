@@ -599,6 +599,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "wee_alloc",
+ "winapi",
 ]
 
 [[package]]
