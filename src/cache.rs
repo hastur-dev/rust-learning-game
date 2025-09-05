@@ -8,6 +8,9 @@ pub struct GameCache {
     pub compiled_levels: HashMap<String, CachedLevel>,
     pub cache_version: u32,
     pub font_metrics: HashMap<String, FontMetrics>,
+    pub precompiled_assets: HashMap<String, CachedAsset>,
+    pub game_settings: Option<CachedGameSettings>,
+    pub startup_data: Option<StartupData>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -25,7 +28,34 @@ pub struct FontMetrics {
     pub cached_at: u64,
 }
 
-const CACHE_VERSION: u32 = 1;
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CachedAsset {
+    pub asset_type: String,
+    pub data: Vec<u8>,
+    pub checksum: String,
+    pub cached_at: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CachedGameSettings {
+    pub window_width: i32,
+    pub window_height: i32,
+    pub fullscreen: bool,
+    pub font_size_multiplier: f32,
+    pub maximized: bool,
+    pub cached_at: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct StartupData {
+    pub last_played_level: usize,
+    pub total_levels_count: usize,
+    pub embedded_levels_checksum: String,
+    pub startup_time_ms: u64,
+    pub cached_at: u64,
+}
+
+const CACHE_VERSION: u32 = 2;
 const CACHE_FILE: &str = "rust_game_cache.json";
 
 impl GameCache {
@@ -68,6 +98,9 @@ impl GameCache {
     pub fn clear(&mut self) {
         self.compiled_levels.clear();
         self.font_metrics.clear();
+        self.precompiled_assets.clear();
+        self.game_settings = None;
+        self.startup_data = None;
         log::info!("Cache cleared");
     }
     
@@ -116,5 +149,92 @@ impl GameCache {
             .as_secs();
         
         current_time - cached_level.compiled_at < max_age_seconds
+    }
+
+    // Asset caching methods
+    pub fn cache_asset(&mut self, key: String, asset_type: String, data: Vec<u8>) {
+        let checksum = Self::calculate_checksum(&String::from_utf8_lossy(&data));
+        let cached_asset = CachedAsset {
+            asset_type,
+            data,
+            checksum,
+            cached_at: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        };
+        
+        log::debug!("Cached asset: {}", key);
+        self.precompiled_assets.insert(key, cached_asset);
+    }
+
+    pub fn get_cached_asset(&self, key: &str) -> Option<&CachedAsset> {
+        self.precompiled_assets.get(key)
+    }
+
+    // Game settings caching
+    pub fn cache_game_settings(&mut self, settings: CachedGameSettings) {
+        log::debug!("Cached game settings");
+        self.game_settings = Some(settings);
+    }
+
+    pub fn get_cached_game_settings(&self) -> Option<&CachedGameSettings> {
+        self.game_settings.as_ref()
+    }
+
+    // Startup data caching
+    pub fn cache_startup_data(&mut self, data: StartupData) {
+        log::debug!("Cached startup data");
+        self.startup_data = Some(data);
+    }
+
+    pub fn get_startup_data(&self) -> Option<&StartupData> {
+        self.startup_data.as_ref()
+    }
+
+    // Generate checksum for embedded levels to detect changes
+    pub fn generate_embedded_levels_checksum() -> String {
+        let embedded_levels = crate::embedded_levels::get_embedded_learning_levels();
+        let serialized = serde_json::to_string(&embedded_levels).unwrap_or_default();
+        Self::calculate_checksum(&serialized)
+    }
+
+    // Check if cached data is still valid
+    pub fn is_startup_data_fresh(&self, max_age_seconds: u64) -> bool {
+        if let Some(data) = &self.startup_data {
+            let current_time = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            
+            current_time - data.cached_at < max_age_seconds
+        } else {
+            false
+        }
+    }
+
+    // Validate that cached embedded levels are still current
+    pub fn is_embedded_levels_cache_valid(&self) -> bool {
+        if let Some(data) = &self.startup_data {
+            let current_checksum = Self::generate_embedded_levels_checksum();
+            data.embedded_levels_checksum == current_checksum
+        } else {
+            false
+        }
+    }
+
+    // Pre-cache common assets to speed up initial load
+    pub fn precache_common_assets(&mut self) {
+        // Cache commonly used text patterns for faster parsing
+        let common_patterns = [
+            ("rust_keywords", "fn main use let mut if else for while loop match"),
+            ("game_commands", "move_bot grab scan laser::direction laser::tile open_door"),
+            ("print_patterns", "println! eprintln! panic! format!"),
+        ];
+
+        for (key, pattern) in common_patterns.iter() {
+            let pattern_data = pattern.as_bytes().to_vec();
+            self.cache_asset(key.to_string(), "text_pattern".to_string(), pattern_data);
+        }
     }
 }

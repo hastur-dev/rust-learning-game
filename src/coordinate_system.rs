@@ -154,7 +154,7 @@ impl CoordinateTransformer {
     pub fn get_window_position() -> Option<WindowInfo> {
         #[cfg(windows)]
         {
-            use winapi::um::winuser::{FindWindowW, GetWindowRect, EnumWindows, GetWindowTextW, IsWindowVisible, GetClientRect, ClientToScreen, IsWindow};
+            use winapi::um::winuser::{FindWindowW, GetWindowRect, EnumWindows, IsWindowVisible, GetClientRect, ClientToScreen, IsWindow};
             use winapi::shared::windef::{RECT, HWND};
             use winapi::shared::minwindef::{BOOL, TRUE, LPARAM};
             use std::mem;
@@ -296,6 +296,11 @@ impl CoordinateTransformer {
                 let best_window_clone = best_window.clone();
                 
                 unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+                    // Add safety checks to prevent crashes
+                    if hwnd.is_null() || IsWindow(hwnd) == 0 {
+                        return TRUE;
+                    }
+                    
                     let best_window = &*(lparam as *const Arc<Mutex<Option<WindowInfo>>>);
                     
                     if IsWindowVisible(hwnd) == TRUE {
@@ -339,9 +344,17 @@ impl CoordinateTransformer {
                 }
 
                 // Debug: List all visible windows for troubleshooting
-                debug!("Failed to find game window. Listing all visible windows for debugging:");
-                
-                unsafe extern "system" fn debug_enum_proc(hwnd: HWND, _lparam: LPARAM) -> BOOL {
+                // Only run this in debug builds to prevent access violations with screenshot tools
+                #[cfg(debug_assertions)]
+                {
+                    debug!("Failed to find game window. Listing all visible windows for debugging:");
+                    
+                    unsafe extern "system" fn debug_enum_proc(hwnd: HWND, _lparam: LPARAM) -> BOOL {
+                    // Add safety checks to prevent crashes
+                    if hwnd.is_null() || IsWindow(hwnd) == 0 {
+                        return TRUE;
+                    }
+                    
                     if IsWindowVisible(hwnd) == TRUE {
                         let mut rect: RECT = mem::zeroed();
                         if GetWindowRect(hwnd, &mut rect) != 0 {
@@ -352,14 +365,9 @@ impl CoordinateTransformer {
                                 height: rect.bottom - rect.top,
                             };
                             
-                            // Get window title for debugging
-                            let mut buffer = [0u16; 256];
-                            let title_len = winapi::um::winuser::GetWindowTextW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
-                            let title = if title_len > 0 {
-                                String::from_utf16_lossy(&buffer[..title_len as usize])
-                            } else {
-                                "No Title".to_string()
-                            };
+                            // Skip window title retrieval to prevent access violations
+                            // This can crash when Windows screenshot tools are running
+                            let title = "Window".to_string();
                             
                             debug!("  Window: '{}' - {:?}", title, window_info);
                         }
@@ -368,6 +376,7 @@ impl CoordinateTransformer {
                 }
                 
                 EnumWindows(Some(debug_enum_proc), 0);
+                }
                 
                 error!("Failed to get window position");
                 None

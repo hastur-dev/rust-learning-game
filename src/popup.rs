@@ -19,6 +19,7 @@ pub enum PopupType {
     Stderr,  // For eprintln! and error output
     Panic,   // For panic! output
     Congratulations, // For level completion
+    FunctionResults, // For robot function execution results
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -130,6 +131,17 @@ impl PopupSystem {
     }
     
     pub fn show_println_output(&mut self, message: String) {
+        // Check if we already have a stdout popup and stack the messages
+        if let Some(ref mut current) = self.current_popup {
+            if matches!(current.popup_type, PopupType::Stdout) {
+                // Stack the new message with the existing one
+                current.content = format!("{}\n{}", current.content, message);
+                self.popup_timer = 0.0; // Reset timer for new message
+                return;
+            }
+        }
+        
+        // Create new stdout popup
         self.show_message(
             "📝 Program Output".to_string(),
             message,
@@ -139,6 +151,17 @@ impl PopupSystem {
     }
     
     pub fn show_eprintln_output(&mut self, message: String) {
+        // Check if we already have a stderr popup and stack the messages
+        if let Some(ref mut current) = self.current_popup {
+            if matches!(current.popup_type, PopupType::Stderr) {
+                // Stack the new message with the existing one
+                current.content = format!("{}\n{}", current.content, message);
+                self.popup_timer = 0.0; // Reset timer for new message
+                return;
+            }
+        }
+        
+        // Create new stderr popup
         self.show_message(
             "🔴 Error Output".to_string(),
             message,
@@ -148,11 +171,62 @@ impl PopupSystem {
     }
     
     pub fn show_panic_output(&mut self, message: String) {
+        // Check if we already have a panic popup and stack the messages
+        if let Some(ref mut current) = self.current_popup {
+            if matches!(current.popup_type, PopupType::Panic) {
+                // Stack the new panic message with the existing one
+                let formatted_message = format!("Program terminated: {}", message);
+                current.content = format!("{}\n{}", current.content, formatted_message);
+                self.popup_timer = 0.0; // Reset timer for new message
+                return;
+            }
+        }
+        
+        // Create new panic popup
         self.show_message(
             "💥 PANIC".to_string(),
             format!("Program terminated: {}", message),
             PopupType::Panic,
             None // Manual close for panics
+        );
+    }
+    
+    pub fn show_function_results(&mut self, results: Vec<String>) {
+        if results.is_empty() {
+            return;
+        }
+        
+        // Filter out empty or generic results
+        let meaningful_results: Vec<String> = results
+            .into_iter()
+            .filter(|r| !r.is_empty() && 
+                        !r.contains("executed") && 
+                        !r.contains("Print functions handled separately") &&
+                        r != "No valid function calls found")
+            .collect();
+        
+        if meaningful_results.is_empty() {
+            return;
+        }
+        
+        // Check if we already have a function results popup and stack the messages
+        if let Some(ref mut current) = self.current_popup {
+            if matches!(current.popup_type, PopupType::FunctionResults) {
+                // Stack the new results with the existing ones
+                let new_content = meaningful_results.join("\n");
+                current.content = format!("{}\n{}", current.content, new_content);
+                self.popup_timer = 0.0; // Reset timer for new message
+                return;
+            }
+        }
+        
+        // Create new function results popup
+        let content = meaningful_results.join("\n");
+        self.show_message(
+            "🤖 Robot Action Results".to_string(),
+            content,
+            PopupType::FunctionResults,
+            Some(4.0) // Auto-close after 4 seconds for function results
         );
     }
     
@@ -272,6 +346,7 @@ impl PopupSystem {
             PopupType::Panic => (Color::new(0.4, 0.1, 0.1, 0.95), RED, ORANGE),
             PopupType::Tutorial => (Color::new(0.25, 0.15, 0.3, 0.95), PURPLE, PINK),
             PopupType::Congratulations => (Color::new(0.1, 0.3, 0.1, 0.95), GOLD, YELLOW),
+            PopupType::FunctionResults => (Color::new(0.15, 0.25, 0.15, 0.95), GREEN, LIME),
         };
         
         let scale = ScaledMeasurements::new();
@@ -323,36 +398,46 @@ impl PopupSystem {
     }
 }
 
-// Helper function to wrap text
+// Helper function to wrap text, respecting explicit newlines
 fn wrap_text(text: &str, max_width: f32, font_size: f32) -> Vec<String> {
-    let words: Vec<&str> = text.split_whitespace().collect();
     let mut lines = Vec::new();
-    let mut current_line = String::new();
     
-    for word in words {
-        let test_line = if current_line.is_empty() {
-            word.to_string()
-        } else {
-            format!("{} {}", current_line, word)
-        };
+    // First split by explicit newlines
+    for paragraph in text.split('\n') {
+        if paragraph.trim().is_empty() {
+            lines.push(String::new()); // Preserve empty lines
+            continue;
+        }
         
-        let test_width = measure_text(&test_line, None, font_size as u16, 1.0).width;
+        // Then wrap each paragraph
+        let words: Vec<&str> = paragraph.split_whitespace().collect();
+        let mut current_line = String::new();
         
-        if test_width <= max_width {
-            current_line = test_line;
-        } else {
-            if !current_line.is_empty() {
-                lines.push(current_line);
-                current_line = word.to_string();
+        for word in words {
+            let test_line = if current_line.is_empty() {
+                word.to_string()
             } else {
-                // Word is too long, just add it anyway
-                lines.push(word.to_string());
+                format!("{} {}", current_line, word)
+            };
+            
+            let test_width = measure_text(&test_line, None, font_size as u16, 1.0).width;
+            
+            if test_width <= max_width {
+                current_line = test_line;
+            } else {
+                if !current_line.is_empty() {
+                    lines.push(current_line);
+                    current_line = word.to_string();
+                } else {
+                    // Word is too long, just add it anyway
+                    lines.push(word.to_string());
+                }
             }
         }
-    }
-    
-    if !current_line.is_empty() {
-        lines.push(current_line);
+        
+        if !current_line.is_empty() {
+            lines.push(current_line);
+        }
     }
     
     lines

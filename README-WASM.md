@@ -1,6 +1,7 @@
 # 🎮 Rust Steam Game - WebAssembly Edition
 
-This is a Rust-based grid exploration game that can run both as a desktop application and in web browsers via WebAssembly (WASM).
+This documentation is wrong and is going to change. Don't deploy this to wasm because I have basically left this behind
+I'm going to fix this and make it work whenever I get the full game completed
 
 ## 🌐 Web Version (WASM)
 

@@ -161,18 +161,7 @@ fn main() {{
             continue;
         }
         
-        // Look for println! statements
-        if let Some(start) = trimmed.find("println!(") {
-            let after_paren = &trimmed[start + 9..];
-            if let Some(end) = after_paren.find(')') {
-                let param = after_paren[..end].trim();
-                let message = parse_println_message(param, &code);
-                debug!("Parsed println message: '{}' from param: '{}'", message, param);
-                print_outputs.push(format!("stdout: {}", message));
-            }
-        }
-        
-        // Look for eprintln! statements
+        // Look for eprintln! statements first (before println! to avoid substring matching)
         if let Some(start) = trimmed.find("eprintln!(") {
             let after_paren = &trimmed[start + 10..];
             if let Some(end) = after_paren.find(')') {
@@ -180,6 +169,16 @@ fn main() {{
                 let message = parse_println_message(param, &code);
                 debug!("Parsed eprintln message: '{}' from param: '{}'", message, param);
                 print_outputs.push(format!("stderr: {}", message));
+            }
+        }
+        // Look for println! statements (after eprintln! to avoid substring matching)
+        else if let Some(start) = trimmed.find("println!(") {
+            let after_paren = &trimmed[start + 9..];
+            if let Some(end) = after_paren.find(')') {
+                let param = after_paren[..end].trim();
+                let message = parse_println_message(param, &code);
+                debug!("Parsed println message: '{}' from param: '{}'", message, param);
+                print_outputs.push(format!("stdout: {}", message));
             }
         }
         
@@ -573,6 +572,59 @@ fn try_scan(game: &mut Game, dir: (i32, i32)) -> String {
     }
 }
 
+fn try_area_scan(game: &mut Game) -> String {
+    // Area scan for Level 2 - scans current position + 8 surrounding tiles
+    let robot_pos = game.robot.get_position();
+    let mut items_found = Vec::new();
+    let mut obstacles_found = Vec::new();
+    let mut empty_count = 0;
+    let mut walls_found = 0;
+    let mut out_of_bounds = 0;
+    
+    // Define 3x3 area around robot (including center)
+    let scan_offsets = [
+        (-1, -1), (0, -1), (1, -1),  // Top row
+        (-1,  0), (0,  0), (1,  0),  // Middle row (including current)
+        (-1,  1), (0,  1), (1,  1),  // Bottom row
+    ];
+    
+    for (dx, dy) in scan_offsets.iter() {
+        let scan_pos = crate::item::Pos {
+            x: robot_pos.0 + dx,
+            y: robot_pos.1 + dy
+        };
+        
+        // Check if position is within grid bounds
+        if !game.grid.in_bounds(scan_pos) {
+            out_of_bounds += 1;
+            continue;
+        }
+        
+        // Reveal this tile
+        game.grid.reveal(scan_pos);
+        
+        // Check what's at this position
+        if game.grid.is_blocked(scan_pos) {
+            obstacles_found.push(format!("({}, {})", scan_pos.x, scan_pos.y));
+            walls_found += 1;
+        } else if let Some(item) = game.item_manager.get_item_at_position(scan_pos) {
+            items_found.push(format!("{} at ({}, {})", item.name, scan_pos.x, scan_pos.y));
+        } else {
+            empty_count += 1;
+        }
+    }
+    
+    // Build result message based on what was found
+    if !items_found.is_empty() {
+        format!("Found items: {}. Empty tiles: {}. Walls: {}.", 
+                items_found.join(", "), empty_count, walls_found)
+    } else if walls_found > 0 {
+        format!("Empty tiles: {}. Found {} walls/obstacles.", empty_count, walls_found)
+    } else {
+        format!("All {} accessible tiles are empty.", empty_count)
+    }
+}
+
 
 // Code parsing and execution
 fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
@@ -644,6 +696,7 @@ fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
                     "down" | "Down" | "\"down\"" | "\"Down\"" => Some((0, 1)),
                     "left" | "Left" | "\"left\"" | "\"Left\"" => Some((-1, 0)),
                     "right" | "Right" | "\"right\"" | "\"Right\"" => Some((1, 0)),
+                    "current" | "Current" | "\"current\"" | "\"Current\"" => Some((0, 0)), // Special case for area scan
                     _ => None,
                 };
                 if let Some(d) = dir {
@@ -779,7 +832,13 @@ fn execute_function(game: &mut Game, call: FunctionCall) -> String {
         },
         RustFunction::Scan => {
             if let Some(dir) = call.direction {
-                try_scan(game, dir).to_string()
+                if dir == (0, 0) {
+                    // Special case: scan("current") - scan 3x3 area around robot
+                    try_area_scan(game)
+                } else {
+                    // Normal directional scan
+                    try_scan(game, dir).to_string()
+                }
             } else {
                 "Direction required for scan".to_string()
             }
@@ -1030,6 +1089,11 @@ async fn execute_rust_code(game: &mut Game) -> String {
         results.push("Print statements executed successfully!".to_string());
     }
     
+    // Show function results in popup if we have meaningful robot function calls
+    if !calls.is_empty() {
+        game.popup_system.show_function_results(results.clone());
+    }
+    
     // Check tutorial progress after execution
     game.check_tutorial_progress();
     
@@ -1140,12 +1204,414 @@ fn main() {
     // The actual game logic is in lib.rs
 }
 
+// Helper function to cache game state when exiting
+#[cfg(not(target_arch = "wasm32"))]
+fn cache_game_state_on_exit(cache: &mut cache::GameCache, game: &Game) {
+    use cache::{CachedGameSettings, StartupData};
+    
+    info!("Caching game state before exit...");
+    
+    // Cache current game settings
+    let settings = CachedGameSettings {
+        window_width: game.menu.settings.window_width,
+        window_height: game.menu.settings.window_height,
+        fullscreen: game.menu.settings.fullscreen,
+        font_size_multiplier: game.menu.settings.font_size_multiplier,
+        maximized: game.menu.settings.maximized,
+        cached_at: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+    };
+    cache.cache_game_settings(settings);
+    
+    // Update startup data with current level
+    let current_checksum = cache::GameCache::generate_embedded_levels_checksum();
+    let startup_data = StartupData {
+        last_played_level: game.level_idx,
+        total_levels_count: game.levels.len(),
+        embedded_levels_checksum: current_checksum,
+        startup_time_ms: 0, // Will be updated on next startup
+        cached_at: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+    };
+    cache.cache_startup_data(startup_data);
+    
+    // Save the cache
+    cache.save();
+    info!("Game state cached successfully");
+}
+
+// Helper function to update cached settings during runtime
+#[cfg(not(target_arch = "wasm32"))]
+fn update_cached_settings(cache: &mut cache::GameCache, settings: &menu::GameSettings) {
+    use cache::CachedGameSettings;
+    
+    let cached_settings = CachedGameSettings {
+        window_width: settings.window_width,
+        window_height: settings.window_height,
+        fullscreen: settings.fullscreen,
+        font_size_multiplier: settings.font_size_multiplier,
+        maximized: settings.maximized,
+        cached_at: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+    };
+    cache.cache_game_settings(cached_settings);
+    // Note: We don't save here to avoid frequent disk I/O, it will be saved on exit
+}
+
+// Test mode function for headless code execution
+#[cfg(not(target_arch = "wasm32"))]
+async fn run_test_mode(test_file: String, enable_all_logs: bool) {
+    println!("=== RUST ROBOT PROGRAMMING GAME - TEST MODE ===");
+    println!("Testing code from file: {}", test_file);
+    
+    // Read the test code from file
+    let test_code = match std::fs::read_to_string(&test_file) {
+        Ok(code) => code,
+        Err(e) => {
+            eprintln!("Error reading test file '{}': {}", test_file, e);
+            return;
+        }
+    };
+    
+    println!("\n--- Test Code ---");
+    println!("{}", test_code);
+    println!("--- End Test Code ---\n");
+    
+    // Initialize minimal game state for testing
+    let rng = StdRng::seed_from_u64(TEST_SEED);
+    let core_levels = embedded_levels::get_embedded_level_specs();
+    let mut game = Game::new(core_levels, rng);
+    game.enable_coordinate_logs = enable_all_logs;
+    game.current_code = test_code.clone();
+    
+    // Load level 0 for testing
+    game.load_level(0);
+    
+    println!("=== Executing Test Code ===");
+    
+    // Create a custom test execution function
+    let execution_result = execute_test_code(&mut game, &test_code).await;
+    
+    println!("\n=== Execution Results ===");
+    println!("Result: {}", execution_result);
+    
+    // Print any accumulated outputs
+    if !game.println_outputs.is_empty() {
+        println!("\n--- Print Outputs (println!) ---");
+        for output in &game.println_outputs {
+            println!("stdout: {}", output);
+        }
+    }
+    
+    if !game.error_outputs.is_empty() {
+        println!("\n--- Error Outputs (eprintln!/panic!) ---");
+        for output in &game.error_outputs {
+            println!("stderr: {}", output);
+        }
+    }
+    
+    // Show what popups would have appeared
+    println!("\n--- Message Popup Simulation ---");
+    if let Some(popup) = &game.popup_system.current_popup {
+        println!("Message Popup: {} - {}", popup.title, popup.content);
+    } else {
+        println!("No popups would be displayed");
+    }
+    
+    // Show robot final position
+    let final_pos = game.robot.get_position();
+    println!("\n--- Robot Final State ---");
+    println!("Position: ({}, {})", final_pos.0, final_pos.1);
+    println!("Credits: {}", game.credits);
+    println!("Turns taken: {}", game.turns);
+    
+    if game.finished {
+        println!("Level completed!");
+    } else {
+        println!("Level not completed");
+    }
+    
+    println!("\n=== Test Mode Complete ===");
+}
+
+// Custom test execution that simulates the popup system output
+#[cfg(not(target_arch = "wasm32"))]
+async fn execute_test_code(game: &mut Game, code: &str) -> String {
+    // Extract and display print statements
+    let print_outputs = extract_print_statements_from_rust_code(code);
+    
+    for output in &print_outputs {
+        if output.starts_with("stdout:") {
+            let message = output.strip_prefix("stdout: ").unwrap_or("").to_string();
+            println!("Message Popup: 📝 Program Output - {}", message);
+            game.println_outputs.push(message);
+        } else if output.starts_with("stderr:") {
+            let message = output.strip_prefix("stderr: ").unwrap_or("").to_string();
+            println!("Message Popup: 🔴 Error Output - {}", message);
+            game.error_outputs.push(message);
+        } else if output.starts_with("panic:") {
+            let message = output.strip_prefix("panic: ").unwrap_or("").to_string();
+            println!("Message Popup: 💥 PANIC - Program terminated: {}", message);
+            game.panic_occurred = true;
+            game.error_outputs.push(format!("panic: {}", message));
+        }
+    }
+    
+    let calls = parse_rust_code(code);
+    if calls.is_empty() && print_outputs.is_empty() {
+        return "No valid function calls found".to_string();
+    }
+    
+    let mut results = Vec::new();
+    
+    // Handle robot function calls
+    for call in &calls {
+        let result = execute_function(game, call.clone());
+        results.push(result.clone());
+        
+        println!("Robot Action: {:?} -> {}", call.function, result);
+        
+        // Halt execution on blocking conditions or panic
+        if result.contains("Unknown Object Blocking Function") || 
+           result.contains("blocked by obstacle") || 
+           result.contains("Search blocked") {
+            results.push("EXECUTION HALTED! Rewrite your program to avoid obstacles.".to_string());
+            break;
+        } else if result.contains("💥 PANIC:") {
+            results.push("EXECUTION HALTED! Program panicked.".to_string());
+            break;
+        }
+    }
+    
+    // Show what function results popup would contain
+    if !calls.is_empty() {
+        let meaningful_results: Vec<String> = results
+            .iter()
+            .filter(|r| !r.is_empty() && 
+                        !r.contains("executed") && 
+                        !r.contains("Print functions handled separately") &&
+                        r.as_str() != "No valid function calls found")
+            .cloned()
+            .collect();
+        
+        if !meaningful_results.is_empty() {
+            println!("Message Popup: 🤖 Robot Action Results - {}", meaningful_results.join("\n"));
+        }
+    }
+    
+    // If we only had print statements (no robot function calls), provide feedback
+    if calls.is_empty() && !print_outputs.is_empty() {
+        results.push("Print statements executed successfully!".to_string());
+    }
+    
+    // Check tutorial progress and level completion
+    game.check_tutorial_progress();
+    game.check_end_condition();
+    
+    results.join("; ")
+}
+
+const TEST_SEED: u64 = 0xDEADBEEF;
+
+// Debug mode function to test all learning level solutions
+#[cfg(not(target_arch = "wasm32"))]
+async fn run_debug_all_levels(enable_all_logs: bool) {
+    println!("=== RUST ROBOT PROGRAMMING GAME - DEBUG ALL LEVELS ===");
+    
+    let learning_configs = crate::gamestate::types::Game::get_learning_level_configs();
+    
+    println!("Found {} learning levels to test", learning_configs.len());
+    println!();
+    
+    let mut total_tests = 0;
+    let mut passed_tests = 0;
+    
+    for config in learning_configs {
+        println!("🧪 Testing Level {}: {}", config.level_idx, config.name);
+        println!("Expected {} tasks to complete", config.max_tasks);
+        
+        // Try to load and test the example solution for this level
+        let level_file = format!("levels/{:02}_*.yaml", config.level_idx + 1);
+        
+        // For now, let's test with some basic solutions for the levels we know
+        let test_results = match config.level_idx {
+            0 => {
+                // Level 1: Complete solution that satisfies all 5 tasks
+                let solution = r#"
+fn main() {
+    // Task 1: println! output
+    println!("Hello, Rust robot!");
+    
+    // Task 2: eprintln! output
+    eprintln!("This is an error message for debugging");
+    
+    // Task 3: Variable used in print statement
+    let my_message = "Variables are powerful!";
+    println!("{}", my_message);
+    
+    // Task 4: Mutable variable with scan function
+    let mut scan_result = scan("right");
+    println!("Scan found: {}", scan_result);
+    
+    // Task 5: u32 integer used for movement
+    let steps: u32 = 3;
+    for _i in 0..steps {
+        move_bot("right");
+    }
+    
+    println!("Level 1 complete!");
+}"#;
+                test_level_solution(&config, solution, enable_all_logs).await
+            },
+            1 => {
+                // Level 2: Complete solution that satisfies all 4 tasks
+                let solution = r#"
+// Task 3: Define GridInfo struct
+struct GridInfo {
+    x: i32,
+    y: i32,
+    content: String,
+}
+
+// Task 1: Function with print statement
+fn scan_level() {
+    println!("Beginning level scan...");
+    
+    let mut item_locations = Vec::new();
+    
+    // Task 2: Nested loops for grid scanning
+    for y in 0..6 {
+        for x in 0..6 {
+            let scan_result = scan("current");
+            println!("Scanned ({}, {}): {}", x, y, scan_result);
+            
+            if scan_result != "empty" && scan_result != "wall" {
+                item_locations.push((x, y, scan_result.clone()));
+            }
+            
+            // Call the grab function
+            grab_if_item(&scan_result);
+        }
+    }
+}
+
+// Task 4: Second function with conditional logic
+fn grab_if_item(scan_result: &str) {
+    if scan_result != "empty" && scan_result != "wall" && scan_result != "goal" {
+        grab();
+        println!("Grabbed: {}", scan_result);
+    }
+}
+
+fn main() {
+    println!("Starting Level 2");
+    scan_level();
+    println!("Level 2 complete!");
+}"#;
+                test_level_solution(&config, solution, enable_all_logs).await
+            },
+            _ => {
+                println!("  ⚠️  No test solution available for level {}", config.level_idx);
+                (false, "No test solution available".to_string())
+            }
+        };
+        
+        total_tests += 1;
+        if test_results.0 {
+            passed_tests += 1;
+            println!("  ✅ PASSED: Level {} completed successfully", config.level_idx);
+        } else {
+            println!("  ❌ FAILED: Level {} - {}", config.level_idx, test_results.1);
+        }
+        
+        println!("  📊 Result: {}", test_results.1);
+        println!();
+    }
+    
+    println!("=== DEBUG TEST SUMMARY ===");
+    println!("Total tests: {}", total_tests);
+    println!("Passed: {}", passed_tests);
+    println!("Failed: {}", total_tests - passed_tests);
+    println!("Success rate: {:.1}%", (passed_tests as f32 / total_tests as f32) * 100.0);
+    
+    if passed_tests == total_tests {
+        println!("🎉 All tests passed!");
+    } else {
+        println!("⚠️  Some tests failed - check output above for details");
+    }
+    
+    println!("=== DEBUG ALL LEVELS COMPLETE ===");
+}
+
+// Test a solution against a specific learning level
+#[cfg(not(target_arch = "wasm32"))]
+async fn test_level_solution(config: &crate::gamestate::types::LearningLevelConfig, solution: &str, enable_all_logs: bool) -> (bool, String) {
+    println!("  🔄 Testing solution for level {}...", config.level_idx);
+    
+    // Initialize game state for this level
+    let rng = StdRng::seed_from_u64(TEST_SEED);
+    let core_levels = embedded_levels::get_embedded_level_specs();
+    
+    if config.level_idx >= core_levels.len() {
+        return (false, format!("Level {} not found in embedded levels", config.level_idx));
+    }
+    
+    let mut game = Game::new(core_levels, rng);
+    game.enable_coordinate_logs = enable_all_logs;
+    game.current_code = solution.to_string();
+    
+    // Load the specific level
+    game.load_level(config.level_idx);
+    let initial_task_count = game.tutorial_state.task_completed.iter().filter(|&&x| x).count();
+    
+    // Execute the solution code
+    println!("    ⚙️  Executing solution...");
+    let execution_result = execute_test_code(&mut game, solution).await;
+    
+    // Manually trigger tutorial progress checking to ensure tasks are evaluated
+    println!("    🔍 Checking tutorial progress...");
+    for _ in 0..5 { // Check multiple times to allow all tasks to be evaluated
+        game.check_tutorial_progress();
+        if game.tutorial_state.current_task >= config.max_tasks {
+            break;
+        }
+    }
+    
+    // Check if the level was completed
+    let final_task_count = game.tutorial_state.task_completed.iter().filter(|&&x| x).count();
+    let tasks_completed = final_task_count - initial_task_count;
+    let level_complete = game.finished;
+    
+    println!("    📈 Tasks completed: {}/{}", tasks_completed, config.max_tasks);
+    println!("    🏁 Level finished: {}", level_complete);
+    
+    // Determine if the test passed
+    let passed = level_complete || tasks_completed >= config.max_tasks;
+    let result_msg = if passed {
+        format!("Completed {} tasks, level finished: {}", tasks_completed, level_complete)
+    } else {
+        format!("Only completed {} of {} tasks, level not finished", tasks_completed, config.max_tasks)
+    };
+    
+    (passed, result_msg)
+}
+
 // Desktop-specific main logic
 #[cfg(not(target_arch = "wasm32"))]
 async fn desktop_main() {
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
     let enable_all_logs = args.contains(&"--all-logs".to_string());
+    let test_mode = args.iter().position(|arg| arg == "--test-code").map(|pos| {
+        args.get(pos + 1).cloned()
+    }).flatten();
+    let debug_all_levels = args.contains(&"--debug".to_string());
     
     // Initialize logging with appropriate level based on command line args
     let log_level = if enable_all_logs {
@@ -1164,12 +1630,30 @@ async fn desktop_main() {
         info!("Normal logging mode - use --all-logs for detailed debug information");
     }
     
+    // Check if we're in test mode
+    if let Some(test_file) = test_mode {
+        info!("Running in test mode with file: {}", test_file);
+        run_test_mode(test_file, enable_all_logs).await;
+        return;
+    }
+    
+    // Check if we're in debug all levels mode
+    if debug_all_levels {
+        info!("Running debug mode - testing all learning levels");
+        run_debug_all_levels(enable_all_logs).await;
+        return;
+    }
+    
     info!("Starting Rust Steam Game...");
     
     let rng = StdRng::seed_from_u64(0xC0FFEE);
     
     // Initialize progressive loader
     let mut loader = ProgressiveLoader::new();
+    
+    // Check for cached startup data to potentially restore game state
+    let cached_startup_data = loader.cache.get_startup_data();
+    let cached_settings = loader.cache.get_cached_game_settings();
     
     // Start with minimal embedded levels for immediate play
     info!("Loading core embedded levels for immediate play...");
@@ -1181,10 +1665,28 @@ async fn desktop_main() {
     // Enable coordinate logs if --all-logs flag is present
     game.enable_coordinate_logs = enable_all_logs;
     
+    // Restore cached game settings if available
+    if let Some(cached) = cached_settings {
+        info!("Restoring cached game settings");
+        game.menu.settings.window_width = cached.window_width;
+        game.menu.settings.window_height = cached.window_height;
+        game.menu.settings.fullscreen = cached.fullscreen;
+        game.menu.settings.font_size_multiplier = cached.font_size_multiplier;
+        game.menu.settings.maximized = cached.maximized;
+        
+        // Apply font scaling immediately
+        font_scaling::set_user_font_multiplier(cached.font_size_multiplier);
+    }
+    
     info!("Game initialized successfully");
     
-    // Set initial levels count in menu
-    game.menu.set_total_levels(core_levels.len());
+    // Set initial levels count in menu (use cached count if available)
+    if let Some(startup_data) = cached_startup_data {
+        game.menu.set_total_levels(startup_data.total_levels_count);
+        info!("Using cached level count: {}", startup_data.total_levels_count);
+    } else {
+        game.menu.set_total_levels(core_levels.len());
+    }
     
     // Start progressive loading in background
     loader.start_loading();
@@ -1240,6 +1742,9 @@ async fn desktop_main() {
                 game.menu.settings.window_width = current_width;
                 game.menu.settings.window_height = current_height;
                 let _ = game.menu.settings.save();
+                
+                // Also update the cache with new settings
+                update_cached_settings(&mut loader.cache, &game.menu.settings);
             }
         }
         
@@ -1269,7 +1774,11 @@ async fn desktop_main() {
                 game.load_level(level);
                 reset_robot_code(&mut game);
             },
-            MenuAction::Exit => break,
+            MenuAction::Exit => {
+                // Cache game settings and state before exit
+                cache_game_state_on_exit(&mut loader.cache, &game);
+                break;
+            },
             _ => {}
         }
 

@@ -76,31 +76,41 @@ impl ProgressiveLoader {
             stage: LoadingStage::Initialization,
             current_item: "Initializing game systems...".to_string(),
             progress: 0.0,
-            total_items: 5,
+            total_items: 6, // Increased for new caching stages
             completed_items: 0,
         });
         
+        // Check if we can use cached startup data for ultra-fast loading
+        if cache.is_startup_data_fresh(300) && cache.is_embedded_levels_cache_valid() {
+            log::info!("Using cached startup data for ultra-fast loading");
+            Self::load_from_cache_fast(progress_sender, levels_sender, cache, start_time);
+            return;
+        }
+        
+        // Pre-cache common assets early for faster parsing later
+        cache.precache_common_assets();
+        
         // Small delay to prevent instantaneous loading feeling
-        thread::sleep(Duration::from_millis(50));
+        thread::sleep(Duration::from_millis(30));
         
         // Stage 2: Load core assets
         let _ = progress_sender.send(LoadingProgress {
             stage: LoadingStage::CoreAssets,
             current_item: "Loading core game assets...".to_string(),
-            progress: 0.2,
-            total_items: 5,
+            progress: 0.16,
+            total_items: 6,
             completed_items: 1,
         });
         
         // Load basic game constants and configurations
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(80));
         
         // Stage 3: Load learning levels (embedded)
         let _ = progress_sender.send(LoadingProgress {
             stage: LoadingStage::LearningLevels,
             current_item: "Loading learning levels...".to_string(),
-            progress: 0.4,
-            total_items: 5,
+            progress: 0.33,
+            total_items: 6,
             completed_items: 2,
         });
         
@@ -116,8 +126,8 @@ impl ProgressiveLoader {
         let _ = progress_sender.send(LoadingProgress {
             stage: LoadingStage::CommunityLevels,
             current_item: "Loading community levels...".to_string(),
-            progress: 0.6,
-            total_items: 5,
+            progress: 0.5,
+            total_items: 6,
             completed_items: 3,
         });
         
@@ -130,21 +140,33 @@ impl ProgressiveLoader {
         let _ = progress_sender.send(LoadingProgress {
             stage: LoadingStage::FontCache,
             current_item: "Optimizing font rendering...".to_string(),
-            progress: 0.8,
-            total_items: 5,
+            progress: 0.66,
+            total_items: 6,
             completed_items: 4,
         });
         
         // Pre-cache common font sizes for better performance
         Self::precache_font_metrics(cache);
         
-        // Stage 6: Complete
+        // Stage 6: Cache startup data for next time
+        let _ = progress_sender.send(LoadingProgress {
+            stage: LoadingStage::Complete,
+            current_item: "Saving startup cache...".to_string(),
+            progress: 0.83,
+            total_items: 6,
+            completed_items: 5,
+        });
+        
+        // Cache startup data for ultra-fast loading next time
+        Self::cache_startup_data(cache, &all_levels, start_time.elapsed().as_millis() as u64);
+        
+        // Stage 7: Complete
         let _ = progress_sender.send(LoadingProgress {
             stage: LoadingStage::Complete,
             current_item: "Loading complete!".to_string(),
             progress: 1.0,
-            total_items: 5,
-            completed_items: 5,
+            total_items: 6,
+            completed_items: 6,
         });
         
         // Brief delay to show completion message before hiding
@@ -155,6 +177,66 @@ impl ProgressiveLoader {
         
         let load_time = start_time.elapsed();
         log::info!("Progressive loading completed in {:?}", load_time);
+    }
+    
+    // Ultra-fast loading path using cached data
+    fn load_from_cache_fast(
+        progress_sender: mpsc::Sender<LoadingProgress>, 
+        levels_sender: mpsc::Sender<Vec<LevelSpec>>,
+        cache: &GameCache,
+        start_time: Instant
+    ) {
+        let _ = progress_sender.send(LoadingProgress {
+            stage: LoadingStage::CoreAssets,
+            current_item: "Loading from cache...".to_string(),
+            progress: 0.5,
+            total_items: 2,
+            completed_items: 1,
+        });
+        
+        // Load embedded levels (these are always available)
+        let learning_levels = crate::embedded_levels::get_embedded_level_specs();
+        let mut all_levels = learning_levels;
+        
+        // Add any cached community levels
+        for cached_level in cache.compiled_levels.values() {
+            all_levels.push(cached_level.spec.clone());
+        }
+        
+        // Send levels immediately
+        let _ = levels_sender.send(all_levels);
+        
+        let _ = progress_sender.send(LoadingProgress {
+            stage: LoadingStage::Complete,
+            current_item: "Cache loading complete!".to_string(),
+            progress: 1.0,
+            total_items: 2,
+            completed_items: 2,
+        });
+        
+        let load_time = start_time.elapsed();
+        log::info!("Ultra-fast cache loading completed in {:?}", load_time);
+        
+        // Brief delay to show completion
+        thread::sleep(Duration::from_millis(200));
+    }
+    
+    // Cache startup data for next session
+    fn cache_startup_data(cache: &mut GameCache, levels: &[LevelSpec], load_time_ms: u64) {
+        use crate::cache::StartupData;
+        
+        let startup_data = StartupData {
+            last_played_level: 0, // Default to first level
+            total_levels_count: levels.len(),
+            embedded_levels_checksum: GameCache::generate_embedded_levels_checksum(),
+            startup_time_ms: load_time_ms,
+            cached_at: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        };
+        
+        cache.cache_startup_data(startup_data);
     }
     
     fn load_community_levels_cached(cache: &mut GameCache) -> Vec<LevelSpec> {
