@@ -3,18 +3,48 @@ use super::types::Game;
 impl Game {
     // Unified tutorial system methods - routes to appropriate level
     pub fn get_tutorial_task_message(&self) -> String {
+        // Only show tutorial messages for learning levels
+        if !self.is_learning_level(self.level_idx) {
+            return String::new();
+        }
+        
         match self.level_idx {
             0 => self.get_level_1_task_message(),
             1 => self.get_level_2_task_message(),
-            _ => String::new(), // No tutorial for other levels yet
+            // Add future learning levels here:
+            // 2 => self.get_level_3_task_message(),
+            // 3 => self.get_level_4_task_message(),
+            _ => {
+                // Generic message for unimplemented learning levels
+                format!("🚧 Learning Level {} is under construction!\n\nThis level's tutorial system hasn't been implemented yet.\nCheck back soon for new learning content!", self.level_idx + 1)
+            }
         }
     }
     
     pub fn check_tutorial_progress(&mut self) {
+        // Only check progress for learning levels
+        if !self.is_learning_level(self.level_idx) {
+            return;
+        }
+        
         match self.level_idx {
             0 => self.check_level_1_progress(),
             1 => self.check_level_2_progress(),
-            _ => {}, // No tutorial for other levels yet
+            // Add future learning levels here:
+            // 2 => self.check_level_3_progress(),
+            // 3 => self.check_level_4_progress(),
+            _ => {
+                // For unimplemented learning levels, just complete them automatically
+                if self.tutorial_state.current_task == 0 {
+                    self.tutorial_state.current_task = self.get_max_tasks_for_level(self.level_idx).unwrap_or(1);
+                    self.popup_system.show_message(
+                        "🚧 Level Under Construction".to_string(),
+                        "This learning level hasn't been fully implemented yet. You can continue to the next level!".to_string(),
+                        crate::popup::PopupType::Info,
+                        Some(3.0)
+                    );
+                }
+            }
         }
     }
     

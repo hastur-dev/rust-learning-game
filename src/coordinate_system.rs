@@ -69,6 +69,88 @@ impl CoordinateTransformer {
         }
     }
 
+    pub fn is_game_window_active(enable_logs: bool) -> bool {
+        #[cfg(windows)]
+        {
+            use winapi::um::winuser::{GetForegroundWindow, IsWindow, IsWindowVisible, IsIconic};
+            
+            unsafe {
+                // Get the currently active foreground window
+                let hwnd = GetForegroundWindow();
+                if hwnd.is_null() {
+                    if enable_logs {
+                        debug!("No foreground window found");
+                    }
+                    return false;
+                }
+                
+                // Check if the window is valid, visible, and not minimized
+                let is_valid = IsWindow(hwnd) != 0;
+                let is_visible = IsWindowVisible(hwnd) != 0;
+                let is_minimized = IsIconic(hwnd) != 0;
+                
+                let is_active = is_valid && is_visible && !is_minimized;
+                
+                if enable_logs {
+                    debug!("Window status: valid={}, visible={}, minimized={}, active={}", 
+                           is_valid, is_visible, is_minimized, is_active);
+                }
+                
+                is_active
+            }
+        }
+        
+        #[cfg(not(windows))]
+        {
+            if enable_logs {
+                debug!("Window activity check not implemented for this platform");
+            }
+            true // Assume active on non-Windows platforms
+        }
+    }
+
+    pub fn is_game_window_maximized() -> bool {
+        #[cfg(windows)]
+        {
+            use winapi::um::winuser::{GetForegroundWindow, IsZoomed};
+            
+            unsafe {
+                let hwnd = GetForegroundWindow();
+                if hwnd.is_null() {
+                    return false;
+                }
+                
+                IsZoomed(hwnd) != 0
+            }
+        }
+        
+        #[cfg(not(windows))]
+        {
+            false // Default to not maximized on non-Windows platforms
+        }
+    }
+    
+    pub fn maximize_game_window() -> bool {
+        #[cfg(windows)]
+        {
+            use winapi::um::winuser::{GetForegroundWindow, ShowWindow, SW_MAXIMIZE};
+            
+            unsafe {
+                let hwnd = GetForegroundWindow();
+                if hwnd.is_null() {
+                    return false;
+                }
+                
+                ShowWindow(hwnd, SW_MAXIMIZE) != 0
+            }
+        }
+        
+        #[cfg(not(windows))]
+        {
+            false // Not supported on non-Windows platforms
+        }
+    }
+
     pub fn get_window_position() -> Option<WindowInfo> {
         #[cfg(windows)]
         {
@@ -365,6 +447,14 @@ impl CoordinateTransformer {
     }
 
     pub fn get_precise_mouse_position_in_editor(&mut self, editor_bounds: (f32, f32, f32, f32), enable_logs: bool) -> Option<EditorCoordinate> {
+        // First check if our window is active/visible to prevent crashes when minimized/background
+        if !Self::is_game_window_active(enable_logs) {
+            if enable_logs {
+                debug!("Game window is not active/visible - skipping coordinate transformation to prevent crashes");
+            }
+            return None;
+        }
+        
         // Add safety check to prevent crashes from rapid calls
         use std::panic;
         

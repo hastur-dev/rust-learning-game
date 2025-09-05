@@ -6,6 +6,14 @@ use log::{debug, warn, error};
 impl Game {
     // Update window position for coordinate transformations (throttled to 1x per second, more during rapid clicking)
     pub fn update_window_coordinates(&mut self) {
+        // Skip coordinate updates entirely if window isn't active to prevent alt-tab crashes
+        if !crate::coordinate_system::CoordinateTransformer::is_game_window_active(self.enable_coordinate_logs) {
+            if self.enable_coordinate_logs {
+                debug!("Skipping coordinate update - window not active (preventing alt-tab crashes)");
+            }
+            return;
+        }
+        
         let current_time = macroquad::prelude::get_time();
         
         // Adaptive throttling: if there's been recent clicking, be more conservative
@@ -198,7 +206,7 @@ impl Game {
         }
     }
     
-    fn ensure_cursor_visible(&mut self) {
+    pub fn ensure_cursor_visible(&mut self) {
         let cursor_line = self.current_code[..self.cursor_position].matches('\n').count();
         let max_visible_lines = 30;
         
@@ -242,6 +250,31 @@ impl Game {
         } else {
             self.key_space_held_time = 0.0;
         }
+        
+        // Update arrow key hold times
+        if is_key_down(KeyCode::Up) {
+            self.key_up_held_time += delta_time;
+        } else {
+            self.key_up_held_time = 0.0;
+        }
+        
+        if is_key_down(KeyCode::Down) {
+            self.key_down_held_time += delta_time;
+        } else {
+            self.key_down_held_time = 0.0;
+        }
+        
+        if is_key_down(KeyCode::Left) {
+            self.key_left_held_time += delta_time;
+        } else {
+            self.key_left_held_time = 0.0;
+        }
+        
+        if is_key_down(KeyCode::Right) {
+            self.key_right_held_time += delta_time;
+        } else {
+            self.key_right_held_time = 0.0;
+        }
     }
     
     // update character timing if we hold down teh button
@@ -276,6 +309,27 @@ impl Game {
     pub fn should_repeat_char(&self) -> bool {
         self.key_char_held_time > self.key_repeat_initial_delay &&
         ((self.key_char_held_time - self.key_repeat_initial_delay) % self.key_repeat_interval) < self.key_repeat_interval / 2.0
+    }
+    
+    // Arrow key repeat functions
+    pub fn should_repeat_up(&self) -> bool {
+        self.key_up_held_time > self.key_repeat_initial_delay &&
+        ((self.key_up_held_time - self.key_repeat_initial_delay) % self.key_repeat_interval) < self.key_repeat_interval / 2.0
+    }
+    
+    pub fn should_repeat_down(&self) -> bool {
+        self.key_down_held_time > self.key_repeat_initial_delay &&
+        ((self.key_down_held_time - self.key_repeat_initial_delay) % self.key_repeat_interval) < self.key_repeat_interval / 2.0
+    }
+    
+    pub fn should_repeat_left(&self) -> bool {
+        self.key_left_held_time > self.key_repeat_initial_delay &&
+        ((self.key_left_held_time - self.key_repeat_initial_delay) % self.key_repeat_interval) < self.key_repeat_interval / 2.0
+    }
+    
+    pub fn should_repeat_right(&self) -> bool {
+        self.key_right_held_time > self.key_repeat_initial_delay &&
+        ((self.key_right_held_time - self.key_repeat_initial_delay) % self.key_repeat_interval) < self.key_repeat_interval / 2.0
     }
     
     // selection management stuff

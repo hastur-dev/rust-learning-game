@@ -164,11 +164,12 @@ impl PlayerProgress {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameSettings {
     pub window_width: i32,
     pub window_height: i32,
     pub fullscreen: bool,
+    pub maximized: bool,
     pub sfx_volume: f32,
     pub music_volume: f32,
     pub font_size_multiplier: f32,
@@ -180,10 +181,51 @@ impl Default for GameSettings {
             window_width: 1920,
             window_height: 1080,
             fullscreen: false,
+            maximized: false,
             sfx_volume: 0.7,
             music_volume: 0.5,
             font_size_multiplier: 1.0,
         }
+    }
+}
+
+impl GameSettings {
+    const SAVE_FILE: &'static str = "game_settings.json";
+    
+    pub fn load_or_default() -> Self {
+        if Path::new(Self::SAVE_FILE).exists() {
+            match fs::read_to_string(Self::SAVE_FILE) {
+                Ok(contents) => {
+                    match serde_json::from_str::<GameSettings>(&contents) {
+                        Ok(settings) => settings,
+                        Err(_) => {
+                            // If file is corrupted, create new settings and save them
+                            let default = Self::default();
+                            let _ = default.save();
+                            default
+                        }
+                    }
+                }
+                Err(_) => Self::default(),
+            }
+        } else {
+            // Create new save file
+            let default = Self::default();
+            let _ = default.save();
+            default
+        }
+    }
+    
+    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let json = serde_json::to_string_pretty(self)?;
+        fs::write(Self::SAVE_FILE, json)?;
+        Ok(())
+    }
+    
+    pub fn update_from_actual_screen(&mut self) {
+        // Update settings to match actual screen size
+        self.window_width = screen_width() as i32;
+        self.window_height = screen_height() as i32;
     }
 }
 
@@ -205,7 +247,7 @@ impl Menu {
         let mut menu = Self {
             state: MenuState::MainMenu,
             buttons: Vec::new(),
-            settings: GameSettings::default(),
+            settings: GameSettings::load_or_default(),
             progress: PlayerProgress::load_or_default(),
             scroll_offset: 0.0,
             opened_from_game: false,
@@ -463,6 +505,11 @@ impl Menu {
     }
 
     pub fn handle_input(&mut self) -> MenuAction {
+        // Only handle input when we're actually showing a menu, not when in-game
+        if self.state == MenuState::InGame {
+            return MenuAction::None;
+        }
+
         let (mouse_x, mouse_y) = mouse_position();
 
         // Handle left mouse button
@@ -543,6 +590,7 @@ impl Menu {
                 let (width, height) = resolutions[next_index];
                 self.settings.window_width = width;
                 self.settings.window_height = height;
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseResolution => {
@@ -556,34 +604,42 @@ impl Menu {
                 let (width, height) = resolutions[prev_index];
                 self.settings.window_width = width;
                 self.settings.window_height = height;
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::ToggleFullscreen => {
                 self.settings.fullscreen = !self.settings.fullscreen;
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::IncreaseSfxVolume => {
                 self.settings.sfx_volume = (self.settings.sfx_volume + 0.1).min(1.0);
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseSfxVolume => {
                 self.settings.sfx_volume = (self.settings.sfx_volume - 0.1).max(0.0);
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::IncreaseMusicVolume => {
                 self.settings.music_volume = (self.settings.music_volume + 0.1).min(1.0);
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseMusicVolume => {
                 self.settings.music_volume = (self.settings.music_volume - 0.1).max(0.0);
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::IncreaseFontSize => {
                 self.settings.font_size_multiplier = (self.settings.font_size_multiplier + 0.1).min(2.0);
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             MenuAction::DecreaseFontSize => {
                 self.settings.font_size_multiplier = (self.settings.font_size_multiplier - 0.1).max(0.5);
+                let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
             _ => {}

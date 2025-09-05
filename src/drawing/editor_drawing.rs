@@ -26,7 +26,7 @@ pub fn draw_code_editor(game: &mut Game) {
     if game.robot_code_modified {
         draw_scaled_text("File modified externally! Changes loaded.", editor_x, editor_y + scale_size(35.0), 12.0, YELLOW);
     } else {
-        draw_scaled_text("Click to position cursor | Arrow keys navigate | Shift+Enter to run", editor_x, editor_y + scale_size(35.0), 11.0, GRAY);
+        draw_scaled_text("Click to position cursor | Arrow keys navigate | Ctrl+Shift+Enter to run", editor_x, editor_y + scale_size(35.0), 11.0, GRAY);
     }
     
     // Text area setup - designed for 30 visible lines
@@ -196,13 +196,13 @@ pub fn draw_code_editor(game: &mut Game) {
 }
 
 fn draw_editor_buttons(editor_x: f32, button_y: f32) {
-    let button_width = scale_size(120.0);
+    let button_width = scale_size(140.0);
     let button_height = scale_size(30.0);
-    let button_spacing = scale_size(130.0);
+    let button_spacing = scale_size(150.0);
     
     draw_rectangle(editor_x, button_y, button_width, button_height, DARKGREEN);
     draw_rectangle_lines(editor_x, button_y, button_width, button_height, scale_size(1.0), WHITE);
-    draw_scaled_text("[Shift+Enter] Run", editor_x + scale_size(5.0), button_y + scale_size(20.0), 14.0, WHITE);
+    draw_scaled_text("[Ctrl+Shift+Enter] Run", editor_x + scale_size(5.0), button_y + scale_size(20.0), 12.0, WHITE);
     
     draw_rectangle(editor_x + button_spacing, button_y, scale_size(110.0), button_height, DARKBLUE);
     draw_rectangle_lines(editor_x + button_spacing, button_y, scale_size(110.0), button_height, scale_size(1.0), WHITE);

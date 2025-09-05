@@ -1112,12 +1112,16 @@ fn draw_main_game_view(game: &mut Game) {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn window_conf() -> Conf {
+    use crate::menu::GameSettings;
+    
+    let settings = GameSettings::load_or_default();
+    
     Conf {
         window_title: "Rust Robot Programming Game".to_owned(),
-        window_width: 1920,
-        window_height: 1080,
+        window_width: settings.window_width,
+        window_height: settings.window_height,
         window_resizable: true,
-        fullscreen: false,
+        fullscreen: settings.fullscreen,
         ..Default::default()
     }
 }
@@ -1189,6 +1193,12 @@ async fn desktop_main() {
     game.load_robot_code();
     game.file_watcher_receiver = setup_file_watcher(&game.robot_code_path);
     
+    // Apply saved maximize state on startup
+    if game.menu.settings.maximized {
+        info!("Restoring maximized window state");
+        crate::coordinate_system::CoordinateTransformer::maximize_game_window();
+    }
+    
     let mut shop_open = false;
     let mut loading_progress: Option<LoadingProgress> = None;
 
@@ -1211,6 +1221,27 @@ async fn desktop_main() {
         }
         // Check for screen size changes and update menu layout if needed
         game.menu.check_screen_resize();
+        
+        // Check if user manually resized window and save the new size
+        let current_width = screen_width() as i32;
+        let current_height = screen_height() as i32;
+        let current_maximized = crate::coordinate_system::CoordinateTransformer::is_game_window_maximized();
+        
+        // Track maximize state changes
+        if current_maximized != game.menu.settings.maximized {
+            game.menu.settings.maximized = current_maximized;
+            let _ = game.menu.settings.save();
+        }
+        
+        // Track window size changes (but don't save if maximized, as that's not the user's preferred size)
+        if current_width != game.menu.settings.window_width || current_height != game.menu.settings.window_height {
+            // Only save if this isn't a fullscreen change and window isn't maximized (to avoid saving weird dimensions)
+            if !game.menu.settings.fullscreen && !current_maximized {
+                game.menu.settings.window_width = current_width;
+                game.menu.settings.window_height = current_height;
+                let _ = game.menu.settings.save();
+            }
+        }
         
         // Handle menu input and updates
         let menu_action = game.menu.handle_input();
@@ -1273,8 +1304,36 @@ async fn desktop_main() {
                     let (mouse_x, mouse_y) = mouse_position();
                     trace!("Mouse position: ({:.2}, {:.2})", mouse_x, mouse_y);
                     
-                    // Update window coordinates for precise mouse tracking
-                    game.update_window_coordinates();
+                    // Check for screenshot and system key combinations to prevent crashes
+                    let system_key_combination = is_key_pressed(KeyCode::PrintScreen) || 
+                        (is_key_down(KeyCode::LeftAlt) && is_key_pressed(KeyCode::PrintScreen)) ||
+                        (is_key_down(KeyCode::LeftSuper) && is_key_down(KeyCode::LeftShift)) ||
+                        (is_key_down(KeyCode::RightSuper) && is_key_down(KeyCode::LeftShift)) ||
+                        (is_key_down(KeyCode::LeftSuper) && is_key_down(KeyCode::RightShift)) ||
+                        (is_key_down(KeyCode::RightSuper) && is_key_down(KeyCode::RightShift)) ||
+                        // Also check for Windows key + S combinations specifically
+                        (is_key_down(KeyCode::LeftSuper) && is_key_pressed(KeyCode::S)) ||
+                        (is_key_down(KeyCode::RightSuper) && is_key_pressed(KeyCode::S));
+                    
+                    // Update system key timing for extended safety period
+                    let current_time = macroquad::prelude::get_time();
+                    if system_key_combination {
+                        game.last_system_key_time = current_time;
+                        debug!("System key combination detected (screenshot/etc) - pausing coordinate updates");
+                    }
+                    
+                    // Skip coordinate updates for 3 seconds after any system key combination
+                    let time_since_system_keys = current_time - game.last_system_key_time;
+                    let coordinate_safe_period = 3.0; // 3 second safety period
+                    
+                    // Update window coordinates for precise mouse tracking (skip during/after system key combinations)
+                    if time_since_system_keys > coordinate_safe_period {
+                        game.update_window_coordinates();
+                    } else if system_key_combination {
+                        debug!("Pausing coordinate updates for {:.1} seconds due to system key combination", coordinate_safe_period);
+                    } else {
+                        debug!("Still in system key safety period ({:.1}s remaining)", coordinate_safe_period - time_since_system_keys);
+                    }
                     
                     if is_mouse_button_pressed(MouseButton::Left) {
                         debug!("Left mouse button pressed at ({:.2}, {:.2})", mouse_x, mouse_y);
@@ -1389,7 +1448,8 @@ async fn desktop_main() {
                         }
                         
                         if is_key_pressed(KeyCode::Enter) {
-                            if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
+                            if (is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift)) && 
+                               (is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl)) {
                                 game.execution_result = execute_rust_code(&mut game).await;
                             } else {
                                 // Delete selection first if it exists
@@ -1399,6 +1459,7 @@ async fn desktop_main() {
                                 
                                 game.current_code.insert(game.cursor_position, '\n');
                                 game.cursor_position += 1;
+                                game.ensure_cursor_visible(); // Ensure the cursor scrolls into view after newline
                                 code_modified = true;
                             }
                         }
@@ -1446,16 +1507,16 @@ async fn desktop_main() {
                         // Arrow key navigation with selection support
                         let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
                         
-                        if is_key_pressed(KeyCode::Up) {
+                        if is_key_pressed(KeyCode::Up) || game.should_repeat_up() {
                             game.move_cursor_up_with_selection(shift_held);
                         }
-                        if is_key_pressed(KeyCode::Down) {
+                        if is_key_pressed(KeyCode::Down) || game.should_repeat_down() {
                             game.move_cursor_down_with_selection(shift_held);
                         }
-                        if is_key_pressed(KeyCode::Left) {
+                        if is_key_pressed(KeyCode::Left) || game.should_repeat_left() {
                             game.move_cursor_left_with_selection(shift_held);
                         }
-                        if is_key_pressed(KeyCode::Right) {
+                        if is_key_pressed(KeyCode::Right) || game.should_repeat_right() {
                             game.move_cursor_right_with_selection(shift_held);
                         }
                         

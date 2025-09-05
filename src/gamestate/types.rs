@@ -90,6 +90,11 @@ pub struct Game {
     pub key_space_held_time: f32,
     pub key_char_held_time: f32,       // For any character key currently held
     pub last_char_pressed: Option<char>, // Track which character is being held
+    // Arrow key continuous press support
+    pub key_up_held_time: f32,
+    pub key_down_held_time: f32,
+    pub key_left_held_time: f32,
+    pub key_right_held_time: f32,
     pub key_repeat_initial_delay: f32, // Delay before key starts repeating (in seconds)
     pub key_repeat_interval: f32,      // Interval between repeats (in seconds)
     // Font measurement caching for cursor positioning
@@ -101,11 +106,69 @@ pub struct Game {
     pub commands_logs_tab: CommandsLogsTab, // Current active tab for commands area
     // Coordinate transformation system
     pub coordinate_transformer: crate::coordinate_system::CoordinateTransformer, // Global/window mouse coordinate handling
+    // System key safety mechanism
+    pub last_system_key_time: f64,    // Time when last system key combination was detected
     // Debug flags
     pub enable_coordinate_logs: bool, // Enable detailed coordinate transformation logs
     // Window tracking timer
     pub last_window_update_time: f64, // Time of last window coordinate update (for throttling)
     pub last_mouse_click_time: f64,   // Time of last mouse click (for click rate limiting)
+}
+
+// Learning level configuration
+#[derive(Debug, Clone)]
+pub struct LearningLevelConfig {
+    pub level_idx: usize,
+    pub max_tasks: usize,
+    pub name: String,
+}
+
+impl Game {
+    // Define which levels are learning levels and their task counts
+    pub fn get_learning_level_configs() -> Vec<LearningLevelConfig> {
+        vec![
+            LearningLevelConfig {
+                level_idx: 0,
+                max_tasks: 5,
+                name: "Level 1: Rust Basics".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 1,
+                max_tasks: 4,
+                name: "Level 2: Functions, Loops, and Structs".to_string(),
+            },
+            // Add more learning levels here as they're implemented:
+            // LearningLevelConfig {
+            //     level_idx: 2,
+            //     max_tasks: 6,
+            //     name: "Level 3: Error Handling".to_string(),
+            // },
+        ]
+    }
+    
+    // Check if a level is a learning level
+    pub fn is_learning_level(&self, level_idx: usize) -> bool {
+        Self::get_learning_level_configs()
+            .iter()
+            .any(|config| config.level_idx == level_idx)
+    }
+    
+    // Get the max tasks for a learning level
+    pub fn get_max_tasks_for_level(&self, level_idx: usize) -> Option<usize> {
+        Self::get_learning_level_configs()
+            .iter()
+            .find(|config| config.level_idx == level_idx)
+            .map(|config| config.max_tasks)
+    }
+    
+    // Check if current level tutorial is complete
+    pub fn is_current_level_tutorial_complete(&self) -> bool {
+        if let Some(max_tasks) = self.get_max_tasks_for_level(self.level_idx) {
+            self.tutorial_state.current_task >= max_tasks
+        } else {
+            true // Non-learning levels are always "complete"
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -63,6 +63,10 @@ impl Game {
             key_space_held_time: 0.0,
             key_char_held_time: 0.0,
             last_char_pressed: None,
+            key_up_held_time: 0.0,
+            key_down_held_time: 0.0,
+            key_left_held_time: 0.0,
+            key_right_held_time: 0.0,
             key_repeat_initial_delay: 0.5, // Wait 0.5 seconds before starting to repeat
             key_repeat_interval: 0.05,     // Repeat every 50ms after initial delay
             cached_font_size: 0.0,
@@ -71,6 +75,7 @@ impl Game {
             needs_font_refresh: true,      // Initially needs refresh
             commands_logs_tab: CommandsLogsTab::Commands, // Default to Commands tab
             coordinate_transformer: crate::coordinate_system::CoordinateTransformer::new(), // Initialize coordinate transformer
+            last_system_key_time: 0.0,    // Initialize system key timer
             enable_coordinate_logs: false, // Default to disabled, enabled via --all-logs command line flag
             last_window_update_time: 0.0, // Initialize timer
             last_mouse_click_time: 0.0,   // Initialize click timer
@@ -163,9 +168,16 @@ impl Game {
         self.scan_armed = false;
         self.enemy_step_paused = false;
         
-        // Reset tutorial state and outputs for level 0 only when starting fresh
-        if idx == 0 && (self.level_idx != 0 || self.tutorial_state.current_task >= 5) {
-            // Only reset when coming from a different level or tutorial is complete
+        // Reset tutorial state and outputs for learning levels when starting fresh
+        let should_reset_tutorial = if self.is_learning_level(idx) {
+            // Reset if coming from a different level OR if current level tutorial is complete
+            self.level_idx != idx || self.is_current_level_tutorial_complete()
+        } else {
+            false
+        };
+        
+        if should_reset_tutorial {
+            // Reset tutorial state for learning levels
             self.tutorial_state = TutorialState {
                 task_completed: [false; 5],
                 current_task: 0,
@@ -176,7 +188,7 @@ impl Game {
             self.println_outputs.clear();
             self.error_outputs.clear();
             self.panic_occurred = false;
-        } else if idx != 0 {
+        } else if !self.is_learning_level(idx) {
             // Clear outputs for non-tutorial levels
             self.println_outputs.clear();
             self.error_outputs.clear();

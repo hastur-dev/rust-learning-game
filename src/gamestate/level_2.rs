@@ -90,7 +90,51 @@ impl Game {
         let has_println = code.contains("println!(");
         let has_function_call = code.contains("scan_level();") || code.contains("scan_level ()");
         
-        has_function_def && has_println && has_function_call
+        // Check if function is called from within main()
+        let has_main_function = code.contains("fn main()");
+        let main_calls_function = if has_main_function {
+            // Find main function and check if it calls scan_level
+            if let Some(main_start) = code.find("fn main()") {
+                let after_main = &code[main_start..];
+                if let Some(main_brace_start) = after_main.find('{') {
+                    let main_body_start = main_start + main_brace_start + 1;
+                    // Find the closing brace for main function
+                    let mut brace_count = 1;
+                    let mut main_end = main_body_start;
+                    let chars: Vec<char> = code.chars().collect();
+                    
+                    for (i, &ch) in chars.iter().enumerate().skip(main_body_start) {
+                        match ch {
+                            '{' => brace_count += 1,
+                            '}' => {
+                                brace_count -= 1;
+                                if brace_count == 0 {
+                                    main_end = i;
+                                    break;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    
+                    if main_end > main_body_start {
+                        let main_body = &code[main_body_start..main_end];
+                        main_body.contains("scan_level();") || main_body.contains("scan_level ()")
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            // If no main function, accept any function call for now
+            has_function_call
+        };
+        
+        has_function_def && has_println && main_calls_function
     }
     
     fn check_nested_loops(&self) -> bool {
