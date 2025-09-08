@@ -62,40 +62,41 @@ impl Game {
         }
         
         self.last_mouse_click_time = current_time;
-        debug!("position_cursor_at_click called: macroquad_coordinates=({:.2}, {:.2}), bounds={:?}", click_x, click_y, editor_bounds);
+        debug!("position_cursor_at_click called: coordinates=({:.2}, {:.2}), bounds={:?}", click_x, click_y, editor_bounds);
         
-        // Get precise mouse position using the coordinate transformer with safety wrapper
-        debug!("Attempting to get precise mouse position...");
+        // Use the new grid-based positioning system
+        self.position_cursor_at_click_grid_based(click_x, click_y, editor_bounds);
+    }
+    
+    /// Grid-based cursor positioning - simpler and more accurate
+    fn position_cursor_at_click_grid_based(&mut self, click_x: f32, click_y: f32, editor_bounds: (f32, f32, f32, f32)) {
+        use crate::drawing::editor_drawing::{mouse_to_grid_position, grid_to_cursor_position};
         
-        let precise_pos_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            self.coordinate_transformer.get_precise_mouse_position_in_editor(editor_bounds, self.enable_coordinate_logs)
-        }));
+        // Make sure code isn't empty
+        if self.current_code.is_empty() {
+            self.current_code = "// Start typing your Rust code here...\n".to_string();
+        }
         
-        let precise_pos_option = match precise_pos_result {
-            Ok(pos) => pos,
-            Err(_) => {
-                warn!("Coordinate transformation panicked - falling back to macroquad coordinates");
-                None
-            }
-        };
+        let char_width = self.get_cached_char_width();
+        let line_height = self.get_cached_line_height();
         
-        if let Some(precise_pos) = precise_pos_option {
-            if self.enable_coordinate_logs {
-                debug!("Using precise coordinates: editor=({:.2}, {:.2})", precise_pos.x, precise_pos.y);
-            }
+        if let Some((row, col)) = mouse_to_grid_position(
+            click_x, 
+            click_y, 
+            editor_bounds, 
+            char_width, 
+            line_height, 
+            self.code_scroll_offset
+        ) {
+            let lines: Vec<&str> = self.current_code.lines().collect();
+            let new_cursor_pos = grid_to_cursor_position(row, col, &lines);
             
-            // The precise_pos is already in editor coordinates, but we need window coordinates for existing logic
-            // So we convert editor coordinates back to window coordinates
-            let actual_click_x = precise_pos.x + editor_bounds.0; // Add editor offset to get window coordinates
-            let actual_click_y = precise_pos.y + editor_bounds.1;
-            if self.enable_coordinate_logs {
-                debug!("Converted to window coordinates: ({:.2}, {:.2})", actual_click_x, actual_click_y);
-            }
+            // Clamp to valid range
+            self.cursor_position = new_cursor_pos.min(self.current_code.len());
             
-            self.position_cursor_at_click_internal(actual_click_x, actual_click_y, editor_bounds);
+            debug!("Grid position: ({}, {}), cursor position: {}", row, col, self.cursor_position);
         } else {
-            warn!("Precise coordinate transformation failed, falling back to macroquad coordinates");
-            self.position_cursor_at_click_internal(click_x, click_y, editor_bounds);
+            debug!("Mouse click outside editor text area");
         }
     }
     

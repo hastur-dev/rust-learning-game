@@ -1472,36 +1472,48 @@ fn main() {
             1 => {
                 // Level 2: Complete solution that satisfies all 4 tasks
                 let solution = r#"
-// Task 3: Define GridInfo struct
+// Task 3: Define struct above functions  
 struct GridInfo {
     x: i32,
     y: i32,
     content: String,
 }
 
-// Task 1: Function with print statement
+// Task 1: Create function with print statement
 fn scan_level() {
     println!("Beginning level scan...");
     
+    // Task 3: Create vector for data collection
     let mut item_locations = Vec::new();
     
-    // Task 2: Nested loops for grid scanning
-    for y in 0..6 {
-        for x in 0..6 {
+    // Task 2: Nested loops for grid scanning  
+    for y in 0..6 {        // 6x6 grid height
+        for x in 0..6 {    // 6x6 grid width
+            // Movement and scanning code here
             let scan_result = scan("current");
             println!("Scanned ({}, {}): {}", x, y, scan_result);
             
+            // Task 3: Using struct and collecting data
             if scan_result != "empty" && scan_result != "wall" {
                 item_locations.push((x, y, scan_result.clone()));
+                
+                // Create GridInfo struct instance
+                let grid_info = GridInfo {
+                    x: x,
+                    y: y, 
+                    content: scan_result.clone(),
+                };
             }
             
-            // Call the grab function
+            // Task 4: Call the grab function
             grab_if_item(&scan_result);
         }
     }
+    
+    println!("Scanning complete! Found {} items.", item_locations.len());
 }
 
-// Task 4: Second function with conditional logic
+// Task 4: Create grab function with conditional logic
 fn grab_if_item(scan_result: &str) {
     if scan_result != "empty" && scan_result != "wall" && scan_result != "goal" {
         grab();
@@ -1510,9 +1522,10 @@ fn grab_if_item(scan_result: &str) {
 }
 
 fn main() {
-    println!("Starting Level 2");
+    println!("Starting Level 2 - Complete Test");
+    // Task 1: Call scan_level function from main
     scan_level();
-    println!("Level 2 complete!");
+    println!("Level 2 complete test finished!");
 }"#;
                 test_level_solution(&config, solution, enable_all_logs).await
             },
@@ -1605,6 +1618,9 @@ async fn test_level_solution(config: &crate::gamestate::types::LearningLevelConf
 // Desktop-specific main logic
 #[cfg(not(target_arch = "wasm32"))]
 async fn desktop_main() {
+    // Initialize fonts first
+    font_scaling::initialize_fonts().await;
+    
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
     let enable_all_logs = args.contains(&"--all-logs".to_string());

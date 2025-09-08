@@ -343,12 +343,12 @@ impl CoordinateTransformer {
                     return Some(window_info);
                 }
 
-                // Debug: List all visible windows for troubleshooting
-                // Only run this in debug builds to prevent access violations with screenshot tools
-                #[cfg(debug_assertions)]
-                {
-                    debug!("Failed to find game window. Listing all visible windows for debugging:");
-                    
+                // Debug: List all visible windows for troubleshooting - DISABLED to prevent access violations
+                // This enumeration can crash when Windows screenshot tools (Win+Shift+S) are running
+                if cfg!(debug_assertions) && std::env::var("ENABLE_WINDOW_DEBUG").is_ok() {
+                    debug!("Failed to find game window. Window enumeration disabled for safety.");
+                    // Enumeration disabled to prevent ACCESS_VIOLATION with screenshot tools
+                    /*
                     unsafe extern "system" fn debug_enum_proc(hwnd: HWND, _lparam: LPARAM) -> BOOL {
                     // Add safety checks to prevent crashes
                     if hwnd.is_null() || IsWindow(hwnd) == 0 {
@@ -376,6 +376,7 @@ impl CoordinateTransformer {
                 }
                 
                 EnumWindows(Some(debug_enum_proc), 0);
+                    */
                 }
                 
                 error!("Failed to get window position");

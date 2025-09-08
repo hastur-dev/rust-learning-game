@@ -9,9 +9,18 @@ const TILE: f32 = 42.0;
 pub fn grid_origin(g: &Game) -> (f32, f32) {
     let gw = g.grid.width as f32 * TILE;
     let gh = g.grid.height as f32 * TILE;
-    // Position grid to take up roughly half the screen (center-left area)
-    let available_width = screen_width() * 0.5; // Half the screen width for grid
-    let ox = (available_width - gw) * 0.5;
+    
+    // Calculate available width dynamically based on editor size
+    // When editor is expanded, it takes more space, so grid should move left
+    let editor_width = screen_width() * 0.25; // Standard editor width
+    let right_panel_width = screen_width() * 0.25; // Commands/logs panel
+    let padding = scale_size(10.0);
+    
+    // Available width is screen minus both right panels with some padding
+    let available_width = screen_width() - editor_width - right_panel_width - (padding * 3.0);
+    
+    // Center the grid in the remaining available space
+    let ox = (available_width - gw) * 0.5 + padding;
     let oy = (screen_height() - gh) * 0.5;
     (ox, oy)
 }

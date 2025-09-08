@@ -2,6 +2,64 @@ use macroquad::prelude::*;
 use crate::gamestate::Game;
 use crate::font_scaling::*;
 
+/// Helper function to convert line/column position to absolute character position
+fn get_absolute_position(line_index: usize, col: usize, lines: &[&str]) -> usize {
+    let mut pos = 0;
+    for i in 0..line_index.min(lines.len()) {
+        pos += lines[i].len();
+        if i < lines.len() - 1 || line_index >= lines.len() {
+            pos += 1; // Add newline character
+        }
+    }
+    pos + col
+}
+
+/// Convert mouse coordinates to grid position (row, col)
+pub fn mouse_to_grid_position(
+    mouse_x: f32, 
+    mouse_y: f32, 
+    editor_bounds: (f32, f32, f32, f32),
+    char_width: f32,
+    line_height: f32,
+    scroll_offset: usize
+) -> Option<(usize, usize)> {
+    let (editor_x, editor_y, editor_width, _editor_height) = editor_bounds;
+    let line_number_width = 35.0; // scale_size(35.0) - approximate
+    let grid_start_x = editor_x + line_number_width + 5.0; // scale_size(5.0) - approximate
+    let grid_start_y = editor_y + 55.0 + 12.0; // account for title and scale_size(12.0)
+    
+    // Check if mouse is within the text area
+    if mouse_x < grid_start_x || mouse_x > editor_x + editor_width - 20.0 {
+        return None;
+    }
+    if mouse_y < grid_start_y || mouse_y > grid_start_y + (30.0 * line_height) {
+        return None;
+    }
+    
+    // Calculate grid position
+    let col = ((mouse_x - grid_start_x) / char_width) as usize;
+    let row = ((mouse_y - grid_start_y) / line_height) as usize;
+    let actual_line = row + scroll_offset;
+    
+    Some((actual_line, col))
+}
+
+/// Convert grid position to absolute cursor position in text
+pub fn grid_to_cursor_position(row: usize, col: usize, lines: &[&str]) -> usize {
+    if row >= lines.len() {
+        // Position at end of last line
+        let mut pos = 0;
+        for line in lines {
+            pos += line.len() + 1; // +1 for newline
+        }
+        return pos.saturating_sub(1); // Remove extra newline
+    }
+    
+    let line = lines[row];
+    let clamped_col = col.min(line.len());
+    get_absolute_position(row, clamped_col, lines)
+}
+
 pub fn draw_code_editor(game: &mut Game) {
     let scale = ScaledMeasurements::new();
     let editor_width = screen_width() * 0.25; // Keep same width
@@ -67,94 +125,70 @@ pub fn draw_code_editor(game: &mut Game) {
         draw_scaled_text(&format!("{:2}", line_num), editor_x + scale_size(3.0), y, 11.0, color);
     }
     
-    // Draw code text with selection highlighting
+    // Grid-based character rendering - each character in its own cell
     let text_x = editor_x + line_number_width + scale_size(5.0);
-    let font_size = game.get_cached_font_size();
+    let char_width = game.get_cached_char_width();
+    let char_height = line_height;
     
-    for i in 0..max_visible_lines {
-        let line_index = start_line + i;
-        let y = input_y + scale_size(12.0) + (i as f32 * line_height);
+    // Calculate grid dimensions
+    let max_cols = ((editor_width - line_number_width - scale_size(20.0)) / char_width) as usize;
+    let grid_start_x = text_x;
+    let grid_start_y = input_y + scale_size(12.0);
+    
+    // Draw character grid
+    for row in 0..max_visible_lines {
+        let line_index = start_line + row;
+        let grid_y = grid_start_y + (row as f32 * char_height);
         
         if line_index < lines.len() {
             let line = lines[line_index];
-            let display_line = if line.len() > chars_per_line {
-                format!("{}...", &line[..chars_per_line.saturating_sub(3)])
-            } else {
-                line.to_string()
-            };
+            let chars: Vec<char> = line.chars().collect();
             
-            let text_color = if game.code_editor_active { WHITE } else { LIGHTGRAY };
-            
-            // Draw selection highlighting if there's a selection
-            if let Some((sel_start, sel_end)) = game.get_selection_bounds() {
-                // Calculate the absolute position of the start of this line
-                let mut line_start_pos = 0;
-                let code_lines: Vec<&str> = game.current_code.lines().collect();
-                for i in 0..line_index.min(code_lines.len()) {
-                    line_start_pos += code_lines[i].len();
-                    if i < code_lines.len() - 1 || game.current_code.ends_with('\n') {
-                        line_start_pos += 1; // Add newline character
-                    }
-                }
+            // Draw each character in its own grid cell
+            for col in 0..max_cols {
+                let grid_x = grid_start_x + (col as f32 * char_width);
+                let char_rect = macroquad::prelude::Rect {
+                    x: grid_x,
+                    y: grid_y - scale_size(10.0),
+                    w: char_width,
+                    h: char_height,
+                };
                 
-                let line_end_pos = line_start_pos + line.len();
-                
-                // Check if this line has any selection
-                if sel_start < line_end_pos && sel_end > line_start_pos {
-                    let line_sel_start = sel_start.saturating_sub(line_start_pos).min(line.len());
-                    let line_sel_end = sel_end.saturating_sub(line_start_pos).min(line.len());
-                    
-                    if line_sel_start < line_sel_end {
-                        // Draw text before selection
-                        if line_sel_start > 0 {
-                            let before_text = &line[..line_sel_start];
-                            draw_scaled_text(before_text, text_x, y, 12.0, text_color);
-                        }
-                        
-                        // Draw selection background
-                        let before_width = if line_sel_start > 0 {
-                            measure_text(&line[..line_sel_start], None, font_size as u16, 1.0).width
-                        } else {
-                            0.0
-                        };
-                        
-                        let selected_text = &line[line_sel_start..line_sel_end];
-                        let selection_width = measure_text(selected_text, None, font_size as u16, 1.0).width;
-                        
-                        // Draw selection background
-                        draw_rectangle(
-                            text_x + before_width,
-                            y - scale_size(10.0),
-                            selection_width,
-                            line_height,
-                            Color::new(0.2, 0.4, 0.8, 0.6) // Blue selection background
-                        );
-                        
-                        // Draw selected text
-                        draw_scaled_text(selected_text, text_x + before_width, y, 12.0, WHITE);
-                        
-                        // Draw text after selection
-                        if line_sel_end < line.len() {
-                            let after_text = &line[line_sel_end..];
-                            let after_x = text_x + before_width + selection_width;
-                            draw_scaled_text(after_text, after_x, y, 12.0, text_color);
-                        }
-                    } else {
-                        // No selection on this line, draw normally
-                        draw_scaled_text(&display_line, text_x, y, 12.0, text_color);
-                    }
+                // Check if this position is selected
+                let absolute_pos = get_absolute_position(line_index, col, &lines);
+                let is_selected = if let Some((sel_start, sel_end)) = game.get_selection_bounds() {
+                    absolute_pos >= sel_start && absolute_pos < sel_end
                 } else {
-                    // No selection on this line, draw normally
-                    draw_scaled_text(&display_line, text_x, y, 12.0, text_color);
+                    false
+                };
+                
+                // Draw selection background
+                if is_selected {
+                    draw_rectangle(char_rect.x, char_rect.y, char_rect.w, char_rect.h, 
+                                 Color::new(0.2, 0.4, 0.8, 0.6));
                 }
-            } else {
-                // No selection at all, draw normally
-                draw_scaled_text(&display_line, text_x, y, 12.0, text_color);
+                
+                // Draw character if it exists
+                if col < chars.len() {
+                    let ch = chars[col];
+                    let char_str = ch.to_string();
+                    let text_color = if game.code_editor_active {
+                        if is_selected { WHITE } else { WHITE }
+                    } else {
+                        LIGHTGRAY
+                    };
+                    
+                    // Center the character in its cell
+                    let char_x = char_rect.x + (char_rect.w - char_width) * 0.5;
+                    let char_y = char_rect.y + char_rect.h - scale_size(3.0);
+                    
+                    draw_scaled_text(&char_str, char_x, char_y, 12.0, text_color);
+                }
             }
         }
     }
     
-    // Draw cursor when active
+    // Draw cursor when active - now grid-based
     if game.code_editor_active {
         let cursor_line = game.current_code[..game.cursor_position].matches('\n').count();
         let line_start = game.current_code[..game.cursor_position].rfind('\n').map(|i| i + 1).unwrap_or(0);
@@ -162,14 +196,21 @@ pub fn draw_code_editor(game: &mut Game) {
         
         // Show cursor if it's in the visible area
         if cursor_line >= start_line && cursor_line < start_line + max_visible_lines {
-            // Use the new precise position calculation method
-            let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
-            let (cursor_x, cursor_y) = game.get_text_position(cursor_line, cursor_col, editor_bounds);
+            let visible_row = cursor_line - start_line;
+            let cursor_x = grid_start_x + (cursor_col as f32 * char_width);
+            let cursor_y = grid_start_y + (visible_row as f32 * char_height);
             
-            // Draw blinking cursor
+            // Draw blinking cursor as a vertical line in the grid cell
             let time = get_time() as f32;
             if (time * 2.0) % 2.0 < 1.0 { // Blink every 0.5 seconds
-                draw_line(cursor_x, cursor_y - scale_size(10.0), cursor_x, cursor_y + scale_size(2.0), scale_size(2.0), YELLOW);
+                draw_line(
+                    cursor_x, 
+                    cursor_y - scale_size(10.0), 
+                    cursor_x, 
+                    cursor_y + char_height - scale_size(10.0), 
+                    scale_size(2.0), 
+                    YELLOW
+                );
             }
         }
     }
