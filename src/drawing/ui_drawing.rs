@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 use crate::gamestate::{Game, RustFunction};
-use crate::gamestate::types::CommandsLogsTab;
+use crate::gamestate::types::EditorTab;
 use crate::font_scaling::*;
 
 pub fn draw_game_info(game: &Game) {
@@ -80,7 +80,7 @@ fn get_function_definition(func: RustFunction) -> &'static str {
     }
 }
 
-pub fn draw_function_definitions(game: &Game) {
+pub fn draw_function_definitions(game: &mut Game) {
     let scale = ScaledMeasurements::new();
     let def_width = screen_width() * 0.25; // 1/4 of screen width
     let def_height = screen_height() * 0.6; // Take up more vertical space
@@ -89,36 +89,42 @@ pub fn draw_function_definitions(game: &Game) {
     
     // Draw tabs before the main content
     let tab_height = scale_size(40.0);
-    draw_commands_logs_tabs(game, def_x - scale.padding, def_y - scale.padding - tab_height, def_width + scale.padding * 2.0, tab_height);
+    draw_editor_tabs(game, def_x - scale.padding, def_y - scale.padding - tab_height, def_width + scale.padding * 2.0, tab_height);
     
     draw_rectangle(def_x - scale.padding, def_y - scale.padding, def_width + scale.padding * 2.0, def_height + scale.padding * 2.0, Color::new(0.0, 0.0, 0.0, 0.8));
     draw_rectangle_lines(def_x - scale.padding, def_y - scale.padding, def_width + scale.padding * 2.0, def_height + scale.padding * 2.0, scale_size(2.0), WHITE);
     
-    match game.commands_logs_tab {
-        CommandsLogsTab::Commands => {
+    match game.editor_tab {
+        EditorTab::Commands => {
             draw_commands_content(game, def_x, def_y, def_width, def_height, &scale);
         }
-        CommandsLogsTab::Logs => {
+        EditorTab::Logs => {
             draw_logs_content(game, def_x, def_y, def_width, def_height, &scale);
+        }
+        EditorTab::Tasks => {
+            draw_tasks_content(game, def_x, def_y, def_width, def_height, &scale);
+        }
+        EditorTab::Editor => {
+            draw_editor_content(game, def_x, def_y, def_width, def_height, &scale);
         }
     }
 }
 
-fn draw_commands_logs_tabs(game: &Game, tab_x: f32, tab_y: f32, total_width: f32, tab_height: f32) {
-    let tab_width = total_width / 2.0;
+fn draw_editor_tabs(game: &Game, tab_x: f32, tab_y: f32, total_width: f32, tab_height: f32) {
+    let tab_width = total_width / 4.0; // Four tabs now
     
     // Commands Tab
-    let commands_active = game.commands_logs_tab == CommandsLogsTab::Commands;
+    let commands_active = game.editor_tab == EditorTab::Commands;
     let commands_color = if commands_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
     let commands_text_color = if commands_active { YELLOW } else { LIGHTGRAY };
     
     draw_rectangle(tab_x, tab_y, tab_width, tab_height, commands_color);
     draw_rectangle_lines(tab_x, tab_y, tab_width, tab_height, scale_size(2.0), 
                         if commands_active { YELLOW } else { GRAY });
-    draw_scaled_text("COMMANDS", tab_x + scale_size(10.0), tab_y + scale_size(25.0), 16.0, commands_text_color);
+    draw_scaled_text("COMMANDS", tab_x + scale_size(5.0), tab_y + scale_size(25.0), 14.0, commands_text_color);
     
     // Logs Tab
-    let logs_active = game.commands_logs_tab == CommandsLogsTab::Logs;
+    let logs_active = game.editor_tab == EditorTab::Logs;
     let logs_color = if logs_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
     let logs_text_color = if logs_active { YELLOW } else { LIGHTGRAY };
     
@@ -133,7 +139,40 @@ fn draw_commands_logs_tabs(game: &Game, tab_x: f32, tab_y: f32, total_width: f32
     } else {
         "LOGS".to_string()
     };
-    draw_scaled_text(&logs_text, tab_x + tab_width + scale_size(10.0), tab_y + scale_size(25.0), 16.0, logs_text_color);
+    draw_scaled_text(&logs_text, tab_x + tab_width + scale_size(5.0), tab_y + scale_size(25.0), 14.0, logs_text_color);
+    
+    // Tasks Tab
+    let tasks_active = game.editor_tab == EditorTab::Tasks;
+    let tasks_color = if tasks_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
+    let tasks_text_color = if tasks_active { YELLOW } else { LIGHTGRAY };
+    
+    draw_rectangle(tab_x + tab_width * 2.0, tab_y, tab_width, tab_height, tasks_color);
+    draw_rectangle_lines(tab_x + tab_width * 2.0, tab_y, tab_width, tab_height, scale_size(2.0), 
+                        if tasks_active { YELLOW } else { GRAY });
+    
+    // Show current task indicator if applicable
+    let tasks_text = if let Some(level_spec) = game.levels.get(game.level_idx) {
+        if !level_spec.tasks.is_empty() {
+            let completed_tasks = level_spec.tasks.iter().filter(|t| t.completed).count();
+            format!("TASKS ({}/{})", completed_tasks, level_spec.tasks.len())
+        } else {
+            "TASKS".to_string()
+        }
+    } else {
+        "TASKS".to_string()
+    };
+    draw_scaled_text(&tasks_text, tab_x + tab_width * 2.0 + scale_size(5.0), tab_y + scale_size(25.0), 12.0, tasks_text_color);
+    
+    // Editor Tab
+    let editor_active = game.editor_tab == EditorTab::Editor;
+    let editor_color = if editor_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
+    let editor_text_color = if editor_active { YELLOW } else { LIGHTGRAY };
+    
+    draw_rectangle(tab_x + tab_width * 3.0, tab_y, tab_width, tab_height, editor_color);
+    draw_rectangle_lines(tab_x + tab_width * 3.0, tab_y, tab_width, tab_height, scale_size(2.0), 
+                        if editor_active { YELLOW } else { GRAY });
+    
+    draw_scaled_text("EDITOR", tab_x + tab_width * 3.0 + scale_size(5.0), tab_y + scale_size(25.0), 12.0, editor_text_color);
 }
 
 fn draw_commands_content(game: &Game, def_x: f32, def_y: f32, def_width: f32, def_height: f32, scale: &ScaledMeasurements) {
@@ -194,6 +233,173 @@ fn draw_commands_content(game: &Game, def_x: f32, def_y: f32, def_width: f32, de
         }
     } else {
         draw_scaled_text("Select a function above to view its implementation", def_x, def_y + y_offset + scale_size(30.0), 16.0, GRAY);
+    }
+}
+
+fn draw_tasks_content(game: &Game, def_x: f32, def_y: f32, def_width: f32, def_height: f32, scale: &ScaledMeasurements) {
+    if let Some(level_spec) = game.levels.get(game.level_idx) {
+        if !level_spec.tasks.is_empty() {
+            draw_scaled_text("CURRENT TASKS", def_x, def_y, 20.0, YELLOW);
+            draw_scaled_text("Complete tasks in order to progress", def_x, def_y + scale.line_height, 12.0, GRAY);
+            
+            let mut y_offset = scale_size(50.0);
+            
+            for (i, task) in level_spec.tasks.iter().enumerate() {
+                let task_y = def_y + y_offset;
+                let task_color = if task.completed {
+                    Color::new(0.0, 0.3, 0.0, 0.8) // Dark green for completed
+                } else if i == 0 || level_spec.tasks.get(i-1).map_or(true, |prev| prev.completed) {
+                    Color::new(0.2, 0.2, 0.4, 0.8) // Active task
+                } else {
+                    Color::new(0.1, 0.1, 0.1, 0.6) // Locked task
+                };
+                
+                let text_color = if task.completed {
+                    GREEN
+                } else if i == 0 || level_spec.tasks.get(i-1).map_or(true, |prev| prev.completed) {
+                    WHITE
+                } else {
+                    GRAY
+                };
+                
+                let button_width = def_width - scale.padding * 2.0;
+                let task_height = scale_size(60.0);
+                
+                draw_rectangle(def_x, task_y, button_width, task_height, task_color);
+                draw_rectangle_lines(def_x, task_y, button_width, task_height, scale_size(1.0), 
+                                   if task.completed { GREEN } else { WHITE });
+                
+                // Task status icon
+                let status_icon = if task.completed { "✓" } else { "○" };
+                draw_scaled_text(status_icon, def_x + scale.padding, task_y + scale_size(15.0), 16.0, 
+                               if task.completed { GREEN } else { text_color });
+                
+                // Task name
+                let task_title = format!("{}. {}", i + 1, task.name);
+                draw_scaled_text(&task_title, def_x + scale.padding + scale_size(25.0), task_y + scale_size(15.0), 
+                               14.0, text_color);
+                
+                // Task description preview
+                if let Some(message) = &task.task_message {
+                    let preview = message.lines().next().unwrap_or("").chars().take(50).collect::<String>();
+                    let preview = if message.len() > 50 { format!("{}...", preview) } else { preview };
+                    draw_scaled_text(&preview, def_x + scale.padding + scale_size(25.0), task_y + scale_size(35.0), 
+                                   10.0, GRAY);
+                }
+                
+                y_offset += task_height + scale_size(10.0);
+                
+                // Don't draw beyond the visible area
+                if task_y + task_height > def_y + def_height {
+                    break;
+                }
+            }
+        } else {
+            draw_scaled_text("NO TASKS", def_x, def_y, 20.0, YELLOW);
+            draw_scaled_text("This level doesn't have specific tasks", def_x, def_y + scale.line_height, 12.0, GRAY);
+        }
+    } else {
+        draw_scaled_text("LOADING...", def_x, def_y, 20.0, YELLOW);
+    }
+}
+
+fn draw_editor_content(game: &mut Game, editor_x: f32, editor_y: f32, editor_width: f32, editor_height: f32, scale: &ScaledMeasurements) {
+    // Draw editor title and info
+    draw_scaled_text("ROBOT CODE EDITOR", editor_x, editor_y, 18.0, YELLOW);
+    draw_scaled_text(&format!("File: {}", game.robot_code_path), editor_x, editor_y + scale.line_height, 11.0, LIGHTGRAY);
+    
+    if game.robot_code_modified {
+        draw_scaled_text("File modified externally! Changes loaded.", editor_x, editor_y + scale_size(32.0), 11.0, YELLOW);
+    } else {
+        draw_scaled_text("Click to position cursor | Arrow keys navigate | Ctrl+Shift+Enter to run", editor_x, editor_y + scale_size(32.0), 10.0, GRAY);
+    }
+    
+    // Text area setup - adjusted for sidebar size
+    let input_y = editor_y + scale_size(50.0);
+    let line_height = game.get_cached_line_height();
+    let available_height = editor_height - scale_size(50.0);
+    let max_visible_lines = ((available_height / line_height) as usize).max(10); // At least 10 lines
+    let text_area_height = max_visible_lines as f32 * line_height;
+    
+    draw_rectangle(editor_x, input_y, editor_width, text_area_height, Color::new(0.05, 0.05, 0.05, 0.9));
+    draw_rectangle_lines(editor_x, input_y, editor_width, text_area_height, scale_size(1.0), 
+                        if game.code_editor_active { YELLOW } else { WHITE });
+    
+    // Show current code from game state
+    let code_to_display = if game.current_code.is_empty() {
+        "// Start typing your Rust code here...\n".to_string()
+    } else {
+        game.current_code.clone()
+    };
+    
+    let lines: Vec<&str> = code_to_display.lines().collect();
+    let start_line = game.code_scroll_offset;
+    
+    // Draw line numbers
+    let line_number_width = scale_size(28.0); // Slightly smaller for sidebar
+    draw_rectangle(editor_x, input_y, line_number_width, text_area_height, Color::new(0.15, 0.15, 0.2, 1.0));
+    draw_line(editor_x + line_number_width, input_y, editor_x + line_number_width, input_y + text_area_height, scale_size(1.0), DARKGRAY);
+    
+    for i in 0..max_visible_lines {
+        let line_num = start_line + i + 1;
+        let y = input_y + scale_size(10.0) + (i as f32 * line_height);
+        let color = if line_num <= lines.len() { DARKGRAY } else { Color::new(0.3, 0.3, 0.3, 1.0) };
+        draw_scaled_text(&format!("{:2}", line_num), editor_x + scale_size(2.0), y, 10.0, color);
+    }
+    
+    // Grid-based character rendering
+    let text_x = editor_x + line_number_width + scale_size(4.0);
+    let char_width = game.get_cached_char_width();
+    let char_height = line_height;
+    
+    // Calculate grid dimensions for sidebar width
+    let max_cols = ((editor_width - line_number_width - scale_size(15.0)) / char_width) as usize;
+    let grid_start_x = text_x;
+    let grid_start_y = input_y + scale_size(10.0);
+    
+    // Draw character grid
+    for row in 0..max_visible_lines {
+        let line_index = start_line + row;
+        let grid_y = grid_start_y + (row as f32 * char_height);
+        
+        if line_index < lines.len() {
+            let line = lines[line_index];
+            let chars: Vec<char> = line.chars().collect();
+            
+            // Highlight current line if cursor is on it
+            let cursor_line = get_cursor_line(game);
+            if game.code_editor_active && line_index == cursor_line {
+                draw_rectangle(grid_start_x, grid_y - scale_size(8.0), editor_width - line_number_width - scale_size(8.0), char_height, Color::new(0.2, 0.2, 0.3, 0.3));
+            }
+            
+            // Draw characters
+            for col in 0..max_cols {
+                if col < chars.len() {
+                    let grid_x = grid_start_x + (col as f32 * char_width);
+                    let ch = chars[col];
+                    let color = get_syntax_color(ch, col, line);
+                    draw_scaled_text(&ch.to_string(), grid_x, grid_y, 11.0, color);
+                }
+            }
+        }
+    }
+    
+    // Show cursor if it's in the visible area and editor is active
+    if game.code_editor_active {
+        let cursor_line = get_cursor_line(game);
+        let cursor_col = get_cursor_col(game);
+        
+        if cursor_line >= start_line && cursor_line < start_line + max_visible_lines {
+            let visible_row = cursor_line - start_line;
+            let cursor_x = grid_start_x + (cursor_col as f32 * char_width);
+            let cursor_y = grid_start_y + (visible_row as f32 * char_height);
+            
+            // Draw blinking cursor
+            let time = get_time() as f32;
+            if (time * 2.0) % 2.0 < 1.0 {
+                draw_line(cursor_x, cursor_y - scale_size(8.0), cursor_x, cursor_y + scale_size(4.0), scale_size(2.0), YELLOW);
+            }
+        }
     }
 }
 
@@ -314,6 +520,100 @@ fn wrap_log_text(text: &str, max_width: f32, font_size: f32) -> Vec<String> {
     }
     
     lines
+}
+
+pub fn draw_tabbed_sidebar(game: &mut Game) {
+    let scale = ScaledMeasurements::new();
+    
+    // Define sidebar position and dimensions (same as old function definitions area)
+    let sidebar_x = screen_width() * 0.5 + scale.padding;
+    let sidebar_y = scale.padding + scale_size(100.0);
+    let sidebar_width = screen_width() * 0.25;
+    let sidebar_height = screen_height() * 0.6;
+    
+    // Tab dimensions  
+    let tab_height = scale_size(40.0);
+    let tab_y = sidebar_y - scale.padding - tab_height;
+    
+    // Draw tabs above the sidebar
+    draw_editor_tabs(game, sidebar_x - scale.padding, tab_y, sidebar_width + scale.padding * 2.0, tab_height);
+    
+    // Draw the main sidebar background
+    draw_rectangle(sidebar_x - scale.padding, sidebar_y - scale.padding, 
+                   sidebar_width + scale.padding * 2.0, sidebar_height + scale.padding * 2.0, 
+                   Color::new(0.0, 0.0, 0.0, 0.8));
+    draw_rectangle_lines(sidebar_x - scale.padding, sidebar_y - scale.padding, 
+                        sidebar_width + scale.padding * 2.0, sidebar_height + scale.padding * 2.0, 
+                        scale_size(2.0), WHITE);
+    
+    // Draw the selected tab content (this takes the full sidebar area)
+    match game.editor_tab {
+        EditorTab::Commands => {
+            draw_commands_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
+        }
+        EditorTab::Logs => {
+            draw_logs_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
+        }
+        EditorTab::Tasks => {
+            draw_tasks_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
+        }
+        EditorTab::Editor => {
+            draw_editor_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
+        }
+    }
+}
+
+// Removed draw_code_editor_standalone - now integrated into tabbed interface as Editor tab
+
+// Helper functions for the editor
+fn get_cursor_line(game: &Game) -> usize {
+    let lines: Vec<&str> = game.current_code.lines().collect();
+    let mut current_pos = 0;
+    for (line_idx, line) in lines.iter().enumerate() {
+        let line_len = line.len() + 1; // +1 for newline
+        if current_pos + line_len > game.cursor_position {
+            return line_idx;
+        }
+        current_pos += line_len;
+    }
+    lines.len().max(1) - 1
+}
+
+fn get_cursor_col(game: &Game) -> usize {
+    let lines: Vec<&str> = game.current_code.lines().collect();
+    let mut current_pos = 0;
+    for line in lines.iter() {
+        let line_len = line.len() + 1; // +1 for newline
+        if current_pos + line_len > game.cursor_position {
+            return game.cursor_position - current_pos;
+        }
+        current_pos += line_len;
+    }
+    0
+}
+
+fn get_syntax_color(ch: char, col: usize, line: &str) -> Color {
+    // Simple syntax highlighting
+    if line.trim_start().starts_with("//") {
+        Color::new(0.5, 0.7, 0.5, 1.0) // Green for comments
+    } else if line.contains("fn ") || line.contains("let ") || line.contains("if ") || line.contains("for ") {
+        if col < line.len() {
+            let word_start = line[..col].rfind(|c: char| c.is_whitespace()).map(|i| i + 1).unwrap_or(0);
+            let word_end = line[col..].find(|c: char| c.is_whitespace()).map(|i| col + i).unwrap_or(line.len());
+            let word = &line[word_start..word_end];
+            if matches!(word, "fn" | "let" | "if" | "for" | "while" | "match" | "struct" | "impl") {
+                Color::new(0.8, 0.6, 1.0, 1.0) // Purple for keywords
+            } else {
+                WHITE
+            }
+        } else {
+            WHITE
+        }
+    } else if ch == '"' || (line.contains('"') && col >= line.find('"').unwrap_or(usize::MAX)) {
+        Color::new(1.0, 0.8, 0.6, 1.0) // Orange for strings
+    } else {
+        WHITE
+    }
 }
 
 pub fn handle_shop(_game: &mut Game) {

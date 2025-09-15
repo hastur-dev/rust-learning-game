@@ -3,6 +3,278 @@ use ::rand::{rngs::StdRng, SeedableRng};
 use std::collections::HashSet;
 use log::{info, warn, error, debug, trace};
 use std::env;
+use std::panic;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+mod crash_protection;
+
+/// Parse only function calls that are reachable from main(), following proper Rust execution flow
+fn parse_rust_code_from_main(code: &str) -> Vec<FunctionCall> {
+    // Extract main function body
+    let main_body = extract_main_function_body(code);
+    if main_body.is_empty() {
+        return Vec::new();
+    }
+    
+    // Parse calls only within main
+    parse_function_calls_in_body(&main_body)
+}
+
+/// Extract the body of the main() function from Rust code
+fn extract_main_function_body(code: &str) -> String {
+    let lines: Vec<&str> = code.lines().collect();
+    let mut in_main = false;
+    let mut brace_count = 0;
+    let mut main_body = Vec::new();
+    let mut found_main_start = false;
+    
+    for line in lines {
+        let trimmed = line.trim();
+        
+        // Look for main function declaration
+        if !found_main_start && (trimmed.starts_with("fn main(") || trimmed.contains("fn main(")) {
+            found_main_start = true;
+            if trimmed.contains('{') {
+                in_main = true;
+                brace_count = 1;
+            }
+            continue;
+        }
+        
+        // If we found main but haven't entered the body yet, look for opening brace
+        if found_main_start && !in_main && trimmed.contains('{') {
+            in_main = true;
+            brace_count = 1;
+            continue;
+        }
+        
+        if in_main {
+            // Count braces to track when we exit main
+            for ch in trimmed.chars() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            // We've exited main function
+                            return main_body.join("\n");
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            
+            // Add this line to main body if we're still inside main
+            if brace_count > 0 {
+                main_body.push(line);
+            }
+        }
+    }
+    
+    main_body.join("\n")
+}
+
+/// Parse function calls within a specific function body
+fn parse_function_calls_in_body(body: &str) -> Vec<FunctionCall> {
+    let mut calls = Vec::new();
+    let lines: Vec<&str> = body.lines().collect();
+    
+    for line in lines {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with("//") {
+            continue;
+        }
+        
+        // Parse robot function calls (move_bot, scan, grab, etc.)
+        if let Some(call) = parse_single_line_for_calls(trimmed) {
+            calls.push(call);
+        }
+    }
+    
+    calls
+}
+
+/// Parse a single line for robot function calls
+fn parse_single_line_for_calls(line: &str) -> Option<FunctionCall> {
+    // Parse move_bot() calls (also support legacy move() for backward compatibility)
+    if let Some(start) = line.find("move_bot(").or_else(|| line.find("move(")) {
+        let paren_offset = if line[start..].starts_with("move_bot(") { 9 } else { 5 };
+        let after_paren = &line[start + paren_offset..];
+        if let Some(end) = after_paren.find(')') {
+            let param = after_paren[..end].trim();
+            let dir = match param {
+                "up" | "Up" | "\"up\"" | "\"Up\"" => Some((0, -1)),
+                "down" | "Down" | "\"down\"" | "\"Down\"" => Some((0, 1)),
+                "left" | "Left" | "\"left\"" | "\"Left\"" => Some((-1, 0)),
+                "right" | "Right" | "\"right\"" | "\"Right\"" => Some((1, 0)),
+                _ => None,
+            };
+            if let Some(d) = dir {
+                return Some(FunctionCall {
+                    function: RustFunction::Move,
+                    direction: Some(d),
+                    coordinates: None,
+                    level_number: None,
+                    boolean_param: None,
+                    message: None,
+                });
+            }
+        }
+    }
+    
+    // Parse scan() calls
+    if let Some(start) = line.find("scan(") {
+        let after_paren = &line[start + 5..];
+        if let Some(end) = after_paren.find(')') {
+            let param = after_paren[..end].trim();
+            let dir = match param {
+                "up" | "Up" | "\"up\"" | "\"Up\"" => Some((0, -1)),
+                "down" | "Down" | "\"down\"" | "\"Down\"" => Some((0, 1)),
+                "left" | "Left" | "\"left\"" | "\"Left\"" => Some((-1, 0)),
+                "right" | "Right" | "\"right\"" | "\"Right\"" => Some((1, 0)),
+                "current" | "Current" | "\"current\"" | "\"Current\"" => Some((0, 0)),
+                _ => None,
+            };
+            if let Some(d) = dir {
+                return Some(FunctionCall {
+                    function: RustFunction::Scan,
+                    direction: Some(d),
+                    coordinates: None,
+                    level_number: None,
+                    boolean_param: None,
+                    message: None,
+                });
+            }
+        }
+    }
+    
+    // Parse grab() calls
+    if line.contains("grab()") {
+        return Some(FunctionCall {
+            function: RustFunction::Grab,
+            direction: None,
+            coordinates: None,
+            level_number: None,
+            boolean_param: None,
+            message: None,
+        });
+    }
+    
+    None
+}
+
+/// Extract print statements only from main() and functions called by main()
+fn extract_print_statements_from_main(code: &str) -> Vec<String> {
+    let main_body = extract_main_function_body(code);
+    if main_body.is_empty() {
+        return Vec::new();
+    }
+    
+    extract_print_statements_from_body(&main_body)
+}
+
+/// Extract print statements from a specific function body
+fn extract_print_statements_from_body(body: &str) -> Vec<String> {
+    let mut print_outputs = Vec::new();
+    let lines: Vec<&str> = body.lines().collect();
+    
+    for line in lines {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with("//") {
+            continue;
+        }
+        
+        // Extract println! statements
+        if let Some(start) = trimmed.find("println!(") {
+            let after_paren = &trimmed[start + 9..];
+            if let Some(end) = after_paren.rfind(')') {
+                let content = &after_paren[..end];
+                // Remove quotes from string literals
+                let clean_content = content.trim_matches('"');
+                print_outputs.push(format!("stdout: {}", clean_content));
+            }
+        }
+        
+        // Extract eprintln! statements
+        if let Some(start) = trimmed.find("eprintln!(") {
+            let after_paren = &trimmed[start + 10..];
+            if let Some(end) = after_paren.rfind(')') {
+                let content = &after_paren[..end];
+                let clean_content = content.trim_matches('"');
+                print_outputs.push(format!("stderr: {}", clean_content));
+            }
+        }
+        
+        // Extract panic! statements
+        if let Some(start) = trimmed.find("panic!(") {
+            let after_paren = &trimmed[start + 7..];
+            if let Some(end) = after_paren.rfind(')') {
+                let content = &after_paren[..end];
+                let clean_content = content.trim_matches('"');
+                print_outputs.push(format!("panic: {}", clean_content));
+            }
+        }
+    }
+    
+    print_outputs
+}
+
+/// Determine the indentation level for the next line based on Rust code structure
+fn get_auto_indentation(code: &str, cursor_position: usize) -> String {
+    // Find the current line
+    let lines: Vec<&str> = code.lines().collect();
+    let mut current_pos = 0;
+    let mut current_line_index = 0;
+    
+    for (i, line) in lines.iter().enumerate() {
+        let line_end = current_pos + line.len();
+        if cursor_position <= line_end {
+            current_line_index = i;
+            break;
+        }
+        current_pos = line_end + 1; // +1 for newline
+    }
+    
+    if current_line_index >= lines.len() {
+        return "".to_string();
+    }
+    
+    let current_line = lines[current_line_index];
+    let trimmed_line = current_line.trim();
+    
+    // Get the base indentation of the current line
+    let mut base_indent = String::new();
+    for ch in current_line.chars() {
+        if ch == ' ' || ch == '\t' {
+            base_indent.push(ch);
+        } else {
+            break;
+        }
+    }
+    
+    // Check if the line ends with an opening brace or contains keywords that need indentation
+    let should_indent = trimmed_line.ends_with('{') || 
+                       trimmed_line.ends_with("=> {") ||
+                       (trimmed_line.starts_with("fn ") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.starts_with("for ") && trimmed_line.contains('{')) ||
+                       (trimmed_line.starts_with("while ") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.starts_with("if ") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.starts_with("else") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.starts_with("loop") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.starts_with("match ") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.contains("impl ") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.contains("struct ") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.contains("enum ") && trimmed_line.ends_with('{')) ||
+                       (trimmed_line.contains("trait ") && trimmed_line.ends_with('{'));
+    
+    if should_indent {
+        // Add 4 spaces for indentation (standard Rust style)
+        return base_indent + "    ";
+    }
+    
+    // No additional indentation needed
+    base_indent
+}
 
 // Desktop-only imports
 #[cfg(not(target_arch = "wasm32"))]
@@ -31,6 +303,7 @@ mod font_scaling;
 mod cache;
 mod progressive_loader;
 mod coordinate_system;
+mod learning_tests;
 
 use level::*;
 use item::*;
@@ -1027,7 +1300,7 @@ async fn execute_rust_code(game: &mut Game) -> String {
     }
     
     // Extract and display print statements
-    let print_outputs = extract_print_statements_from_rust_code(&code_to_execute);
+    let print_outputs = extract_print_statements_from_main(&code_to_execute);
     
     // Debug: Show extracted print outputs (commented out)
     // if game.level_idx == 0 {
@@ -1051,7 +1324,7 @@ async fn execute_rust_code(game: &mut Game) -> String {
         }
     }
     
-    let calls = parse_rust_code(&code_to_execute);
+    let calls = parse_rust_code_from_main(&code_to_execute);
     if calls.is_empty() && print_outputs.is_empty() {
         return "No valid function calls found".to_string();
     }
@@ -1163,22 +1436,72 @@ fn shop_items(game: &Game) -> Vec<ShopItem> {
 }
 
 fn draw_main_game_view(game: &mut Game) {
-    clear_background(Color::from_rgba(18, 18, 18, 255));
-    draw_game(game);
-    draw_game_info(game);
-    draw_tutorial_overlay(game);
-    draw_time_slow_indicator(game);
-    draw_controls_text();
-    draw_function_definitions(game);
-    draw_code_editor(game);
-    draw_level_complete_overlay(game);
+    // Clear background is usually safe, but wrap it just in case
+    safe_draw_operation(|| clear_background(Color::from_rgba(18, 18, 18, 255)), "clear_background");
+    
+    // Wrap each drawing operation in crash protection
+    if !safe_draw_operation(|| draw_game(game), "draw_game") {
+        // If main game drawing fails, try to draw a fallback
+        safe_draw_operation(|| {
+            draw_text("RENDERING ERROR - GAME RECOVERY MODE", 50.0, 100.0, 30.0, RED);
+            draw_text("Press R to restart level or M to return to menu", 50.0, 140.0, 20.0, YELLOW);
+        }, "fallback_game_drawing");
+    }
+    
+    safe_draw_operation(|| draw_game_info(game), "draw_game_info");
+    safe_draw_operation(|| draw_tutorial_overlay(game), "draw_tutorial_overlay");
+    safe_draw_operation(|| draw_time_slow_indicator(game), "draw_time_slow_indicator");
+    safe_draw_operation(|| draw_controls_text(), "draw_controls_text");
+    
+    // Draw tabbed sidebar (Commands/Logs/Tasks/Editor)
+    safe_draw_operation(|| drawing::ui_drawing::draw_tabbed_sidebar(game), "draw_tabbed_sidebar");
+    safe_draw_operation(|| draw_level_complete_overlay(game), "draw_level_complete_overlay");
+    
+    // Check if crash recovery was triggered this frame
+    if is_crash_recovery_active() || crash_protection::is_system_crash_active() || crash_protection::is_permanent_protection_active() {
+        safe_draw_operation(|| {
+            let msg = if crash_protection::is_permanent_protection_active() {
+                let blacklisted = crash_protection::get_blacklisted_count();
+                format!("PERMANENT CRASH PROTECTION ACTIVE - {} problematic operations disabled", blacklisted)
+            } else if crash_protection::is_system_crash_active() {
+                let (total, addr, same_count) = crash_protection::get_crash_info();
+                format!("SYSTEM CRASH RECOVERY - {} total, addr: 0x{:x} ({}x)", total, addr, same_count)
+            } else {
+                "CRASH DETECTED - GAME CONTINUES WITH RECOVERY MODE".to_string()
+            };
+            let text_width = measure_text(&msg, None, 18, 1.0).width;
+            let x = (screen_width() - text_width) / 2.0;
+            let color = if crash_protection::is_permanent_protection_active() {
+                Color::new(0.0, 0.8, 0.2, 0.9)  // Green for permanent protection (stable)
+            } else if crash_protection::is_system_crash_active() { 
+                Color::new(1.0, 0.5, 0.0, 0.9)  // Orange for system crashes
+            } else { 
+                Color::new(1.0, 0.0, 0.0, 0.8)  // Red for normal crashes
+            };
+            draw_rectangle(x - 10.0, 10.0, text_width + 20.0, 30.0, color);
+            draw_text(&msg, x, 30.0, 18.0, WHITE);
+        }, "crash_recovery_notice");
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn window_conf() -> Conf {
     use crate::menu::GameSettings;
+    use crate::cache::GameCache;
     
-    let settings = GameSettings::load_or_default();
+    // First try to load from cache (most recent), then fallback to GameSettings
+    let mut settings = GameSettings::load_or_default();
+    
+    // Try to load from cache to get the most recent window settings
+    let cache = GameCache::load();
+    if let Some(cached_settings) = cache.get_cached_game_settings() {
+        settings.window_width = cached_settings.window_width;
+        settings.window_height = cached_settings.window_height;
+        settings.fullscreen = cached_settings.fullscreen;
+        settings.maximized = cached_settings.maximized;
+        settings.font_size_multiplier = cached_settings.font_size_multiplier;
+        info!("Using cached window settings: {}x{}", settings.window_width, settings.window_height);
+    }
     
     Conf {
         window_title: "Rust Robot Programming Game".to_owned(),
@@ -1344,7 +1667,7 @@ async fn run_test_mode(test_file: String, enable_all_logs: bool) {
 #[cfg(not(target_arch = "wasm32"))]
 async fn execute_test_code(game: &mut Game, code: &str) -> String {
     // Extract and display print statements
-    let print_outputs = extract_print_statements_from_rust_code(code);
+    let print_outputs = extract_print_statements_from_main(code);
     
     for output in &print_outputs {
         if output.starts_with("stdout:") {
@@ -1363,7 +1686,7 @@ async fn execute_test_code(game: &mut Game, code: &str) -> String {
         }
     }
     
-    let calls = parse_rust_code(code);
+    let calls = parse_rust_code_from_main(code);
     if calls.is_empty() && print_outputs.is_empty() {
         return "No valid function calls found".to_string();
     }
@@ -1615,11 +1938,151 @@ async fn test_level_solution(config: &crate::gamestate::types::LearningLevelConf
     (passed, result_msg)
 }
 
+// Global crash recovery state
+static CRASH_RECOVERY_ACTIVE: AtomicBool = AtomicBool::new(false);
+static mut CRASH_RECOVERY_TIMER: f32 = 0.0;
+
+// Crash protection system
+fn setup_crash_protection() {
+    // Set up panic hook to catch panics and prevent game exit
+    panic::set_hook(Box::new(|panic_info| {
+        // Log the panic information
+        let location = panic_info.location().unwrap_or_else(|| {
+            std::panic::Location::caller()
+        });
+        
+        let message = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Unknown panic occurred".to_string()
+        };
+        
+        error!("CRASH CAUGHT - Panic at {}:{} - {}", location.file(), location.line(), message);
+        
+        // Set crash recovery flag and timer
+        CRASH_RECOVERY_ACTIVE.store(true, Ordering::SeqCst);
+        unsafe {
+            CRASH_RECOVERY_TIMER = 5.0; // Show recovery message for 5 seconds
+        }
+        
+        // Log recovery attempt
+        error!("Attempting to recover from crash...");
+    }));
+    
+    info!("Crash protection system initialized");
+}
+
+// Safe font initialization with error handling
+async fn safe_initialize_fonts() -> Result<(), String> {
+    // For async operations, we'll rely on the panic hook to catch issues
+    // and just log any problems that occur
+    info!("Initializing fonts with crash protection...");
+    font_scaling::initialize_fonts().await;
+    info!("Font initialization completed successfully");
+    Ok(())
+}
+
+// Safe drawing operations with error recovery
+fn safe_draw_operation<F>(operation: F, operation_name: &str) -> bool 
+where 
+    F: FnOnce(),
+{
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(operation)) {
+        Ok(_) => true,
+        Err(_) => {
+            error!("Drawing operation '{}' failed, skipping", operation_name);
+            false
+        }
+    }
+}
+
+// Safe game state operations with error recovery
+fn safe_game_operation<F, R>(operation: F, operation_name: &str, default_result: R) -> R 
+where 
+    F: FnOnce() -> R,
+    R: Clone,
+{
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(operation)) {
+        Ok(result) => result,
+        Err(_) => {
+            error!("Game operation '{}' failed, using default", operation_name);
+            default_result
+        }
+    }
+}
+
+// Check if crash recovery is active
+fn is_crash_recovery_active() -> bool {
+    CRASH_RECOVERY_ACTIVE.load(Ordering::SeqCst)
+}
+
+// Reset crash recovery state
+fn reset_crash_recovery() {
+    CRASH_RECOVERY_ACTIVE.store(false, Ordering::SeqCst);
+    unsafe {
+        CRASH_RECOVERY_TIMER = 0.0;
+    }
+}
+
+// Update crash recovery timer
+fn update_crash_recovery_timer(delta_time: f32) {
+    if is_crash_recovery_active() {
+        unsafe {
+            CRASH_RECOVERY_TIMER -= delta_time;
+            if CRASH_RECOVERY_TIMER <= 0.0 {
+                CRASH_RECOVERY_ACTIVE.store(false, Ordering::SeqCst);
+                CRASH_RECOVERY_TIMER = 0.0;
+                info!("Crash recovery mode disabled");
+            }
+        }
+    }
+}
+
+// Emergency recovery for corrupted game state
+fn emergency_game_recovery(game: &mut Game) {
+    error!("Performing emergency game recovery...");
+    
+    // Try to reload current level
+    if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let current_level = game.level_idx;
+        game.load_level(current_level);
+    })) {
+        error!("Failed to reload level during recovery: {:?}", e);
+        
+        // If level reload fails, reset to first level
+        if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            game.level_idx = 0;
+            if !game.levels.is_empty() {
+                game.load_level(0);
+            }
+        })) {
+            error!("Critical: Failed to reset to first level: {:?}", e);
+            // At this point, the game state is severely corrupted
+            // The panic hook should have already caught this
+        }
+    }
+    
+    // Reset critical flags
+    game.finished = false;
+    game.execution_result.clear();
+    
+    info!("Emergency recovery completed");
+}
+
 // Desktop-specific main logic
 #[cfg(not(target_arch = "wasm32"))]
 async fn desktop_main() {
-    // Initialize fonts first
-    font_scaling::initialize_fonts().await;
+    // Set up simplified crash protection only
+    setup_crash_protection();
+    // Temporarily disable system-level crash protection to prevent infinite loops
+    // crash_protection::setup_system_crash_protection();
+    
+    // Initialize fonts first with error handling
+    if let Err(e) = safe_initialize_fonts().await {
+        error!("Failed to initialize fonts: {}, continuing with defaults", e);
+    }
     
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
@@ -1719,8 +2182,27 @@ async fn desktop_main() {
     
     let mut shop_open = false;
     let mut loading_progress: Option<LoadingProgress> = None;
+    let mut last_time = get_time();
 
     loop {
+        // Update crash recovery timer
+        let current_time = get_time();
+        let delta_time = (current_time - last_time) as f32;
+        last_time = current_time;
+        update_crash_recovery_timer(delta_time);
+        
+        // Check for system-level crashes and reset state if needed
+        if crash_protection::is_system_crash_active() {
+            static mut SYSTEM_CRASH_TIMER: f32 = 0.0;
+            unsafe {
+                SYSTEM_CRASH_TIMER += delta_time;
+                if SYSTEM_CRASH_TIMER >= 3.0 {  // Reset after 3 seconds
+                    crash_protection::reset_system_crash_state();
+                    SYSTEM_CRASH_TIMER = 0.0;
+                    info!("System crash recovery state reset");
+                }
+            }
+        }
         // Check for progressive loading updates
         if let Some(progress) = loader.get_latest_progress() {
             // Clear loading progress once complete to stop checking
@@ -1808,7 +2290,8 @@ async fn desktop_main() {
                 // Update popup system with delta time
                 game.update_popup_system(get_frame_time());
 
-                draw_main_game_view(&mut game);
+                // Wrap main game view drawing in crash protection
+                safe_draw_operation(|| draw_main_game_view(&mut game), "main_game_view");
 
                 // Shop functionality removed - replaced with Rust docs
                 
@@ -1829,16 +2312,8 @@ async fn desktop_main() {
                     let (mouse_x, mouse_y) = mouse_position();
                     trace!("Mouse position: ({:.2}, {:.2})", mouse_x, mouse_y);
                     
-                    // Check for screenshot and system key combinations to prevent crashes
-                    let system_key_combination = is_key_pressed(KeyCode::PrintScreen) || 
-                        (is_key_down(KeyCode::LeftAlt) && is_key_pressed(KeyCode::PrintScreen)) ||
-                        (is_key_down(KeyCode::LeftSuper) && is_key_down(KeyCode::LeftShift)) ||
-                        (is_key_down(KeyCode::RightSuper) && is_key_down(KeyCode::LeftShift)) ||
-                        (is_key_down(KeyCode::LeftSuper) && is_key_down(KeyCode::RightShift)) ||
-                        (is_key_down(KeyCode::RightSuper) && is_key_down(KeyCode::RightShift)) ||
-                        // Also check for Windows key + S combinations specifically
-                        (is_key_down(KeyCode::LeftSuper) && is_key_pressed(KeyCode::S)) ||
-                        (is_key_down(KeyCode::RightSuper) && is_key_pressed(KeyCode::S));
+                    // Simplified system key checking - less aggressive to avoid crashes
+                    let system_key_combination = false; // Temporarily disable complex key checking
                     
                     // Update system key timing for extended safety period
                     let current_time = macroquad::prelude::get_time();
@@ -1863,71 +2338,76 @@ async fn desktop_main() {
                     if is_mouse_button_pressed(MouseButton::Left) {
                         debug!("Left mouse button pressed at ({:.2}, {:.2})", mouse_x, mouse_y);
                         
-                        // Tab click handling (above function definitions area)
-                        let def_x = screen_width() * 0.5 + 16.0; // Match PADDING constant
-                        let def_y = 16.0 + 100.0; // Match PADDING constant
-                        let def_width = screen_width() * 0.25;
+                        // Tab click handling (above sidebar area)
+                        let sidebar_x = screen_width() * 0.5 + 16.0; // Match sidebar position  
+                        let sidebar_width = screen_width() * 0.25;
                         let tab_height = 40.0;
-                        let tab_y = def_y - 16.0 - tab_height; // Above the main area
-                        let tab_width = (def_width + 32.0) / 2.0; // Split into two tabs
+                        let tab_y = 16.0 + 100.0 - 16.0 - tab_height; // Above the sidebar area
+                        let tab_width = (sidebar_width + 32.0) / 4.0; // Four tabs now
                         
                         // Commands tab click
-                        if mouse_x >= def_x - 16.0 && mouse_x <= def_x - 16.0 + tab_width &&
+                        if mouse_x >= sidebar_x - 16.0 && mouse_x <= sidebar_x - 16.0 + tab_width &&
                            mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
-                            game.commands_logs_tab = gamestate::types::CommandsLogsTab::Commands;
+                            game.editor_tab = gamestate::types::EditorTab::Commands;
                             debug!("Switched to Commands tab");
                         }
                         // Logs tab click
-                        else if mouse_x >= def_x - 16.0 + tab_width && mouse_x <= def_x - 16.0 + (def_width + 32.0) &&
+                        else if mouse_x >= sidebar_x - 16.0 + tab_width && mouse_x <= sidebar_x - 16.0 + tab_width * 2.0 &&
                                 mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
-                            game.commands_logs_tab = gamestate::types::CommandsLogsTab::Logs;
+                            game.editor_tab = gamestate::types::EditorTab::Logs;
                             debug!("Switched to Logs tab");
                         }
-                        
-                        // Function definitions area
-                        let available_functions = game.get_gui_functions();
-                        
-                        for (i, func) in available_functions.iter().enumerate() {
-                            let button_y = def_y + 50.0 + (i as f32 * 30.0);
-                            if mouse_x >= def_x && mouse_x <= def_x + def_width &&
-                               mouse_y >= button_y && mouse_y <= button_y + 25.0 {
-                                game.selected_function_to_view = Some(*func);
-                            }
+                        // Tasks tab click
+                        else if mouse_x >= sidebar_x - 16.0 + tab_width * 2.0 && mouse_x <= sidebar_x - 16.0 + tab_width * 3.0 &&
+                                mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
+                            game.editor_tab = gamestate::types::EditorTab::Tasks;
+                            debug!("Switched to Tasks tab");
+                        }
+                        // Editor tab click
+                        else if mouse_x >= sidebar_x - 16.0 + tab_width * 3.0 && mouse_x <= sidebar_x - 16.0 + (sidebar_width + 32.0) &&
+                                mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
+                            game.editor_tab = gamestate::types::EditorTab::Editor;
+                            debug!("Switched to Editor tab");
                         }
                         
-                        // Editor click handling
-                        let editor_x = screen_width() - (screen_width() * 0.25) - 16.0; // Match PADDING constant
-                        let editor_y = 16.0 + 100.0; // Match PADDING constant
-                        let editor_width = screen_width() * 0.25;
-                        let editor_height = screen_height() * 0.6;
+                        // Function definitions click handling is now integrated into tabbed editor
+                        // TODO: Add click handling for function buttons within the Commands tab
                         
-                        debug!("Editor bounds: x={:.2}, y={:.2}, w={:.2}, h={:.2}", editor_x, editor_y, editor_width, editor_height);
-                        
-                        if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + editor_width + 10.0 &&
-                           mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + editor_height + 10.0 {
-                            debug!("Click detected in editor area, activating editor");
-                            game.code_editor_active = true;
+                        // Editor click handling (when Editor tab is active)
+                        if game.editor_tab == gamestate::types::EditorTab::Editor {
+                            let editor_x = sidebar_x; // Use sidebar position when Editor tab is active
+                            let editor_y = 16.0 + 100.0; // Match PADDING constant
+                            let editor_width = sidebar_width;
+                            let editor_height = screen_height() * 0.6;
                             
-                            // Position cursor at click location
-                            let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
-                            debug!("Calling position_cursor_at_click with bounds: {:?}", editor_bounds);
+                            debug!("Editor bounds: x={:.2}, y={:.2}, w={:.2}, h={:.2}", editor_x, editor_y, editor_width, editor_height);
                             
-                            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                game.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
-                            })) {
-                                Ok(_) => debug!("Cursor positioning completed successfully"),
-                                Err(e) => {
-                                    error!("Panic caught in position_cursor_at_click: {:?}", e);
-                                    // Set safe defaults
-                                    game.cursor_position = 0;
-                                    if game.current_code.is_empty() {
-                                        game.current_code = "// Start typing your Rust code here...\n".to_string();
+                            if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + editor_width + 10.0 &&
+                               mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + editor_height + 10.0 {
+                                debug!("Click detected in editor area, activating editor");
+                                game.code_editor_active = true;
+                                
+                                // Position cursor at click location
+                                let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+                                debug!("Calling position_cursor_at_click with bounds: {:?}", editor_bounds);
+                                
+                                match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                    game.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
+                                })) {
+                                    Ok(_) => debug!("Cursor positioning completed successfully"),
+                                    Err(e) => {
+                                        error!("Panic caught in position_cursor_at_click: {:?}", e);
+                                        // Set safe defaults
+                                        game.cursor_position = 0;
+                                        if game.current_code.is_empty() {
+                                            game.current_code = "// Start typing your Rust code here...\n".to_string();
+                                        }
                                     }
                                 }
+                            } else {
+                                debug!("Click outside editor area, deactivating editor");
+                                game.code_editor_active = false;
                             }
-                        } else if mouse_x > screen_width() / 2.0 {
-                            debug!("Click outside editor area, deactivating editor");
-                            game.code_editor_active = false;
                         }
                     }
                     
@@ -1982,8 +2462,15 @@ async fn desktop_main() {
                                     code_modified = true;
                                 }
                                 
-                                game.current_code.insert(game.cursor_position, '\n');
-                                game.cursor_position += 1;
+                                // Get automatic indentation for the next line
+                                let auto_indent = get_auto_indentation(&game.current_code, game.cursor_position);
+                                let newline_with_indent = format!("\n{}", auto_indent);
+                                
+                                // Insert newline with automatic indentation
+                                for ch in newline_with_indent.chars() {
+                                    game.current_code.insert(game.cursor_position, ch);
+                                    game.cursor_position += 1;
+                                }
                                 game.ensure_cursor_visible(); // Ensure the cursor scrolls into view after newline
                                 code_modified = true;
                             }
@@ -2108,11 +2595,11 @@ async fn desktop_main() {
                     if is_key_pressed(KeyCode::Escape) { shop_open = false; }
                 }
 
-                game.check_end_condition();
+                safe_game_operation(|| game.check_end_condition(), "check_end_condition", ());
             },
             _ => {
                 // Draw menu with loading progress
-                game.menu.draw_with_loading_progress(loading_progress.as_ref());
+                safe_draw_operation(|| game.menu.draw_with_loading_progress(loading_progress.as_ref()), "menu_draw_with_loading");
             }
         }
 

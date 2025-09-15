@@ -11,6 +11,7 @@ mod menu;
 mod movement_patterns;
 mod popup;
 mod embedded_levels;
+mod learning_tests;
 
 use level::*;
 use game_state::*;

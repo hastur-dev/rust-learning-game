@@ -73,7 +73,7 @@ impl Game {
             cached_char_width: 0.0,
             cached_line_height: 0.0,
             needs_font_refresh: true,      // Initially needs refresh
-            commands_logs_tab: CommandsLogsTab::Commands, // Default to Commands tab
+            editor_tab: EditorTab::Commands, // Default to Commands tab
             coordinate_transformer: crate::coordinate_system::CoordinateTransformer::new(), // Initialize coordinate transformer
             last_system_key_time: 0.0,    // Initialize system key timer
             enable_coordinate_logs: false, // Default to disabled, enabled via --all-logs command line flag

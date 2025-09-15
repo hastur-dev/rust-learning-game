@@ -1,0 +1,274 @@
+name: "Level 2: Functions and Loops (Task System)"
+grid_size: "6x6"
+start_position: [0, 0]
+max_turns: 150
+fog_of_war: false
+income_per_square: 1
+message: |
+  🎯 **LEVEL 2: Functions, Loops, and Structs**
+  
+  Learn to organize your code effectively and process data systematically!
+  
+  You'll complete 4 sequential tasks to master functions, loops, and structs.
+
+hint_message: |
+  **Programming Tips:**
+  - Create functions to organize your code
+  - Use loops to repeat actions systematically  
+  - Use structs to organize related data
+  - All code should be organized in functions!
+
+rust_docs_url: "https://doc.rust-lang.org/book/ch03-03-how-functions-work.html"
+obstacles: 0
+
+items:
+  - name: "key"
+    item_file: "items/key.rs"
+    spawn_randomly: false
+    location: [3, 0]
+  - name: "coin" 
+    item_file: "items/coin.rs"
+    spawn_randomly: false
+    location: [4, 1]
+  - name: "gem"
+    item_file: "items/gem.rs"
+    spawn_randomly: false
+    location: [5, 2]
+  - name: "crystal"
+    item_file: "items/crystal.rs"
+    spawn_randomly: false
+    location: [0, 3]
+  - name: "scroll"
+    item_file: "items/scroll.rs"
+    spawn_randomly: false
+    location: [1, 4]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [5, 5]
+
+tasks:
+  - name: "Create Function with Print Statement"
+    task_file: "learning_tests::level2_task1_function::level2_task1_tests"
+    task_message: |
+      ## Task 1: Create a Function with Print Statement
+      
+      Functions are the building blocks of organized code. Let's create your first function!
+      
+      **Your goal:** Create a function called `scan_level()` that contains a print statement.
+      
+      **Requirements:**
+      ```rust
+      fn scan_level() {
+          println!("Beginning level scan...");
+          // More code will go here in later tasks
+      }
+      ```
+      
+      **What you need to do:**
+      1. Define the function above `main()`
+      2. Use `println!()` macro inside the function
+      3. Call the function from `main()` with `scan_level();`
+      
+      **Why functions matter:** Functions help organize code, make it reusable, and easier to understand.
+    
+    completion_message: |
+      ✅ **Great!** You've created your first function!
+      
+      **What you learned:**
+      - How to define functions with `fn`
+      - Function naming conventions (snake_case)
+      - Calling functions from other functions
+      - Code organization principles
+    
+    start_task_message: "Let's start by creating a function to hold our main logic!"
+
+  - name: "Add Loops to Scan Each Tile"
+    task_file: "learning_tests::level2_task2_loops::level2_task2_tests"
+    task_message: |
+      ## Task 2: Add Nested Loops Inside Function
+      
+      Now let's add loops inside your `scan_level()` function to systematically go through each tile.
+      
+      **Your goal:** Add nested loops inside your `scan_level()` function to scan every tile in the 6x6 grid.
+      
+      **Required loop structure:**
+      ```rust
+      fn scan_level() {
+          println!("Beginning level scan...");
+          
+          for y in 0..6 {        // 6x6 grid height
+              for x in 0..6 {    // 6x6 grid width
+                  println!("Scanning position ({}, {})", x, y);
+              }
+          }
+      }
+      ```
+      
+      **Key concepts:**
+      - `for` loops with ranges (`0..6` means 0 to 5)
+      - Nested loops for 2D grid traversal
+      - Variable naming (`x` for horizontal, `y` for vertical)
+    
+    completion_message: |
+      ✅ **Excellent!** You've mastered nested loops!
+      
+      **What you learned:**
+      - `for` loop syntax with ranges
+      - Nested loop patterns for 2D grids
+      - Systematic data processing
+      - Combining functions with loops
+    
+    start_task_message: "Time to add loops to process each tile systematically!"
+    required_conditions:
+      - condition_type: "objects_destroyed"
+        target_value: 1
+
+  - name: "Create Struct to Track Grid Information"
+    task_file: "learning_tests::level2_task3_struct::level2_task3_tests"
+    task_message: |
+      ## Task 3: Create Struct and Track Grid Information
+      
+      Structs help organize related data. Let's create one to track grid information!
+      
+      **Your goal:** Create a `GridInfo` struct and use it to collect data about each grid position.
+      
+      **Step 1: Define the struct above all functions:**
+      ```rust
+      struct GridInfo {
+          x: i32,
+          y: i32,
+          content: String,
+      }
+      ```
+      
+      **Step 2: Modify your loops to collect data:**
+      ```rust
+      let mut item_locations = Vec::new();
+      
+      for y in 0..6 {
+          for x in 0..6 {
+              let content = format!("tile_{}_{}", x, y);
+              
+              // Create GridInfo instance
+              let grid_info = GridInfo {
+                  x: x,
+                  y: y,
+                  content: content.clone(),
+              };
+              
+              // Track items for printing
+              if content.contains("item") {
+                  item_locations.push((x, y, content));
+              }
+          }
+      }
+      ```
+    
+    completion_message: |
+      ✅ **Outstanding!** You've mastered structs and data organization!
+      
+      **What you learned:**
+      - Defining custom structs
+      - Creating struct instances
+      - Organizing related data together
+      - Using Vec to collect data
+    
+    start_task_message: "Let's organize our data with structs!"
+    required_conditions:
+      - condition_type: "grids_scanned"
+        target_value: 5
+
+  - name: "Create Item Collection Function"
+    task_file: "learning_tests::level2_task4_conditional::level2_task4_tests"
+    task_message: |
+      ## Task 4: Create Function with Conditional Logic
+      
+      Let's create a second function that uses conditional logic to decide when to grab items!
+      
+      **Your goal:** Create a `grab_if_item()` function and call it from inside your scanning loop.
+      
+      **The function:**
+      ```rust
+      fn grab_if_item(scan_result: &str) {
+          if scan_result != "empty" && scan_result != "wall" && scan_result != "goal" {
+              println!("Grabbed: {}", scan_result);
+          }
+      }
+      ```
+      
+      **Call it inside your scanning loop:**
+      ```rust
+      for y in 0..6 {
+          for x in 0..6 {
+              let scan_result = format!("scan_{}_{}", x, y);
+              grab_if_item(&scan_result);  // Call the grab function
+          }
+      }
+      ```
+      
+      **Key concepts:**
+      - Function parameters (`&str` is a string reference)
+      - Conditional logic with `if` statements
+      - Boolean operators (`!=`, `&&`)
+      - String comparison
+    
+    completion_message: |
+      🎉 **Perfect!** You've mastered functions, loops, structs, and conditional logic!
+      
+      **What you accomplished:**
+      - Created multiple organized functions
+      - Used nested loops for systematic processing
+      - Defined and used custom structs
+      - Implemented conditional logic
+      - Organized code in a professional manner
+      
+      **You're ready for more advanced Rust concepts!**
+    
+    start_task_message: "Final task: Add conditional logic with another function!"
+    required_conditions:
+      - condition_type: "grids_scanned"
+        target_value: "all"
+
+starting_code: |
+  // Level 2: Functions, Loops, and Structs
+  // All code must be organized into functions!
+  
+  // TODO: Task 3 - Define your GridInfo struct here
+  // struct GridInfo {
+  //     x: i32,
+  //     y: i32,
+  //     content: String,
+  // }
+  
+  // TODO: Task 1 - Create scan_level function with print statement
+  // fn scan_level() {
+  //     println!("Beginning level scan...");
+  //     
+  //     // TODO: Task 2 - Add nested loops here
+  //     // for y in 0..6 {
+  //     //     for x in 0..6 {
+  //     //         // Movement and scanning code
+  //     //     }
+  //     // }
+  // }
+  
+  // TODO: Task 4 - Create grab_if_item function
+  // fn grab_if_item(scan_result: &str) {
+  //     // Add if statement to check for items and grab them
+  // }
+  
+  fn main() {
+      println!("Level 2: Functions, Loops, and Structs");
+      println!("Remember: All code must be in functions!");
+      
+      // TODO: Call your scan_level() function here
+      // scan_level();
+      
+      // Navigate to goal when done
+      println!("All tasks complete! Moving to goal...");
+  }
+
+achievement_message: "Perfect! You've mastered function organization, loops, structs, and conditional logic!"
+next_level_hint: "Next level: Error handling and advanced movement patterns"
+completion_flag: "goal"

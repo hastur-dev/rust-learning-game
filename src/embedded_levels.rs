@@ -1,9 +1,32 @@
-use crate::level::{YamlLevelConfig, LevelSpec, ItemConfig};
+use crate::level::{YamlLevelConfig, LevelSpec, ItemConfig, TaskConfig};
 use rand::{rngs::StdRng, SeedableRng};
+use std::fs;
+
+// Function to load tasks from separate YAML files
+fn load_level_tasks(level_number: u32) -> Option<Vec<TaskConfig>> {
+    let _task_file_path = format!("learning_levels/{:02}_*_tasks.yaml", level_number);
+    
+    // Try specific filenames we know exist
+    let possible_paths = match level_number {
+        1 => vec!["learning_levels/01_hello_rust_tasks.yaml"],
+        2 => vec!["learning_levels/02_functions_and_loops_tasks.yaml"], 
+        _ => vec![]
+    };
+    
+    for path in possible_paths {
+        if let Ok(content) = fs::read_to_string(path) {
+            if let Ok(config) = serde_yaml::from_str::<YamlLevelConfig>(&content) {
+                return config.tasks;
+            }
+        }
+    }
+    
+    None
+}
 
 // Embedded learning levels - these are core levels included in the executable
 pub fn get_embedded_learning_levels() -> Vec<YamlLevelConfig> {
-    vec![
+    let levels = vec![
         // Level 1: Hello Rust!
         YamlLevelConfig {
             name: "Level 1 - Hello Rust!".to_string(),
@@ -25,6 +48,7 @@ pub fn get_embedded_learning_levels() -> Vec<YamlLevelConfig> {
                     location: Some((8, 2)),
                 }
             ]),
+            tasks: load_level_tasks(1),
             income_per_square: Some(1),
             start_position: Some((1, 1)),
             max_turns: Some(0),
@@ -68,6 +92,7 @@ fn main() {
                     location: Some((5, 5)),
                 }
             ]),
+            tasks: load_level_tasks(2),
             income_per_square: Some(1),
             start_position: Some((0, 0)),
             max_turns: Some(150),
@@ -120,7 +145,9 @@ fn main() {
             completion_flag: Some("items_collected:2".to_string()),
             completion_message: None,
         },
-    ]
+    ];
+    
+    levels
 }
 
 pub fn get_embedded_level_specs() -> Vec<LevelSpec> {

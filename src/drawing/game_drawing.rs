@@ -6,22 +6,94 @@ use crate::font_scaling::*;
 
 const TILE: f32 = 42.0;
 
+// Helper function to wrap text with dynamic font sizing and scrolling support
+fn calculate_wrapped_text_dimensions(text: &str, initial_font_size: f32, max_width: f32, max_height: f32) -> (Vec<String>, f32, f32, f32) {
+    let mut font_size = initial_font_size;
+    let min_font_size = 10.0; // Don't go below readable size
+    
+    loop {
+        let mut wrapped_lines = Vec::new();
+        let mut max_line_width = 0.0f32;
+        
+        // Calculate line height for current font size
+        let line_height = font_size * 1.2; // Standard line spacing
+        
+        for line in text.lines() {
+            if line.trim().is_empty() {
+                wrapped_lines.push("".to_string());
+                continue;
+            }
+            
+            let line_width = measure_scaled_text(line, font_size).width;
+            if line_width <= max_width {
+                wrapped_lines.push(line.to_string());
+                max_line_width = max_line_width.max(line_width);
+            } else {
+                // Need to wrap this line
+                let words: Vec<&str> = line.split_whitespace().collect();
+                let mut current_line = String::new();
+                let mut current_width = 0.0;
+                
+                for word in words {
+                    let word_width = measure_scaled_text(&format!("{} ", word), font_size).width;
+                    
+                    if current_line.is_empty() {
+                        // First word on line
+                        current_line = word.to_string();
+                        current_width = word_width;
+                    } else if current_width + word_width <= max_width {
+                        // Add word to current line
+                        current_line.push(' ');
+                        current_line.push_str(word);
+                        current_width += word_width;
+                    } else {
+                        // Start new line
+                        max_line_width = max_line_width.max(current_width);
+                        wrapped_lines.push(current_line);
+                        current_line = word.to_string();
+                        current_width = word_width;
+                    }
+                }
+                
+                if !current_line.is_empty() {
+                    max_line_width = max_line_width.max(current_width);
+                    wrapped_lines.push(current_line);
+                }
+            }
+        }
+        
+        let total_height = wrapped_lines.len() as f32 * line_height;
+        
+        // If it fits within max height or we're at minimum font size, use this
+        if total_height <= max_height || font_size <= min_font_size {
+            return (wrapped_lines, max_line_width, total_height, font_size);
+        }
+        
+        // Reduce font size and try again
+        font_size -= 1.0;
+    }
+}
+
 pub fn grid_origin(g: &Game) -> (f32, f32) {
     let gw = g.grid.width as f32 * TILE;
     let gh = g.grid.height as f32 * TILE;
     
-    // Calculate available width dynamically based on editor size
-    // When editor is expanded, it takes more space, so grid should move left
-    let editor_width = screen_width() * 0.25; // Standard editor width
-    let right_panel_width = screen_width() * 0.25; // Commands/logs panel
+    // Calculate available width dynamically based on single sidebar layout
+    // We now have only the tabbed sidebar (Commands/Logs/Tasks/Editor)
+    let sidebar_width = screen_width() * 0.25; // Tabbed sidebar on the right
     let padding = scale_size(10.0);
     
-    // Available width is screen minus both right panels with some padding
-    let available_width = screen_width() - editor_width - right_panel_width - (padding * 3.0);
+    // Available width is screen minus sidebar with padding
+    let available_width = screen_width() - sidebar_width - (padding * 2.0);
     
-    // Center the grid in the remaining available space
+    // Center the grid in the available space (left side of screen)
     let ox = (available_width - gw) * 0.5 + padding;
-    let oy = (screen_height() - gh) * 0.5;
+    
+    // Center the grid vertically with some space for header
+    let header_height = scale_size(100.0); // Space for game info at top
+    let available_height = screen_height() - header_height - padding;
+    let oy = header_height + (available_height - gh) * 0.5; // Center vertically
+    
     (ox, oy)
 }
 
@@ -173,19 +245,59 @@ pub fn draw_tutorial_overlay(game: &Game) {
         let tutorial_message = game.get_tutorial_task_message();
         if !tutorial_message.is_empty() {
             let scale = ScaledMeasurements::new();
-            // Draw tutorial background
-            let tutorial_y = scale.padding + scale_size(70.0);
-            let lines: Vec<&str> = tutorial_message.lines().collect();
-            let line_height = scale_size(16.0);
-            let height = (lines.len() as f32 * line_height) + scale_size(20.0);
             
-            draw_rectangle(scale.padding - scale_size(10.0), tutorial_y - scale_size(10.0), scale_size(500.0), height, Color::new(0.0, 0.2, 0.4, 0.9));
-            draw_rectangle_lines(scale.padding - scale_size(10.0), tutorial_y - scale_size(10.0), scale_size(500.0), height, scale_size(2.0), SKYBLUE);
+            // Calculate available space (avoid interfering with the grid)
+            let (grid_x, _) = grid_origin(game);
+            let max_task_box_width = (grid_x - scale.padding * 3.0).max(scale_size(300.0)); // At least 300px wide, but don't go into grid
             
-            // Draw tutorial text
-            for (i, line) in lines.iter().enumerate() {
-                let color = if line.starts_with("Task") { YELLOW } else { WHITE };
-                draw_scaled_text(line, scale.padding, tutorial_y + (i as f32 * line_height), 14.0, color);
+            // Calculate max height (stop at bottom of screen with some padding)
+            let tutorial_start_y = scale.padding + scale_size(70.0);
+            let max_task_box_height = (screen_height() - tutorial_start_y - scale_size(50.0)).max(scale_size(200.0)); // At least 200px tall
+            
+            // Calculate wrapped text dimensions with dynamic font sizing and height constraints
+            let initial_font_size = 14.0;
+            let (wrapped_lines, actual_width, text_height, final_font_size) = calculate_wrapped_text_dimensions(
+                &tutorial_message, 
+                initial_font_size, 
+                max_task_box_width, 
+                max_task_box_height - scale_size(20.0) // Account for padding
+            );
+            
+            // Position and size the task box
+            let tutorial_x = scale.padding;
+            let tutorial_y = tutorial_start_y;
+            let box_width = (actual_width + scale_size(20.0)).max(scale_size(250.0)); // Add padding, ensure minimum width
+            let actual_box_height = (text_height + scale_size(20.0)).min(max_task_box_height); // Don't exceed max height
+            let needs_scrolling = text_height + scale_size(20.0) > max_task_box_height;
+            
+            // Draw background (expands downward only)
+            draw_rectangle(tutorial_x - scale_size(10.0), tutorial_y - scale_size(10.0), box_width, actual_box_height, Color::new(0.0, 0.2, 0.4, 0.9));
+            draw_rectangle_lines(tutorial_x - scale_size(10.0), tutorial_y - scale_size(10.0), box_width, actual_box_height, scale_size(2.0), SKYBLUE);
+            
+            // Draw scrolling indicator if needed
+            if needs_scrolling {
+                draw_scaled_text("↕ Scrollable", tutorial_x + box_width - scale_size(80.0), tutorial_y - scale_size(5.0), 10.0, GRAY);
+            }
+            
+            // Draw wrapped text with scrolling support
+            let line_height = final_font_size * 1.2; // Use calculated line height
+            let visible_lines = ((actual_box_height - scale_size(20.0)) / line_height) as usize;
+            
+            // Simple scrolling: show first N lines that fit (could be enhanced with scroll offset later)
+            let lines_to_show = if needs_scrolling { visible_lines.min(wrapped_lines.len()) } else { wrapped_lines.len() };
+            
+            for i in 0..lines_to_show {
+                if i < wrapped_lines.len() {
+                    let line = &wrapped_lines[i];
+                    let color = if line.starts_with("Task") || line.starts_with("📋") { YELLOW } else { WHITE };
+                    draw_scaled_text(line, tutorial_x, tutorial_y + (i as f32 * line_height), final_font_size, color);
+                }
+            }
+            
+            // Show truncation indicator if content is cut off
+            if needs_scrolling && lines_to_show < wrapped_lines.len() {
+                let indicator_y = tutorial_y + actual_box_height - scale_size(30.0);
+                draw_scaled_text("... (more content)", tutorial_x, indicator_y, final_font_size * 0.8, GRAY);
             }
         }
     }

@@ -1,0 +1,81 @@
+name: "Level 1 - Hello Rust! (Task System)"
+grid_size: "12x8"
+start_position: [1, 1]
+max_turns: 0
+fog_of_war: true
+income_per_square: 1
+message: |
+  Welcome to Rust Robot Programming! 🦀 
+  
+  This level introduces you to Rust basics and the println! macro for output.
+  
+  Complete the task below to proceed to the next level.
+
+hint_message: |
+  **HOW TO PLAY:** Type commands like 'println!("Hello, Rust!");' then press ENTER to execute.
+  
+  The exclamation mark in println! means it's a macro, not a function - this is Rust's way of code generation at compile time.
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/hello.html"
+obstacles: 3
+
+items:
+  - name: "hello_world_tip"
+    item_file: "items/hello_world.rs"
+    spawn_randomly: false
+    location: [10, 6]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs" 
+    spawn_randomly: false
+    location: [8, 2]
+
+tasks:
+  - name: "Print Hello World"
+    task_file: "learning_tests::level1_task1_hello::level1_task1_tests"
+    task_message: |
+      ## Task 1: Your First Rust Program
+      
+      Welcome to Rust! Let's start with the classic Hello World program.
+      
+      **Your goal:** Write a program that prints "Hello, Rust!" to the console.
+      
+      **What you need to do:**
+      1. Use the `println!` macro to output text
+      2. The exact text should be: `Hello, Rust!`
+      
+      **Example:**
+      ```rust
+      fn main() {
+          println!("Hello, Rust!");
+      }
+      ```
+      
+      **Note:** The exclamation mark (!) indicates that `println!` is a macro, not a regular function.
+    
+    completion_message: |
+      🎉 **Excellent!** You've written your first Rust program!
+      
+      You successfully used the `println!` macro to output text. Macros in Rust are powerful tools for code generation at compile time.
+      
+      **What you learned:**
+      - Basic Rust syntax
+      - Using the `println!` macro
+      - The difference between macros (with !) and functions
+    
+    start_task_message: |
+      Welcome to your first Rust programming challenge! 
+      
+      Let's start with the traditional "Hello World" program.
+
+starting_code: |
+  // Welcome to Rust! Let's start with the classic Hello World program.
+  // Your task: Make this program print "Hello, Rust!" to complete the level.
+
+  fn main() {
+      // TODO: Add your println! statement here
+      // println!("Hello, Rust!");
+  }
+
+achievement_message: "🎉 Congratulations! You've completed your first Rust program!"
+next_level_hint: "Next: Learn about functions, loops, and organizing code!"
+completion_flag: "println:Hello, Rust!"

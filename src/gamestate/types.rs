@@ -102,8 +102,8 @@ pub struct Game {
     pub cached_char_width: f32,        // Width of 'M' character at cached font size
     pub cached_line_height: f32,       // Line height at cached font size
     pub needs_font_refresh: bool,      // Flag to indicate font measurements need refresh
-    // Commands/Logs tab system
-    pub commands_logs_tab: CommandsLogsTab, // Current active tab for commands area
+    // Editor tab system (above editor)
+    pub editor_tab: EditorTab, // Current active tab above the editor
     // Coordinate transformation system
     pub coordinate_transformer: crate::coordinate_system::CoordinateTransformer, // Global/window mouse coordinate handling
     // System key safety mechanism
@@ -172,7 +172,9 @@ impl Game {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum CommandsLogsTab {
+pub enum EditorTab {
     Commands,
     Logs,
+    Tasks,
+    Editor,
 }

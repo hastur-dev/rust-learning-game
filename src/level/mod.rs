@@ -12,6 +12,7 @@ pub struct YamlLevelConfig {
     pub doors: Option<Vec<(u32, u32)>>, // Door positions
     pub enemies: Option<Vec<EnemyConfig>>,
     pub items: Option<Vec<ItemConfig>>,
+    pub tasks: Option<Vec<TaskConfig>>, // Multiple tasks for sequential completion
     pub income_per_square: Option<u32>,
     pub start_position: Option<(u32, u32)>,
     pub max_turns: Option<u32>,
@@ -43,6 +44,29 @@ pub struct ItemConfig {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TaskConfig {
+    pub name: String,
+    pub task_file: Option<String>, // Path to rust test file
+    pub task_message: Option<String>, // Instructions in markdown
+    pub completion_message: Option<String>, // Message shown when task is completed
+    pub start_task_message: Option<String>, // Optional message shown when task starts
+    pub required_conditions: Option<Vec<TaskCondition>>, // Game state conditions to check
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TaskCondition {
+    pub condition_type: String, // "objects_destroyed", "grids_scanned", "enemies_destroyed", etc.
+    pub target_value: TaskTarget, // Target value or "all"
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum TaskTarget {
+    Number(u32),
+    String(String), // For "all" or other string conditions
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LevelSpec {
     pub name: String,
     pub width: usize,
@@ -53,6 +77,7 @@ pub struct LevelSpec {
     pub doors: Vec<(usize, usize)>, // Door positions
     pub enemies: Vec<EnemySpec>,
     pub items: Vec<ItemSpec>,
+    pub tasks: Vec<TaskSpec>, // Sequential tasks for completion
     pub fog_of_war: bool,
     pub max_turns: usize,
     pub income_per_square: u32,
@@ -86,6 +111,17 @@ pub struct ItemSpec {
     pub name: String,
     pub pos: Option<(i32, i32)>,
     pub capabilities: HashMap<String, serde_yaml::Value>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TaskSpec {
+    pub name: String,
+    pub task_file: Option<String>, // Path to rust test file
+    pub task_message: Option<String>, // Instructions in markdown
+    pub completion_message: Option<String>, // Message shown when task is completed
+    pub start_task_message: Option<String>, // Optional message shown when task starts
+    pub required_conditions: Vec<TaskCondition>, // Game state conditions to check
+    pub completed: bool, // Track if task is completed
 }
 
 impl YamlLevelConfig {
@@ -201,6 +237,27 @@ impl YamlLevelConfig {
             .and_then(|scanner| scanner.pos)
             .map(|(x, y)| (x as usize, y as usize));
         
+        // Convert tasks
+        let tasks = self.tasks.as_ref()
+            .map(|tasks| {
+                tasks.iter().map(|task| {
+                    let required_conditions = task.required_conditions.as_ref()
+                        .map(|conditions| conditions.clone())
+                        .unwrap_or_else(Vec::new);
+                    
+                    TaskSpec {
+                        name: task.name.clone(),
+                        task_file: task.task_file.clone(),
+                        task_message: task.task_message.clone(),
+                        completion_message: task.completion_message.clone(),
+                        start_task_message: task.start_task_message.clone(),
+                        required_conditions,
+                        completed: false, // Initially not completed
+                    }
+                }).collect()
+            })
+            .unwrap_or_else(Vec::new);
+        
         // Convert doors
         let doors = self.doors.as_ref()
             .map(|doors| doors.iter().map(|(x, y)| (*x as usize, *y as usize)).collect())
@@ -216,6 +273,7 @@ impl YamlLevelConfig {
             doors,
             enemies,
             items,
+            tasks,
             fog_of_war: self.fog_of_war.unwrap_or(true),
             max_turns: self.max_turns.unwrap_or(0) as usize,
             income_per_square: self.income_per_square.unwrap_or(1),
