@@ -1,0 +1,164 @@
+name: "Level 11: Tokio Async Basics"
+description: "Master async/await fundamentals with robot movement patterns"
+max_turns: 200
+width: 8
+height: 8
+start: [0, 0]
+
+# Grid with enemies using basic movement patterns and doors
+grid:
+  - ["S", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", ".", "E", ".", "#", ".", "."]
+  - [".", ".", "D", ".", ".", ".", "D", "."]
+  - [".", "E", ".", "#", ".", "E", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", ".", "D", ".", "#", ".", "."]
+  - [".", ".", ".", "E", ".", ".", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", "G"]
+
+items:
+  - name: "async_tip"
+    pos: [2, 1]
+  - name: "await_tip"
+    pos: [6, 2]
+  - name: "runtime_tip"
+    pos: [3, 5]
+  - name: "task_tip"
+    pos: [6, 6]
+
+enemies:
+  - start_position: [3, 1]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [1, 3]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [5, 3]
+    movement_pattern: "vertical"
+  - start_position: [3, 6]
+    movement_pattern: "horizontal"
+
+doors:
+  - position: [2, 2]
+    initially_open: false
+  - position: [6, 2]
+    initially_open: false
+  - position: [3, 5]
+    initially_open: false
+
+completion_flag: "goal"
+completion_message: |
+  🚀 **LEVEL 11: Tokio Async Basics**
+
+  Learn to write asynchronous code using Tokio and async/await!
+
+  **📋 TASK 1: Create Async Function for Robot Movement**
+  Create an async function that moves the robot with delays between moves.
+
+  Required:
+  ```rust
+  async fn move_robot_async(direction: &str) {
+      tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+      match direction {
+          "right" => robot.move_right(),
+          "down" => robot.move_down(),
+          "left" => robot.move_left(),
+          "up" => robot.move_up(),
+          _ => println!("Invalid direction"),
+      }
+  }
+  ```
+
+  **📋 TASK 2: Create Async Main Function with Tokio Runtime**
+  Convert your main function to async and add #[tokio::main] attribute.
+
+  Required structure:
+  ```rust
+  #[tokio::main]
+  async fn main() {
+      println!("Starting async robot control...");
+      // Your async code here
+  }
+  ```
+
+  **📋 TASK 3: Chain Multiple Async Movement Commands**
+  Use .await to chain multiple async movements in sequence.
+
+  Example pattern:
+  ```rust
+  move_robot_async("right").await;
+  move_robot_async("right").await;
+  move_robot_async("down").await;
+  ```
+
+  **📋 TASK 4: Create Async Scanning Function with Timeout**
+  Create an async scan function that includes a timeout mechanism.
+
+  Required:
+  ```rust
+  async fn scan_with_timeout() -> Result<String, &'static str> {
+      tokio::time::timeout(
+          tokio::time::Duration::from_secs(1),
+          async {
+              tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+              robot.scan("all")
+          }
+      ).await.map_err(|_| "Scan timeout")
+  }
+  ```
+
+  **📋 TASK 5: Open Doors Using Async Commands**
+  Create an async function to open doors when scanning reveals them nearby.
+
+  Required:
+  ```rust
+  async fn open_nearby_doors() {
+      let scan_result = robot.scan("all");
+      if scan_result.contains("door") {
+          robot.open_door().await;
+          println!("Door opened asynchronously!");
+      }
+  }
+  ```
+
+  **🎯 Goal: Navigate through the maze, avoid enemies, open doors, collect all items, and reach the goal using async/await patterns!**
+
+achievement_message: "Excellent! You've mastered the basics of async/await with Tokio!"
+next_level_hint: "Next: Level 12 - Spawning concurrent tasks for parallel exploration"
+
+starting_code: |
+  // Level 11: Tokio Async Basics
+  // Learn async/await fundamentals with robot control
+
+  // Add this to your Cargo.toml dependencies:
+  // tokio = { version = "1.0", features = ["full"] }
+
+  use tokio::time::{sleep, timeout, Duration};
+
+  // TODO: Task 1 - Create async function for robot movement
+  // async fn move_robot_async(direction: &str) {
+  //     sleep(Duration::from_millis(100)).await;
+  //     // Add movement logic here
+  // }
+
+  // TODO: Task 4 - Create async scanning with timeout
+  // async fn scan_with_timeout() -> Result<String, &'static str> {
+  //     // Add timeout logic here
+  // }
+
+  // TODO: Task 5 - Create async door opening function
+  // async fn open_nearby_doors() {
+  //     // Add door opening logic here
+  // }
+
+  // TODO: Task 2 - Make main function async with #[tokio::main]
+  fn main() {
+      println!("Level 11: Tokio Async Basics");
+      println!("Convert to async and use await patterns!");
+
+      // TODO: Task 3 - Chain async movements here
+      // move_robot_async("right").await;
+      // move_robot_async("down").await;
+
+      println!("Navigate to goal using async patterns!");
+  }
+
+rust_docs_url: "https://tokio.rs/tokio/tutorial/async"

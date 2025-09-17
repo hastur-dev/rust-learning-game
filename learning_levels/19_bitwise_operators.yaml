@@ -1,0 +1,299 @@
+# Level 19: Bitwise Operations Mastery
+# This level teaches bitwise operators, bit manipulation, and binary data processing
+# Players learn AND, OR, XOR, shifts, and advanced bit manipulation techniques
+
+level_id: 19
+name: "Ancient Terminal Decoder"
+description: "🔐 You've discovered encrypted alien terminals! Decode their binary transmissions using bitwise operations to unlock hidden areas and reveal ancient secrets"
+next_level: 20
+
+# Grid layout: 16x8 with binary data processing stations
+grid:
+  width: 16
+  height: 8
+  start_position: [1, 1]
+
+walls:
+  - [0, 0, 15, 0]    # Top wall
+  - [0, 7, 15, 7]    # Bottom wall
+  - [0, 0, 0, 7]     # Left wall
+  - [15, 0, 15, 7]   # Right wall
+  - [4, 1, 4, 6]     # Bit manipulation area
+  - [8, 1, 8, 6]     # Binary processing zone
+  - [12, 1, 12, 6]   # Advanced algorithms section
+
+# Items teach different bitwise operation concepts
+items:
+  # Task 1: Basic bitwise operators (AND, OR, XOR, NOT)
+  - position: [2, 2]
+    item_type: "alien_control_panel"
+    name: "Ancient Alien Control Panel"
+    description: "🛸 DISCOVERY! An alien control panel with glowing binary sequences. Each bit controls a different system in this ancient structure!"
+    content: |
+      👽 ALIEN CONTROL PANEL ACTIVATED 👽
+
+      🔍 BINARY STATUS DISPLAY:
+      System Flags: 0b10110100
+
+      Bit Legend (discovered through analysis):
+      Bit 7 (128): 🔋 Power Core (1=Online, 0=Offline)
+      Bit 6 (64):  🛡️ Shield Generator (1=Active, 0=Inactive)
+      Bit 5 (32):  📡 Communications Array (1=Online, 0=Offline)
+      Bit 4 (16):  🌡️ Life Support (1=Stable, 0=Critical)
+      Bit 3 (8):   🚪 Blast Doors (1=Sealed, 0=Open)
+      Bit 2 (4):   📹 Security Cameras (1=Recording, 0=Disabled)
+      Bit 1 (2):   💡 Lighting System (1=On, 0=Emergency)
+      Bit 0 (1):   ⚡ Emergency Lockdown (1=Active, 0=Safe)
+
+      🎯 DECODING MISSION:
+      - Use & (AND) to CHECK if the power core (bit 7) is online
+      - Use | (OR) to ACTIVATE the communications array (bit 5)
+      - Use ^ (XOR) to TOGGLE the security cameras (bit 2)
+      - Use ~ (NOT) to REVERSE all system states for emergency protocol
+
+      🔐 SUCCESS UNLOCKS: Hidden alien technology and access to restricted areas!
+
+      ⚠️ WARNING: Wrong bit manipulation could trigger alien security systems!
+    requirements:
+      - "Implement bit testing using AND (&) operator"
+      - "Use OR (|) operator to set specific bits"
+      - "Implement bit toggling with XOR (^) operator"
+      - "Use NOT (~) operator for bit inversion"
+
+  # Task 2: Bit shifting operations (left and right shifts)
+  - position: [6, 2]
+    item_type: "encrypted_data_stream"
+    name: "Alien Encrypted Data Stream"
+    description: "📡 INTERCEPTED! An alien data transmission is streaming encrypted coordinates and access codes. Decode using bit shifts!"
+    content: |
+      📡 ALIEN TRANSMISSION INTERCEPTED 📡
+
+      🔐 ENCRYPTED DATA STREAM:
+      Station ID: 42 (encoded: needs 8-bit left shift to high byte position)
+      Coordinates: 0x1A2B (scaled: needs 4-bit right shift for true value)
+      Access Code: 1634567890 (scrambled: needs bit rotation for decryption)
+      Security Key: 0b11010010 (rotated: needs circular rotation to unlock)
+
+      👽 ALIEN ENCRYPTION DISCOVERED: The aliens use bit shifting to hide
+      their true data! They move bits left and right to scramble coordinates,
+      shift access codes to different positions, and rotate security keys.
+
+      🎯 DECRYPTION MISSION:
+      - Use << (left shift) to decode station ID by moving bits to high byte
+      - Use >> (right shift) to decode true coordinates by scaling down
+      - Implement bit rotation to unscramble access codes
+      - Create circular rotation to unlock security keys
+
+      🗝️ BREAKTHROUGH: Each successful decode reveals part of the alien facility map!
+
+      🏆 TOTAL DECRYPTION: Unlock hidden alien base and discover their technology!
+
+      ⚠️ CAUTION: Incorrect shifting may corrupt the transmission permanently!
+    requirements:
+      - "Implement left bit shifting (<<) for position multiplication"
+      - "Use right bit shifting (>>) for division and scaling"
+      - "Understand signed vs unsigned right shift behavior"
+      - "Create circular bit rotation functions"
+
+  # Task 3: Bit masks and field extraction
+  - position: [10, 2]
+    item_type: "field_extractor"
+    name: "Binary Field Extractor"
+    description: "System extracting specific bit fields from packed binary data"
+    content: |
+      // Packed data structure (32-bit):
+      // Bits 31-24: Robot Type (8 bits)
+      // Bits 23-16: Battery Level (8 bits)
+      // Bits 15-8:  Sensor Count (8 bits)
+      // Bits 7-0:   Status Flags (8 bits)
+
+      Sample Data: 0x2A4D1C83
+      Binary: 00101010 01001101 00011100 10000011
+
+      Task: Create bit masks to extract and modify specific fields
+      Requirements:
+      - Create masks for field extraction
+      - Implement field insertion with mask clearing
+      - Use bit manipulation for packed structures
+      - Create generic field accessor functions
+    requirements:
+      - "Create bit masks for extracting specific field ranges"
+      - "Implement field insertion by clearing and setting bits"
+      - "Use bit manipulation for packed data structures"
+      - "Create generic functions for field access"
+
+  # Task 4: Bit counting and population algorithms
+  - position: [14, 2]
+    item_type: "bit_counter"
+    name: "Population Count Analyzer"
+    description: "Analysis system counting set bits and implementing bit counting algorithms"
+    content: |
+      // Data requiring bit counting analysis
+      Sample Data Arrays:
+      - Sensor Mask: [0xFF, 0x0F, 0xAA, 0x55] // Count active sensors
+      - Error Flags: [0x81, 0x42, 0x24, 0x18] // Count error conditions
+      - State Bits: [0xFFFF, 0x0000, 0x5555] // Count state changes
+
+      Algorithm Requirements:
+      - Population count (count set bits)
+      - Leading/trailing zero count
+      - Find first/last set bit
+      - Parity calculation (even/odd bit count)
+
+      Task: Implement efficient bit counting algorithms
+      Requirements:
+      - Implement population count (popcount) algorithm
+      - Create leading/trailing zero counting functions
+      - Find first and last set bit positions
+      - Calculate parity and implement checksums
+    requirements:
+      - "Implement population count algorithm to count set bits"
+      - "Create functions for leading and trailing zero counting"
+      - "Find first and last set bit positions efficiently"
+      - "Implement parity calculation and bit-based checksums"
+
+  # Task 5: Advanced bit manipulation and algorithms
+  - position: [6, 5]
+    item_type: "crypto_engine"
+    name: "Cryptographic Bit Engine"
+    description: "Advanced cryptographic operations using sophisticated bit manipulation"
+    content: |
+      // Cryptographic operations requiring advanced bit manipulation
+      Operations:
+      - Bit Interleaving: Merge two 16-bit values into 32-bit pattern
+      - Gray Code: Convert binary to Gray code and vice versa
+      - Bit Reversal: Reverse bit order for endianness conversion
+      - LFSR: Linear Feedback Shift Register for random generation
+      - Hamming Distance: Calculate bit differences between values
+
+      Task: Implement advanced bit manipulation algorithms
+      Requirements:
+      - Create bit interleaving and de-interleaving functions
+      - Implement Gray code conversion algorithms
+      - Create efficient bit reversal operations
+      - Implement Linear Feedback Shift Register
+      - Calculate Hamming distance and error correction
+    requirements:
+      - "Implement bit interleaving for merging binary data"
+      - "Create Gray code conversion for error-resistant encoding"
+      - "Implement efficient bit reversal for endianness handling"
+      - "Create LFSR for pseudorandom number generation"
+      - "Calculate Hamming distance for error detection"
+
+# Enemies represent bitwise operation challenges
+enemies:
+  - position: [3, 4]
+    enemy_type: "overflow_bug"
+    name: "Bit Overflow Glitch"
+    health: 30
+    description: "Arithmetic overflow from bit operations - defeat with proper bounds checking"
+
+  - position: [7, 4]
+    enemy_type: "endian_confusion"
+    name: "Endianness Confusion"
+    health: 35
+    description: "Byte order issues in bit manipulation - defeat with proper byte ordering"
+
+  - position: [11, 4]
+    enemy_type: "mask_error"
+    name: "Bit Mask Misalignment"
+    health: 28
+    description: "Incorrect bit masking causing data corruption - defeat with precise masks"
+
+  - position: [13, 5]
+    enemy_type: "shift_trap"
+    name: "Undefined Shift Behavior"
+    health: 32
+    description: "Undefined behavior from excessive shifts - defeat with bounds validation"
+
+# Doors represent bitwise concept progression
+doors:
+  - position: [1, 3]
+    door_type: "basic_ops_door"
+    name: "Basic Operations Gate"
+    key_requirement: "Bitwise operator mastery"
+    description: "Access to advanced bit manipulation"
+
+  - position: [5, 6]
+    door_type: "shift_door"
+    name: "Bit Shift Portal"
+    key_requirement: "Shift operation proficiency"
+    description: "Enter bit shifting and rotation zone"
+
+  - position: [9, 6]
+    door_type: "mask_door"
+    name: "Bit Mask Chamber"
+    key_requirement: "Field extraction expertise"
+    description: "Access to packed data manipulation"
+
+  - position: [13, 3]
+    door_type: "algorithm_door"
+    name: "Algorithm Vault"
+    key_requirement: "Bit counting mastery"
+    description: "Advanced bit algorithm implementation area"
+
+# Task definitions with learning objectives
+tasks:
+  - id: 1
+    name: "Basic Bitwise Operations"
+    description: "Master fundamental bitwise operators for flag manipulation and logic operations"
+    requirements:
+      - "Use AND (&) operator for bit testing and masking"
+      - "Implement OR (|) operator for bit setting operations"
+      - "Use XOR (^) operator for bit toggling and simple encryption"
+      - "Apply NOT (~) operator for bit inversion and complement"
+    item_location: [2, 2]
+    completion_message: "Bitwise fundamentals mastered! Logic operations at the bit level achieved."
+
+  - id: 2
+    name: "Bit Shifting Mastery"
+    description: "Implement bit shifting operations for data scaling, positioning, and rotation"
+    requirements:
+      - "Use left shift (<<) for bit position multiplication and scaling"
+      - "Implement right shift (>>) for division and data compression"
+      - "Understand arithmetic vs logical right shift behavior"
+      - "Create circular bit rotation functions for data encryption"
+    item_location: [6, 2]
+    completion_message: "Bit shifting expertise achieved! Data manipulation through position control."
+
+  - id: 3
+    name: "Bit Masks and Field Extraction"
+    description: "Create sophisticated bit masks for packed data structure manipulation"
+    requirements:
+      - "Design bit masks for extracting specific field ranges"
+      - "Implement field insertion by clearing and setting bit ranges"
+      - "Use bit manipulation for efficient packed data structures"
+      - "Create generic field accessor functions with type safety"
+    item_location: [10, 2]
+    completion_message: "Bit masking perfected! Packed data structures under complete control."
+
+  - id: 4
+    name: "Bit Counting Algorithms"
+    description: "Implement efficient algorithms for bit analysis and population counting"
+    requirements:
+      - "Create population count algorithm for counting set bits"
+      - "Implement leading and trailing zero counting functions"
+      - "Find first and last set bit positions efficiently"
+      - "Calculate parity and implement bit-based checksum algorithms"
+    item_location: [14, 2]
+    completion_message: "Bit counting mastery complete! Efficient analysis of binary data achieved."
+
+  - id: 5
+    name: "Advanced Bit Algorithms"
+    description: "Implement sophisticated bit manipulation for cryptographic and conversion operations"
+    requirements:
+      - "Create bit interleaving functions for merging binary data streams"
+      - "Implement Gray code conversion for error-resistant binary encoding"
+      - "Design efficient bit reversal for endianness conversion"
+      - "Create LFSR implementation for cryptographic random generation"
+      - "Calculate Hamming distance for error detection and correction"
+    item_location: [6, 5]
+    completion_message: "Advanced bit manipulation achieved! Cryptographic-level bit control mastered."
+
+completion_requirements:
+  - "Complete all 5 bitwise operation tasks"
+  - "Defeat all bit-related enemies"
+  - "Open all bitwise concept doors"
+  - "Demonstrate mastery of bit operators, masks, and advanced algorithms"
+
+final_message: "Level 19 Complete: Bitwise Operations Expert achieved! You've mastered bit-level manipulation from basic operators to advanced cryptographic algorithms. Ready for callable traits!"

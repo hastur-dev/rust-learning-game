@@ -1,0 +1,1960 @@
+name: "Level 10: Advanced Error Handling"
+grid_size: "16x12"
+start_position: [0, 0]
+max_turns: 400
+fog_of_war: true
+income_per_square: 5
+message: |
+  🛡️ **LEVEL 10: Advanced Error Handling**
+
+  Master Rust's robust error handling system using Result, custom errors, and error propagation!
+
+  Build fault-tolerant robot systems that gracefully handle failures and recover from errors.
+
+hint_message: |
+  **Error Handling Tips:**
+  - Use Result<T, E> for operations that can fail
+  - Create custom error types with enums
+  - Use ? operator for error propagation
+  - Handle errors with match, unwrap_or, and map_err
+  - Chain operations safely with and_then
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/error.html"
+obstacles: 20
+
+enemies:
+  - start_position: [6, 3]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [12, 5]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [4, 8]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [14, 9]
+    movement_pattern: "file:movement_patterns/horizontal_patrol.rs"
+  - start_position: [2, 6]
+    movement_pattern: "file:movement_patterns/vertical_patrol.rs"
+  - start_position: [10, 2]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+
+doors:
+  - position: [5, 4]
+    initially_open: false
+  - position: [9, 6]
+    initially_open: false
+  - position: [3, 9]
+    initially_open: false
+  - position: [13, 8]
+    initially_open: false
+  - position: [7, 2]
+    initially_open: false
+  - position: [11, 10]
+    initially_open: false
+
+items:
+  - name: "result_core"
+    item_file: "items/result_data.rs"
+    spawn_randomly: false
+    location: [4, 1]
+  - name: "error_handler"
+    item_file: "items/error_data.rs"
+    spawn_randomly: false
+    location: [14, 3]
+  - name: "recovery_system"
+    item_file: "items/recovery_data.rs"
+    spawn_randomly: false
+    location: [1, 10]
+  - name: "fault_tolerance"
+    item_file: "items/fault_data.rs"
+    spawn_randomly: false
+    location: [8, 11]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [15, 11]
+
+tasks:
+  - name: "Result Basics and Error Propagation"
+    task_file: "learning_tests::level10_task1_result_basics::level10_task1_tests"
+    task_message: |
+      ## Task 1: Result Basics and Error Propagation
+
+      Master Result<T, E> for handling operations that can succeed or fail.
+
+      **Your goal:** Use Result to handle robot operations safely with proper error handling.
+
+      **Requirements:**
+      ```rust
+      #[derive(Debug)]
+      enum RobotError {
+          InsufficientEnergy { required: u32, available: u32 },
+          PathBlocked { position: (i32, i32), obstacle: String },
+          InvalidCommand { command: String },
+          SystemFailure { component: String },
+      }
+
+      type RobotResult<T> = Result<T, RobotError>;
+
+      fn move_robot(current_pos: (i32, i32), direction: &str, energy: u32) -> RobotResult<(i32, i32)> {
+          // Check energy requirements
+          if energy < 10 {
+              return Err(RobotError::InsufficientEnergy {
+                  required: 10,
+                  available: energy,
+              });
+          }
+
+          // Calculate new position
+          let new_pos = match direction {
+              "north" => (current_pos.0, current_pos.1 - 1),
+              "south" => (current_pos.0, current_pos.1 + 1),
+              "east" => (current_pos.0 + 1, current_pos.1),
+              "west" => (current_pos.0 - 1, current_pos.1),
+              _ => return Err(RobotError::InvalidCommand {
+                  command: direction.to_string(),
+              }),
+          };
+
+          // Check for obstacles at new position
+          let obstacles = vec![(6, 3), (12, 5), (4, 8)]; // Enemy positions
+          if obstacles.contains(&new_pos) {
+              return Err(RobotError::PathBlocked {
+                  position: new_pos,
+                  obstacle: "Enemy".to_string(),
+              });
+          }
+
+          // Check bounds
+          if new_pos.0 < 0 || new_pos.0 >= 16 || new_pos.1 < 0 || new_pos.1 >= 12 {
+              return Err(RobotError::PathBlocked {
+                  position: new_pos,
+                  obstacle: "Boundary".to_string(),
+              });
+          }
+
+          Ok(new_pos)
+      }
+
+      fn scan_area(pos: (i32, i32), energy: u32) -> RobotResult<Vec<String>> {
+          if energy < 5 {
+              return Err(RobotError::InsufficientEnergy {
+                  required: 5,
+                  available: energy,
+              });
+          }
+
+          let mut scan_results = Vec::new();
+
+          // Simulate scanning around position
+          let scan_range = 2;
+          for dx in -scan_range..=scan_range {
+              for dy in -scan_range..=scan_range {
+                  let scan_pos = (pos.0 + dx, pos.1 + dy);
+
+                  // Check item positions
+                  let items = vec![(4, 1), (14, 3), (1, 10), (8, 11)];
+                  if items.contains(&scan_pos) {
+                      scan_results.push(format!("Item at {:?}", scan_pos));
+                  }
+
+                  // Check enemy positions
+                  let enemies = vec![(6, 3), (12, 5), (4, 8), (14, 9), (2, 6), (10, 2)];
+                  if enemies.contains(&scan_pos) {
+                      scan_results.push(format!("Enemy at {:?}", scan_pos));
+                  }
+
+                  // Check door positions
+                  let doors = vec![(5, 4), (9, 6), (3, 9), (13, 8), (7, 2), (11, 10)];
+                  if doors.contains(&scan_pos) {
+                      scan_results.push(format!("Door at {:?}", scan_pos));
+                  }
+              }
+          }
+
+          Ok(scan_results)
+      }
+
+      fn main() {
+          println!("=== Robot Error Handling System ===");
+
+          let mut robot_pos = (0, 0);
+          let mut robot_energy = 100;
+
+          println!("Initial position: {:?}, Energy: {}", robot_pos, robot_energy);
+
+          // Test successful operations
+          match move_robot(robot_pos, "east", robot_energy) {
+              Ok(new_pos) => {
+                  robot_pos = new_pos;
+                  robot_energy -= 10;
+                  println!("✅ Moved to {:?}, Energy: {}", robot_pos, robot_energy);
+              }
+              Err(e) => println!("❌ Move failed: {:?}", e),
+          }
+
+          // Test error conditions
+          println!("\n=== Testing Error Conditions ===");
+
+          // Test invalid command
+          match move_robot(robot_pos, "invalid", robot_energy) {
+              Ok(new_pos) => println!("Moved to {:?}", new_pos),
+              Err(RobotError::InvalidCommand { command }) => {
+                  println!("❌ Invalid command: {}", command);
+              }
+              Err(e) => println!("❌ Other error: {:?}", e),
+          }
+
+          // Test low energy
+          robot_energy = 5;
+          match move_robot(robot_pos, "north", robot_energy) {
+              Ok(_) => println!("Move successful"),
+              Err(RobotError::InsufficientEnergy { required, available }) => {
+                  println!("❌ Low energy: need {}, have {}", required, available);
+              }
+              Err(e) => println!("❌ Other error: {:?}", e),
+          }
+
+          // Test blocked path
+          robot_energy = 50;
+          match move_robot((5, 3), "east", robot_energy) {
+              Ok(_) => println!("Move successful"),
+              Err(RobotError::PathBlocked { position, obstacle }) => {
+                  println!("❌ Path blocked at {:?} by {}", position, obstacle);
+              }
+              Err(e) => println!("❌ Other error: {:?}", e),
+          }
+
+          // Test scanning
+          println!("\n=== Scanning Operations ===");
+          match scan_area(robot_pos, robot_energy) {
+              Ok(results) => {
+                  println!("Scan successful, found {} objects:", results.len());
+                  for result in results.iter().take(5) {
+                      println!("  - {}", result);
+                  }
+              }
+              Err(e) => println!("❌ Scan failed: {:?}", e),
+          }
+
+          // Test scan with low energy
+          match scan_area(robot_pos, 3) {
+              Ok(results) => println!("Scan found {} objects", results.len()),
+              Err(RobotError::InsufficientEnergy { required, available }) => {
+                  println!("❌ Cannot scan: need {}, have {}", required, available);
+              }
+              Err(e) => println!("❌ Scan error: {:?}", e),
+          }
+
+          // Error handling patterns
+          println!("\n=== Error Handling Patterns ===");
+
+          // Using unwrap_or for defaults
+          let safe_move = move_robot(robot_pos, "south", robot_energy)
+              .unwrap_or(robot_pos);
+          println!("Safe move result: {:?}", safe_move);
+
+          // Using map_err for error transformation
+          let move_result = move_robot(robot_pos, "west", 5)
+              .map_err(|e| format!("Movement failed: {:?}", e));
+
+          match move_result {
+              Ok(pos) => println!("Move successful: {:?}", pos),
+              Err(msg) => println!("Move failed: {}", msg),
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Excellent!** You've mastered Result basics and error handling!
+
+      **What you learned:**
+      - Creating Result<T, E> return types
+      - Custom error enums with data
+      - Pattern matching for error handling
+      - Error transformation with map_err
+
+    start_task_message: "Let's master Result types for robust error handling!"
+
+  - name: "Custom Error Types and Error Traits"
+    task_file: "learning_tests::level10_task2_custom_errors::level10_task2_tests"
+    task_message: |
+      ## Task 2: Custom Error Types and Error Traits
+
+      Create comprehensive custom error types that implement standard Rust error traits.
+
+      **Your goal:** Build a complete error system with proper error trait implementations.
+
+      **Requirements:**
+      ```rust
+      use std::fmt;
+      use std::error::Error;
+
+      #[derive(Debug, Clone)]
+      pub enum RobotSystemError {
+          Movement {
+              reason: MovementError,
+              attempted_position: (i32, i32),
+          },
+          Energy {
+              current: u32,
+              required: u32,
+              operation: String,
+          },
+          Communication {
+              target: String,
+              error_code: u32,
+          },
+          Hardware {
+              component: String,
+              diagnostic: String,
+          },
+          Mission {
+              objective: String,
+              failure_reason: String,
+          },
+      }
+
+      #[derive(Debug, Clone)]
+      pub enum MovementError {
+          ObstacleDetected(String),
+          BoundaryViolation,
+          InvalidDirection,
+          PathCalculationFailed,
+      }
+
+      // Implement Display trait for user-friendly error messages
+      impl fmt::Display for RobotSystemError {
+          fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+              match self {
+                  RobotSystemError::Movement { reason, attempted_position } => {
+                      write!(f, "Movement error at {:?}: {}", attempted_position, reason)
+                  }
+                  RobotSystemError::Energy { current, required, operation } => {
+                      write!(f, "Insufficient energy for {}: have {}, need {}",
+                             operation, current, required)
+                  }
+                  RobotSystemError::Communication { target, error_code } => {
+                      write!(f, "Communication failed with {}: error code {}",
+                             target, error_code)
+                  }
+                  RobotSystemError::Hardware { component, diagnostic } => {
+                      write!(f, "Hardware failure in {}: {}", component, diagnostic)
+                  }
+                  RobotSystemError::Mission { objective, failure_reason } => {
+                      write!(f, "Mission '{}' failed: {}", objective, failure_reason)
+                  }
+              }
+          }
+      }
+
+      impl fmt::Display for MovementError {
+          fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+              match self {
+                  MovementError::ObstacleDetected(obstacle) => {
+                      write!(f, "obstacle detected: {}", obstacle)
+                  }
+                  MovementError::BoundaryViolation => {
+                      write!(f, "attempted to move outside level bounds")
+                  }
+                  MovementError::InvalidDirection => {
+                      write!(f, "invalid movement direction specified")
+                  }
+                  MovementError::PathCalculationFailed => {
+                      write!(f, "unable to calculate valid path")
+                  }
+              }
+          }
+      }
+
+      // Implement Error trait
+      impl Error for RobotSystemError {
+          fn description(&self) -> &str {
+              match self {
+                  RobotSystemError::Movement { .. } => "robot movement error",
+                  RobotSystemError::Energy { .. } => "robot energy error",
+                  RobotSystemError::Communication { .. } => "robot communication error",
+                  RobotSystemError::Hardware { .. } => "robot hardware error",
+                  RobotSystemError::Mission { .. } => "robot mission error",
+              }
+          }
+      }
+
+      impl Error for MovementError {}
+
+      // Helper functions for creating specific errors
+      impl RobotSystemError {
+          pub fn movement_blocked(pos: (i32, i32), obstacle: &str) -> Self {
+              RobotSystemError::Movement {
+                  reason: MovementError::ObstacleDetected(obstacle.to_string()),
+                  attempted_position: pos,
+              }
+          }
+
+          pub fn insufficient_energy(current: u32, required: u32, operation: &str) -> Self {
+              RobotSystemError::Energy {
+                  current,
+                  required,
+                  operation: operation.to_string(),
+              }
+          }
+
+          pub fn hardware_failure(component: &str, diagnostic: &str) -> Self {
+              RobotSystemError::Hardware {
+                  component: component.to_string(),
+                  diagnostic: diagnostic.to_string(),
+              }
+          }
+      }
+
+      type RobotResult<T> = Result<T, RobotSystemError>;
+
+      struct AdvancedRobot {
+          position: (i32, i32),
+          energy: u32,
+          health: u32,
+          systems_online: bool,
+      }
+
+      impl AdvancedRobot {
+          fn new() -> Self {
+              AdvancedRobot {
+                  position: (0, 0),
+                  energy: 100,
+                  health: 100,
+                  systems_online: true,
+              }
+          }
+
+          fn move_to(&mut self, target: (i32, i32)) -> RobotResult<()> {
+              // Check system status
+              if !self.systems_online {
+                  return Err(RobotSystemError::hardware_failure(
+                      "Navigation System",
+                      "Systems offline"
+                  ));
+              }
+
+              // Check energy
+              let energy_cost = self.calculate_move_cost(target);
+              if self.energy < energy_cost {
+                  return Err(RobotSystemError::insufficient_energy(
+                      self.energy,
+                      energy_cost,
+                      "movement"
+                  ));
+              }
+
+              // Check bounds
+              if target.0 < 0 || target.0 >= 16 || target.1 < 0 || target.1 >= 12 {
+                  return Err(RobotSystemError::Movement {
+                      reason: MovementError::BoundaryViolation,
+                      attempted_position: target,
+                  });
+              }
+
+              // Check for obstacles
+              let obstacles = vec![
+                  ((6, 3), "Enemy Guard"),
+                  ((12, 5), "Enemy Chaser"),
+                  ((4, 8), "Enemy Spiral"),
+                  ((14, 9), "Enemy Patrol"),
+              ];
+
+              for (pos, obstacle_type) in obstacles {
+                  if pos == target {
+                      return Err(RobotSystemError::movement_blocked(target, obstacle_type));
+                  }
+              }
+
+              // Successful move
+              self.position = target;
+              self.energy -= energy_cost;
+              Ok(())
+          }
+
+          fn calculate_move_cost(&self, target: (i32, i32)) -> u32 {
+              let distance = (self.position.0 - target.0).abs() + (self.position.1 - target.1).abs();
+              (distance as u32) * 5
+          }
+
+          fn scan_for_items(&self) -> RobotResult<Vec<(String, (i32, i32))>> {
+              if self.energy < 15 {
+                  return Err(RobotSystemError::insufficient_energy(
+                      self.energy,
+                      15,
+                      "area scan"
+                  ));
+              }
+
+              if !self.systems_online {
+                  return Err(RobotSystemError::hardware_failure(
+                      "Scanner Array",
+                      "Scanner offline"
+                  ));
+              }
+
+              // Simulate scanning for items
+              let items = vec![
+                  ("result_core".to_string(), (4, 1)),
+                  ("error_handler".to_string(), (14, 3)),
+                  ("recovery_system".to_string(), (1, 10)),
+                  ("fault_tolerance".to_string(), (8, 11)),
+              ];
+
+              // Filter items within scan range
+              let scan_range = 5;
+              let nearby_items: Vec<_> = items.into_iter()
+                  .filter(|(_, pos)| {
+                      let distance = (self.position.0 - pos.0).abs() + (self.position.1 - pos.1).abs();
+                      distance <= scan_range
+                  })
+                  .collect();
+
+              Ok(nearby_items)
+          }
+
+          fn attempt_door_opening(&mut self, door_pos: (i32, i32)) -> RobotResult<()> {
+              if self.energy < 20 {
+                  return Err(RobotSystemError::insufficient_energy(
+                      self.energy,
+                      20,
+                      "door opening"
+                  ));
+              }
+
+              let distance = (self.position.0 - door_pos.0).abs() + (self.position.1 - door_pos.1).abs();
+              if distance > 1 {
+                  return Err(RobotSystemError::Mission {
+                      objective: "Open Door".to_string(),
+                      failure_reason: "Too far from door".to_string(),
+                  });
+              }
+
+              // Simulate potential hardware failure
+              if self.health < 30 {
+                  return Err(RobotSystemError::hardware_failure(
+                      "Door Interface",
+                      "Low system health affecting door controls"
+                  ));
+              }
+
+              self.energy -= 20;
+              Ok(())
+          }
+
+          fn system_diagnostic(&self) -> RobotResult<String> {
+              let mut diagnostics = Vec::new();
+
+              if self.energy < 20 {
+                  diagnostics.push("CRITICAL: Low energy");
+              }
+
+              if self.health < 50 {
+                  diagnostics.push("WARNING: System health degraded");
+              }
+
+              if !self.systems_online {
+                  return Err(RobotSystemError::hardware_failure(
+                      "Diagnostic System",
+                      "Cannot run diagnostics - systems offline"
+                  ));
+              }
+
+              let status = if diagnostics.is_empty() {
+                  "All systems nominal".to_string()
+              } else {
+                  diagnostics.join(", ")
+              };
+
+              Ok(status)
+          }
+      }
+
+      fn main() {
+          println!("🤖 Advanced Robot Error System Demo");
+
+          let mut robot = AdvancedRobot::new();
+
+          // Demonstrate successful operations
+          println!("\n=== Successful Operations ===");
+          match robot.move_to((3, 1)) {
+              Ok(()) => println!("✅ Moved to (3, 1)"),
+              Err(e) => println!("❌ Move failed: {}", e),
+          }
+
+          match robot.scan_for_items() {
+              Ok(items) => {
+                  println!("✅ Scan complete, found {} items:", items.len());
+                  for (item, pos) in items {
+                      println!("  - {} at {:?}", item, pos);
+                  }
+              }
+              Err(e) => println!("❌ Scan failed: {}", e),
+          }
+
+          // Demonstrate different error types
+          println!("\n=== Error Demonstrations ===");
+
+          // Energy error
+          robot.energy = 5;
+          match robot.move_to((10, 10)) {
+              Ok(()) => println!("Move successful"),
+              Err(e) => {
+                  println!("❌ {}", e);
+                  println!("   Error type: {}", e.description());
+              }
+          }
+
+          // Movement error - boundary violation
+          robot.energy = 100;
+          match robot.move_to((20, 20)) {
+              Ok(()) => println!("Move successful"),
+              Err(e) => println!("❌ {}", e),
+          }
+
+          // Movement error - obstacle
+          match robot.move_to((6, 3)) {
+              Ok(()) => println!("Move successful"),
+              Err(e) => println!("❌ {}", e),
+          }
+
+          // Hardware error
+          robot.systems_online = false;
+          match robot.scan_for_items() {
+              Ok(_) => println!("Scan successful"),
+              Err(e) => println!("❌ {}", e),
+          }
+
+          // System diagnostic
+          robot.systems_online = true;
+          robot.health = 25;
+          match robot.system_diagnostic() {
+              Ok(status) => println!("✅ Diagnostic: {}", status),
+              Err(e) => println!("❌ Diagnostic failed: {}", e),
+          }
+
+          println!("\n=== Error Recovery Demonstration ===");
+
+          // Attempt recovery
+          robot.energy = 100;
+          robot.health = 100;
+          robot.systems_online = true;
+
+          match robot.system_diagnostic() {
+              Ok(status) => println!("✅ System recovered: {}", status),
+              Err(e) => println!("❌ Recovery failed: {}", e),
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Great work!** You've created comprehensive custom error types!
+
+      **What you learned:**
+      - Implementing Display and Error traits
+      - Creating hierarchical error types
+      - User-friendly error messages
+      - Error helper functions for common cases
+
+    start_task_message: "Let's create sophisticated custom error types with proper traits!"
+
+  - name: "Error Propagation with the ? Operator"
+    task_file: "learning_tests::level10_task3_error_propagation::level10_task3_tests"
+    task_message: |
+      ## Task 3: Error Propagation with the ? Operator
+
+      Master the ? operator for clean error propagation through function call chains.
+
+      **Your goal:** Use ? operator to create clean, readable error-handling code.
+
+      **Requirements:**
+      ```rust
+      use std::collections::HashMap;
+
+      // Reuse error types from previous task
+      type RobotResult<T> = Result<T, RobotSystemError>;
+
+      struct MissionController {
+          robots: HashMap<String, AdvancedRobot>,
+          mission_log: Vec<String>,
+      }
+
+      impl MissionController {
+          fn new() -> Self {
+              MissionController {
+                  robots: HashMap::new(),
+                  mission_log: Vec::new(),
+              }
+          }
+
+          fn add_robot(&mut self, id: String) -> RobotResult<()> {
+              let robot = AdvancedRobot::new();
+
+              // Check if robot ID already exists
+              if self.robots.contains_key(&id) {
+                  return Err(RobotSystemError::Mission {
+                      objective: "Add Robot".to_string(),
+                      failure_reason: format!("Robot {} already exists", id),
+                  });
+              }
+
+              self.robots.insert(id.clone(), robot);
+              self.mission_log.push(format!("Robot {} added to mission", id));
+              Ok(())
+          }
+
+          // Using ? operator for clean error propagation
+          fn execute_movement_sequence(&mut self, robot_id: &str, waypoints: Vec<(i32, i32)>) -> RobotResult<()> {
+              let robot = self.robots.get_mut(robot_id).ok_or_else(|| {
+                  RobotSystemError::Mission {
+                      objective: "Movement Sequence".to_string(),
+                      failure_reason: format!("Robot {} not found", robot_id),
+                  }
+              })?;
+
+              self.mission_log.push(format!("Starting movement sequence for {}", robot_id));
+
+              for (i, waypoint) in waypoints.iter().enumerate() {
+                  // The ? operator automatically returns the error if move_to fails
+                  robot.move_to(*waypoint)?;
+
+                  self.mission_log.push(format!("{} reached waypoint {}: {:?}",
+                                               robot_id, i + 1, waypoint));
+
+                  // Check system status after each move
+                  let diagnostic = robot.system_diagnostic()?;
+                  if diagnostic.contains("CRITICAL") {
+                      return Err(RobotSystemError::Mission {
+                          objective: "Movement Sequence".to_string(),
+                          failure_reason: format!("Critical system status: {}", diagnostic),
+                      });
+                  }
+              }
+
+              Ok(())
+          }
+
+          fn collect_all_items(&mut self, robot_id: &str) -> RobotResult<Vec<String>> {
+              let robot = self.robots.get_mut(robot_id).ok_or_else(|| {
+                  RobotSystemError::Mission {
+                      objective: "Item Collection".to_string(),
+                      failure_reason: format!("Robot {} not found", robot_id),
+                  }
+              })?;
+
+              let mut collected_items = Vec::new();
+
+              // Item locations from level 10
+              let item_locations = vec![
+                  ((4, 1), "result_core"),
+                  ((14, 3), "error_handler"),
+                  ((1, 10), "recovery_system"),
+                  ((8, 11), "fault_tolerance"),
+              ];
+
+              for ((x, y), item_name) in item_locations {
+                  // Move to item location - ? propagates any movement errors
+                  robot.move_to((x, y))?;
+
+                  // Scan for the item - ? propagates scan errors
+                  let nearby_items = robot.scan_for_items()?;
+
+                  // Check if target item was found
+                  let item_found = nearby_items.iter()
+                      .any(|(name, _)| name == item_name);
+
+                  if item_found {
+                      collected_items.push(item_name.to_string());
+                      self.mission_log.push(format!("{} collected {}", robot_id, item_name));
+                  } else {
+                      return Err(RobotSystemError::Mission {
+                          objective: "Item Collection".to_string(),
+                          failure_reason: format!("Item {} not found at {:?}", item_name, (x, y)),
+                      });
+                  }
+              }
+
+              Ok(collected_items)
+          }
+
+          fn navigate_through_doors(&mut self, robot_id: &str) -> RobotResult<u32> {
+              let robot = self.robots.get_mut(robot_id).ok_or_else(|| {
+                  RobotSystemError::Mission {
+                      objective: "Door Navigation".to_string(),
+                      failure_reason: format!("Robot {} not found", robot_id),
+                  }
+              })?;
+
+              let door_positions = vec![(5, 4), (9, 6), (3, 9), (13, 8)];
+              let mut doors_opened = 0;
+
+              for door_pos in door_positions {
+                  // Move near the door - ? propagates movement errors
+                  let approach_pos = (door_pos.0 - 1, door_pos.1);
+                  robot.move_to(approach_pos)?;
+
+                  // Attempt to open the door - ? propagates door operation errors
+                  robot.attempt_door_opening(door_pos)?;
+
+                  doors_opened += 1;
+                  self.mission_log.push(format!("{} opened door at {:?}", robot_id, door_pos));
+              }
+
+              Ok(doors_opened)
+          }
+
+          fn complete_mission(&mut self, robot_id: &str) -> RobotResult<String> {
+              // Chain multiple operations using ? operator
+              // Each ? automatically returns if an error occurs
+
+              self.mission_log.push(format!("Starting complete mission for {}", robot_id));
+
+              // Execute movement sequence
+              let waypoints = vec![(2, 0), (4, 1), (8, 3), (12, 5)];
+              self.execute_movement_sequence(robot_id, waypoints)?;
+
+              // Collect items
+              let collected_items = self.collect_all_items(robot_id)?;
+
+              // Navigate doors
+              let doors_opened = self.navigate_through_doors(robot_id)?;
+
+              // Final movement to goal
+              let robot = self.robots.get_mut(robot_id).unwrap(); // Safe because previous operations succeeded
+              robot.move_to((15, 11))?;
+
+              // Generate mission report
+              let report = format!(
+                  "Mission completed successfully!\n\
+                   Robot: {}\n\
+                   Items collected: {} ({})\n\
+                   Doors opened: {}\n\
+                   Final position: {:?}\n\
+                   Remaining energy: {}",
+                  robot_id,
+                  collected_items.len(),
+                  collected_items.join(", "),
+                  doors_opened,
+                  robot.position,
+                  robot.energy
+              );
+
+              Ok(report)
+          }
+
+          fn parallel_mission_attempt(&mut self) -> RobotResult<Vec<String>> {
+              let robot_ids = vec!["Alpha", "Beta", "Gamma"];
+              let mut results = Vec::new();
+
+              // Add robots to the mission
+              for id in &robot_ids {
+                  self.add_robot(id.to_string())?; // ? propagates any robot addition errors
+              }
+
+              // Attempt missions for each robot
+              for robot_id in robot_ids {
+                  match self.complete_mission(&robot_id) {
+                      Ok(report) => {
+                          results.push(format!("✅ {}: SUCCESS", robot_id));
+                          results.push(report);
+                      }
+                      Err(e) => {
+                          // Convert error to string and continue with other robots
+                          results.push(format!("❌ {}: FAILED - {}", robot_id, e));
+
+                          // Log the failure
+                          self.mission_log.push(format!("{} mission failed: {}", robot_id, e));
+                      }
+                  }
+              }
+
+              Ok(results)
+          }
+
+          fn get_mission_summary(&self) -> String {
+              format!("Mission Log ({} entries):\n{}",
+                     self.mission_log.len(),
+                     self.mission_log.join("\n"))
+          }
+      }
+
+      fn main() {
+          println!("🚀 Mission Control - Error Propagation Demo");
+
+          let mut mission_control = MissionController::new();
+
+          // Demonstrate successful mission with ? operator
+          println!("\n=== Single Robot Mission ===");
+          match mission_control.add_robot("MainRobot".to_string()) {
+              Ok(()) => println!("✅ Robot added successfully"),
+              Err(e) => println!("❌ Failed to add robot: {}", e),
+          }
+
+          match mission_control.complete_mission("MainRobot") {
+              Ok(report) => {
+                  println!("✅ Mission completed!");
+                  println!("{}", report);
+              }
+              Err(e) => {
+                  println!("❌ Mission failed: {}", e);
+                  println!("Error propagated through function chain");
+              }
+          }
+
+          // Demonstrate parallel missions with mixed results
+          println!("\n=== Parallel Mission Attempt ===");
+          let mut parallel_control = MissionController::new();
+
+          match parallel_control.parallel_mission_attempt() {
+              Ok(results) => {
+                  println!("Parallel mission results:");
+                  for result in results {
+                      println!("{}", result);
+                  }
+              }
+              Err(e) => println!("❌ Parallel mission setup failed: {}", e),
+          }
+
+          // Show mission logs
+          println!("\n=== Mission Logs ===");
+          println!("{}", mission_control.get_mission_summary());
+
+          // Demonstrate error recovery
+          println!("\n=== Error Recovery Example ===");
+          let recovery_result = (|| -> RobotResult<String> {
+              let mut recovery_control = MissionController::new();
+
+              // This might fail, but ? will propagate the error
+              recovery_control.add_robot("RecoveryBot".to_string())?;
+
+              // Try the mission, propagating any errors
+              let report = recovery_control.complete_mission("RecoveryBot")?;
+
+              Ok(format!("Recovery successful: {}", report))
+          })();
+
+          match recovery_result {
+              Ok(success_msg) => println!("✅ {}", success_msg),
+              Err(e) => println!("❌ Recovery failed: {}", e),
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Perfect!** You've mastered error propagation with the ? operator!
+
+      **What you learned:**
+      - Using ? operator for clean error propagation
+      - Chaining fallible operations
+      - Early returns on errors
+      - Error handling in complex function chains
+
+    start_task_message: "Let's master the ? operator for clean error propagation!"
+
+  - name: "Error Recovery and Fallback Strategies"
+    task_file: "learning_tests::level10_task4_error_recovery::level10_task4_tests"
+    task_message: |
+      ## Task 4: Error Recovery and Fallback Strategies
+
+      Implement sophisticated error recovery mechanisms and fallback strategies.
+
+      **Your goal:** Build fault-tolerant systems that can recover from errors gracefully.
+
+      **Requirements:**
+      ```rust
+      use std::time::{Duration, Instant};
+
+      #[derive(Debug, Clone)]
+      struct RetryConfig {
+          max_attempts: u32,
+          delay_between_attempts: Duration,
+          exponential_backoff: bool,
+      }
+
+      impl Default for RetryConfig {
+          fn default() -> Self {
+              RetryConfig {
+                  max_attempts: 3,
+                  delay_between_attempts: Duration::from_millis(100),
+                  exponential_backoff: true,
+              }
+          }
+      }
+
+      #[derive(Debug)]
+      struct RecoveryRobot {
+          inner: AdvancedRobot,
+          retry_config: RetryConfig,
+          fallback_positions: Vec<(i32, i32)>,
+          emergency_energy: u32,
+      }
+
+      impl RecoveryRobot {
+          fn new() -> Self {
+              RecoveryRobot {
+                  inner: AdvancedRobot::new(),
+                  retry_config: RetryConfig::default(),
+                  fallback_positions: vec![(1, 1), (5, 5), (10, 8), (2, 9)],
+                  emergency_energy: 30,
+              }
+          }
+
+          fn retry_with_recovery<F, T>(&mut self, operation: F, operation_name: &str) -> RobotResult<T>
+          where
+              F: Fn(&mut AdvancedRobot) -> RobotResult<T>,
+          {
+              let mut last_error = None;
+              let mut delay = self.retry_config.delay_between_attempts;
+
+              for attempt in 1..=self.retry_config.max_attempts {
+                  println!("Attempt {} of {} for {}", attempt, self.retry_config.max_attempts, operation_name);
+
+                  match operation(&mut self.inner) {
+                      Ok(result) => {
+                          if attempt > 1 {
+                              println!("✅ {} succeeded after {} attempts", operation_name, attempt);
+                          }
+                          return Ok(result);
+                      }
+                      Err(e) => {
+                          println!("❌ {} attempt {} failed: {}", operation_name, attempt, e);
+                          last_error = Some(e.clone());
+
+                          // Don't sleep on the last attempt
+                          if attempt < self.retry_config.max_attempts {
+                              // Try recovery strategies based on error type
+                              match &e {
+                                  RobotSystemError::Energy { .. } => {
+                                      println!("🔋 Attempting energy recovery...");
+                                      self.attempt_energy_recovery()?;
+                                  }
+                                  RobotSystemError::Movement { .. } => {
+                                      println!("🚧 Attempting movement recovery...");
+                                      self.attempt_movement_recovery()?;
+                                  }
+                                  RobotSystemError::Hardware { .. } => {
+                                      println!("🔧 Attempting hardware recovery...");
+                                      self.attempt_hardware_recovery()?;
+                                  }
+                                  _ => {
+                                      println!("⏳ Generic recovery delay...");
+                                  }
+                              }
+
+                              // Sleep with exponential backoff
+                              std::thread::sleep(delay);
+
+                              if self.retry_config.exponential_backoff {
+                                  delay = Duration::from_millis(delay.as_millis() as u64 * 2);
+                              }
+                          }
+                      }
+                  }
+              }
+
+              // All attempts failed, return the last error
+              Err(last_error.unwrap_or_else(|| RobotSystemError::Mission {
+                  objective: operation_name.to_string(),
+                  failure_reason: "All retry attempts failed".to_string(),
+              }))
+          }
+
+          fn attempt_energy_recovery(&mut self) -> RobotResult<()> {
+              if self.inner.energy < self.emergency_energy {
+                  println!("🔌 Emergency energy boost activated");
+                  self.inner.energy += self.emergency_energy;
+                  Ok(())
+              } else {
+                  println!("⚡ Energy levels acceptable, no recovery needed");
+                  Ok(())
+              }
+          }
+
+          fn attempt_movement_recovery(&mut self) -> RobotResult<()> {
+              println!("🗺️ Trying fallback positions...");
+
+              for &fallback_pos in &self.fallback_positions {
+                  if let Ok(()) = self.inner.move_to(fallback_pos) {
+                      println!("✅ Moved to fallback position: {:?}", fallback_pos);
+                      return Ok(());
+                  }
+              }
+
+              Err(RobotSystemError::Mission {
+                  objective: "Movement Recovery".to_string(),
+                  failure_reason: "All fallback positions failed".to_string(),
+              })
+          }
+
+          fn attempt_hardware_recovery(&mut self) -> RobotResult<()> {
+              println!("🔧 Running system diagnostics and repair...");
+
+              // Simulate hardware recovery
+              if !self.inner.systems_online {
+                  self.inner.systems_online = true;
+                  println!("✅ Systems brought back online");
+              }
+
+              if self.inner.health < 50 {
+                  self.inner.health += 25;
+                  println!("✅ System health improved to {}", self.inner.health);
+              }
+
+              Ok(())
+          }
+
+          fn safe_move_to(&mut self, target: (i32, i32)) -> RobotResult<()> {
+              self.retry_with_recovery(
+                  |robot| robot.move_to(target),
+                  &format!("move to {:?}", target)
+              )
+          }
+
+          fn safe_scan_for_items(&mut self) -> RobotResult<Vec<(String, (i32, i32))>> {
+              self.retry_with_recovery(
+                  |robot| robot.scan_for_items(),
+                  "area scan"
+              )
+          }
+
+          fn safe_door_operation(&mut self, door_pos: (i32, i32)) -> RobotResult<()> {
+              self.retry_with_recovery(
+                  |robot| robot.attempt_door_opening(door_pos),
+                  &format!("open door at {:?}", door_pos)
+              )
+          }
+
+          fn execute_mission_with_recovery(&mut self) -> RobotResult<String> {
+              let mut mission_report = Vec::new();
+              let start_time = Instant::now();
+
+              mission_report.push("🚀 Starting fault-tolerant mission...".to_string());
+
+              // Phase 1: Navigate to first item with recovery
+              match self.safe_move_to((4, 1)) {
+                  Ok(()) => mission_report.push("✅ Reached first item location".to_string()),
+                  Err(e) => {
+                      mission_report.push(format!("❌ Failed to reach first item: {}", e));
+                      return Ok(mission_report.join("\n"));
+                  }
+              }
+
+              // Phase 2: Scan for items with recovery
+              match self.safe_scan_for_items() {
+                  Ok(items) => {
+                      mission_report.push(format!("✅ Scanned area, found {} items", items.len()));
+                  }
+                  Err(e) => {
+                      mission_report.push(format!("❌ Scan failed: {}", e));
+                      // Continue mission despite scan failure
+                  }
+              }
+
+              // Phase 3: Attempt door operations with recovery
+              let door_positions = vec![(5, 4), (9, 6)];
+              let mut doors_opened = 0;
+
+              for door_pos in door_positions {
+                  // Move near door first
+                  if let Ok(()) = self.safe_move_to((door_pos.0 - 1, door_pos.1)) {
+                      // Try to open door
+                      match self.safe_door_operation(door_pos) {
+                          Ok(()) => {
+                              doors_opened += 1;
+                              mission_report.push(format!("✅ Opened door at {:?}", door_pos));
+                          }
+                          Err(e) => {
+                              mission_report.push(format!("❌ Failed to open door at {:?}: {}", door_pos, e));
+                          }
+                      }
+                  }
+              }
+
+              // Phase 4: Final navigation with multiple fallbacks
+              let goal_position = (15, 11);
+              let intermediate_positions = vec![(10, 8), (12, 9), (14, 10)];
+
+              let mut reached_goal = false;
+
+              // Try direct path first
+              if let Ok(()) = self.safe_move_to(goal_position) {
+                  reached_goal = true;
+                  mission_report.push("✅ Reached goal via direct path".to_string());
+              } else {
+                  // Try intermediate positions
+                  for intermediate in intermediate_positions {
+                      if let Ok(()) = self.safe_move_to(intermediate) {
+                          if let Ok(()) = self.safe_move_to(goal_position) {
+                              reached_goal = true;
+                              mission_report.push(format!("✅ Reached goal via intermediate position {:?}", intermediate));
+                              break;
+                          }
+                      }
+                  }
+              }
+
+              if !reached_goal {
+                  mission_report.push("❌ Unable to reach goal position".to_string());
+              }
+
+              let mission_time = start_time.elapsed();
+              mission_report.push(format!("⏱️ Mission completed in {:.2} seconds", mission_time.as_secs_f32()));
+              mission_report.push(format!("📊 Final status: Position {:?}, Energy: {}, Health: {}",
+                                         self.inner.position, self.inner.energy, self.inner.health));
+
+              Ok(mission_report.join("\n"))
+          }
+
+          fn stress_test_with_recovery(&mut self) -> RobotResult<Vec<String>> {
+              let mut results = Vec::new();
+
+              // Simulate various stress conditions
+              results.push("🧪 Starting stress test with recovery...".to_string());
+
+              // Test 1: Low energy operations
+              self.inner.energy = 15;
+              match self.safe_move_to((5, 5)) {
+                  Ok(()) => results.push("✅ Low energy movement recovered".to_string()),
+                  Err(e) => results.push(format!("❌ Low energy test failed: {}", e)),
+              }
+
+              // Test 2: Hardware failure simulation
+              self.inner.systems_online = false;
+              self.inner.health = 25;
+              match self.safe_scan_for_items() {
+                  Ok(_) => results.push("✅ Hardware failure recovered".to_string()),
+                  Err(e) => results.push(format!("❌ Hardware recovery failed: {}", e)),
+              }
+
+              // Test 3: Multiple consecutive failures
+              self.inner.energy = 5;
+              self.inner.health = 10;
+              match self.safe_move_to((12, 8)) {
+                  Ok(()) => results.push("✅ Multiple failure recovery succeeded".to_string()),
+                  Err(e) => results.push(format!("❌ Multiple failure recovery failed: {}", e)),
+              }
+
+              Ok(results)
+          }
+      }
+
+      fn main() {
+          println!("🛡️ Advanced Error Recovery System Demo");
+
+          let mut recovery_robot = RecoveryRobot::new();
+
+          // Demonstrate normal mission with recovery
+          println!("\n=== Mission with Automatic Recovery ===");
+          match recovery_robot.execute_mission_with_recovery() {
+              Ok(report) => {
+                  println!("Mission Report:");
+                  println!("{}", report);
+              }
+              Err(e) => println!("❌ Mission completely failed: {}", e),
+          }
+
+          // Reset robot for stress test
+          let mut stress_robot = RecoveryRobot::new();
+
+          println!("\n=== Stress Test with Recovery ===");
+          match stress_robot.stress_test_with_recovery() {
+              Ok(results) => {
+                  for result in results {
+                      println!("{}", result);
+                  }
+              }
+              Err(e) => println!("❌ Stress test failed: {}", e),
+          }
+
+          // Demonstrate custom retry configuration
+          println!("\n=== Custom Recovery Configuration ===");
+          let mut custom_robot = RecoveryRobot::new();
+          custom_robot.retry_config = RetryConfig {
+              max_attempts: 5,
+              delay_between_attempts: Duration::from_millis(50),
+              exponential_backoff: false,
+          };
+
+          // Force a challenging scenario
+          custom_robot.inner.energy = 8;
+          custom_robot.inner.health = 20;
+
+          match custom_robot.safe_move_to((8, 8)) {
+              Ok(()) => println!("✅ Custom recovery configuration succeeded"),
+              Err(e) => println!("❌ Custom recovery failed: {}", e),
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Amazing!** You've built sophisticated error recovery systems!
+
+      **What you learned:**
+      - Retry mechanisms with exponential backoff
+      - Error-specific recovery strategies
+      - Fallback position systems
+      - Graceful degradation patterns
+
+    start_task_message: "Let's build robust error recovery and fallback systems!"
+
+  - name: "Complete Fault-Tolerant Robot System"
+    task_file: "learning_tests::level10_task5_fault_tolerant_system::level10_task5_tests"
+    task_message: |
+      ## Task 5: Complete Fault-Tolerant Robot System
+
+      Combine all error handling techniques into a production-ready fault-tolerant system.
+
+      **Your goal:** Create a comprehensive robot system that handles all possible failure modes.
+
+      **Requirements:**
+      ```rust
+      use std::collections::{HashMap, VecDeque};
+      use std::fmt;
+
+      // Complete error taxonomy for the robot system
+      #[derive(Debug, Clone)]
+      pub enum SystemError {
+          // Critical errors that stop the mission
+          Critical {
+              component: String,
+              error: CriticalError,
+              recovery_impossible: bool,
+          },
+          // Recoverable errors that can be retried
+          Recoverable {
+              operation: String,
+              error: RecoverableError,
+              retry_count: u32,
+          },
+          // Warning-level errors that don't stop execution
+          Warning {
+              source: String,
+              message: String,
+              impact: ImpactLevel,
+          },
+      }
+
+      #[derive(Debug, Clone)]
+      pub enum CriticalError {
+          PowerSystemFailure,
+          NavigationSystemOffline,
+          CommunicationLost,
+          HardwareDestroyed,
+      }
+
+      #[derive(Debug, Clone)]
+      pub enum RecoverableError {
+          InsufficientEnergy { required: u32, available: u32 },
+          PathBlocked { position: (i32, i32), obstacle: String },
+          TemporaryHardwareGlitch { component: String },
+          ResourceUnavailable { resource: String },
+      }
+
+      #[derive(Debug, Clone)]
+      pub enum ImpactLevel {
+          Low,       // Minor performance impact
+          Medium,    // Noticeable but not critical
+          High,      // Significant impact on mission
+      }
+
+      impl fmt::Display for SystemError {
+          fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+              match self {
+                  SystemError::Critical { component, error, recovery_impossible } => {
+                      write!(f, "CRITICAL: {} failure in {} (Recovery: {})",
+                             error, component,
+                             if *recovery_impossible { "impossible" } else { "attempting" })
+                  }
+                  SystemError::Recoverable { operation, error, retry_count } => {
+                      write!(f, "RECOVERABLE: {} failed (attempt {}): {}",
+                             operation, retry_count, error)
+                  }
+                  SystemError::Warning { source, message, impact } => {
+                      write!(f, "WARNING [{:?}]: {} - {}", impact, source, message)
+                  }
+              }
+          }
+      }
+
+      impl fmt::Display for CriticalError {
+          fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+              match self {
+                  CriticalError::PowerSystemFailure => write!(f, "Power system failure"),
+                  CriticalError::NavigationSystemOffline => write!(f, "Navigation system offline"),
+                  CriticalError::CommunicationLost => write!(f, "Communication lost"),
+                  CriticalError::HardwareDestroyed => write!(f, "Hardware destroyed"),
+              }
+          }
+      }
+
+      impl fmt::Display for RecoverableError {
+          fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+              match self {
+                  RecoverableError::InsufficientEnergy { required, available } => {
+                      write!(f, "Need {} energy, have {}", required, available)
+                  }
+                  RecoverableError::PathBlocked { position, obstacle } => {
+                      write!(f, "Path blocked at {:?} by {}", position, obstacle)
+                  }
+                  RecoverableError::TemporaryHardwareGlitch { component } => {
+                      write!(f, "Hardware glitch in {}", component)
+                  }
+                  RecoverableError::ResourceUnavailable { resource } => {
+                      write!(f, "Resource {} unavailable", resource)
+                  }
+              }
+          }
+      }
+
+      type SystemResult<T> = Result<T, SystemError>;
+
+      #[derive(Debug, Clone)]
+      struct MissionObjective {
+          id: String,
+          objective_type: ObjectiveType,
+          target_position: (i32, i32),
+          priority: Priority,
+          required_resources: Vec<String>,
+          estimated_energy_cost: u32,
+      }
+
+      #[derive(Debug, Clone, PartialEq)]
+      enum ObjectiveType {
+          Navigate,
+          CollectItem(String),
+          OpenDoor,
+          ScanArea,
+          EmergencyEvacuation,
+      }
+
+      #[derive(Debug, Clone, PartialOrd, PartialEq, Ord, Eq)]
+      enum Priority {
+          Low = 1,
+          Medium = 2,
+          High = 3,
+          Critical = 4,
+      }
+
+      struct FaultTolerantRobotSystem {
+          robot: RecoveryRobot,
+          error_log: Vec<SystemError>,
+          mission_queue: VecDeque<MissionObjective>,
+          completed_objectives: Vec<String>,
+          system_health: f32,
+          error_budget: u32, // Maximum recoverable errors before mission abort
+          warning_count: u32,
+      }
+
+      impl FaultTolerantRobotSystem {
+          fn new() -> Self {
+              FaultTolerantRobotSystem {
+                  robot: RecoveryRobot::new(),
+                  error_log: Vec::new(),
+                  mission_queue: VecDeque::new(),
+                  completed_objectives: Vec::new(),
+                  system_health: 100.0,
+                  error_budget: 10,
+                  warning_count: 0,
+              }
+          }
+
+          fn add_mission_objective(&mut self, objective: MissionObjective) {
+              // Insert based on priority
+              let position = self.mission_queue.iter()
+                  .position(|obj| obj.priority < objective.priority)
+                  .unwrap_or(self.mission_queue.len());
+
+              self.mission_queue.insert(position, objective);
+          }
+
+          fn log_error(&mut self, error: SystemError) {
+              match &error {
+                  SystemError::Critical { .. } => {
+                      self.system_health -= 25.0;
+                  }
+                  SystemError::Recoverable { .. } => {
+                      self.system_health -= 5.0;
+                      if self.error_budget > 0 {
+                          self.error_budget -= 1;
+                      }
+                  }
+                  SystemError::Warning { impact, .. } => {
+                      self.warning_count += 1;
+                      let health_impact = match impact {
+                          ImpactLevel::Low => 1.0,
+                          ImpactLevel::Medium => 2.5,
+                          ImpactLevel::High => 5.0,
+                      };
+                      self.system_health -= health_impact;
+                  }
+              }
+
+              self.error_log.push(error);
+              self.system_health = self.system_health.max(0.0);
+          }
+
+          fn execute_objective(&mut self, objective: MissionObjective) -> SystemResult<String> {
+              println!("🎯 Executing objective: {} (Priority: {:?})", objective.id, objective.priority);
+
+              // Pre-flight checks
+              if self.system_health < 20.0 {
+                  return Err(SystemError::Critical {
+                      component: "System Health".to_string(),
+                      error: CriticalError::PowerSystemFailure,
+                      recovery_impossible: true,
+                  });
+              }
+
+              if self.error_budget == 0 {
+                  return Err(SystemError::Critical {
+                      component: "Error Budget".to_string(),
+                      error: CriticalError::NavigationSystemOffline,
+                      recovery_impossible: false,
+                  });
+              }
+
+              // Check energy requirements
+              if self.robot.inner.energy < objective.estimated_energy_cost {
+                  let error = SystemError::Recoverable {
+                      operation: format!("Execute {}", objective.id),
+                      error: RecoverableError::InsufficientEnergy {
+                          required: objective.estimated_energy_cost,
+                          available: self.robot.inner.energy,
+                      },
+                      retry_count: 1,
+                  };
+
+                  self.log_error(error.clone());
+
+                  // Attempt energy recovery
+                  if let Err(recovery_error) = self.robot.attempt_energy_recovery() {
+                      return Err(SystemError::Critical {
+                          component: "Energy Recovery".to_string(),
+                          error: CriticalError::PowerSystemFailure,
+                          recovery_impossible: true,
+                      });
+                  }
+              }
+
+              // Execute the objective based on type
+              let result = match &objective.objective_type {
+                  ObjectiveType::Navigate => {
+                      match self.robot.safe_move_to(objective.target_position) {
+                          Ok(()) => Ok(format!("Navigated to {:?}", objective.target_position)),
+                          Err(robot_error) => {
+                              let system_error = self.convert_robot_error_to_system_error(robot_error);
+                              self.log_error(system_error.clone());
+                              Err(system_error)
+                          }
+                      }
+                  }
+                  ObjectiveType::CollectItem(item_name) => {
+                      match self.robot.safe_move_to(objective.target_position) {
+                          Ok(()) => {
+                              match self.robot.safe_scan_for_items() {
+                                  Ok(items) => {
+                                      if items.iter().any(|(name, _)| name == item_name) {
+                                          Ok(format!("Collected item: {}", item_name))
+                                      } else {
+                                          let error = SystemError::Warning {
+                                              source: "Item Collection".to_string(),
+                                              message: format!("Item {} not found at location", item_name),
+                                              impact: ImpactLevel::Medium,
+                                          };
+                                          self.log_error(error.clone());
+                                          Err(error)
+                                      }
+                                  }
+                                  Err(robot_error) => {
+                                      let system_error = self.convert_robot_error_to_system_error(robot_error);
+                                      self.log_error(system_error.clone());
+                                      Err(system_error)
+                                  }
+                              }
+                          }
+                          Err(robot_error) => {
+                              let system_error = self.convert_robot_error_to_system_error(robot_error);
+                              self.log_error(system_error.clone());
+                              Err(system_error)
+                          }
+                      }
+                  }
+                  ObjectiveType::OpenDoor => {
+                      // Move close to door first
+                      let approach_pos = (objective.target_position.0 - 1, objective.target_position.1);
+                      match self.robot.safe_move_to(approach_pos) {
+                          Ok(()) => {
+                              match self.robot.safe_door_operation(objective.target_position) {
+                                  Ok(()) => Ok(format!("Opened door at {:?}", objective.target_position)),
+                                  Err(robot_error) => {
+                                      let system_error = self.convert_robot_error_to_system_error(robot_error);
+                                      self.log_error(system_error.clone());
+                                      Err(system_error)
+                                  }
+                              }
+                          }
+                          Err(robot_error) => {
+                              let system_error = self.convert_robot_error_to_system_error(robot_error);
+                              self.log_error(system_error.clone());
+                              Err(system_error)
+                          }
+                      }
+                  }
+                  ObjectiveType::ScanArea => {
+                      match self.robot.safe_move_to(objective.target_position) {
+                          Ok(()) => {
+                              match self.robot.safe_scan_for_items() {
+                                  Ok(items) => Ok(format!("Scanned area, found {} objects", items.len())),
+                                  Err(robot_error) => {
+                                      let system_error = self.convert_robot_error_to_system_error(robot_error);
+                                      self.log_error(system_error.clone());
+                                      Err(system_error)
+                                  }
+                              }
+                          }
+                          Err(robot_error) => {
+                              let system_error = self.convert_robot_error_to_system_error(robot_error);
+                              self.log_error(system_error.clone());
+                              Err(system_error)
+                          }
+                      }
+                  }
+                  ObjectiveType::EmergencyEvacuation => {
+                      // Find nearest safe position
+                      let safe_positions = vec![(0, 0), (15, 11), (1, 1), (14, 10)];
+                      for safe_pos in safe_positions {
+                          if let Ok(()) = self.robot.safe_move_to(safe_pos) {
+                              return Ok(format!("Emergency evacuation to {:?}", safe_pos));
+                          }
+                      }
+
+                      Err(SystemError::Critical {
+                          component: "Emergency Systems".to_string(),
+                          error: CriticalError::NavigationSystemOffline,
+                          recovery_impossible: true,
+                      })
+                  }
+              };
+
+              match &result {
+                  Ok(success_msg) => {
+                      self.completed_objectives.push(objective.id.clone());
+                      println!("✅ {}", success_msg);
+                  }
+                  Err(e) => {
+                      println!("❌ Objective {} failed: {}", objective.id, e);
+                  }
+              }
+
+              result
+          }
+
+          fn convert_robot_error_to_system_error(&self, robot_error: RobotSystemError) -> SystemError {
+              match robot_error {
+                  RobotSystemError::Energy { current, required, operation } => {
+                      SystemError::Recoverable {
+                          operation,
+                          error: RecoverableError::InsufficientEnergy {
+                              required,
+                              available: current,
+                          },
+                          retry_count: 1,
+                      }
+                  }
+                  RobotSystemError::Movement { reason, attempted_position } => {
+                      SystemError::Recoverable {
+                          operation: "Movement".to_string(),
+                          error: RecoverableError::PathBlocked {
+                              position: attempted_position,
+                              obstacle: format!("{:?}", reason),
+                          },
+                          retry_count: 1,
+                      }
+                  }
+                  RobotSystemError::Hardware { component, diagnostic } => {
+                      if diagnostic.contains("offline") || diagnostic.contains("destroyed") {
+                          SystemError::Critical {
+                              component,
+                              error: CriticalError::HardwareDestroyed,
+                              recovery_impossible: false,
+                          }
+                      } else {
+                          SystemError::Recoverable {
+                              operation: "Hardware Operation".to_string(),
+                              error: RecoverableError::TemporaryHardwareGlitch { component },
+                              retry_count: 1,
+                          }
+                      }
+                  }
+                  _ => SystemError::Warning {
+                      source: "Robot System".to_string(),
+                      message: format!("{}", robot_error),
+                      impact: ImpactLevel::Medium,
+                  }
+              }
+          }
+
+          fn execute_mission(&mut self) -> SystemResult<String> {
+              let mut mission_summary = Vec::new();
+              let mut objectives_completed = 0;
+              let mut objectives_failed = 0;
+
+              mission_summary.push("🚀 Starting fault-tolerant mission execution".to_string());
+
+              while let Some(objective) = self.mission_queue.pop_front() {
+                  // Check if we should abort the mission
+                  if self.system_health < 10.0 {
+                      mission_summary.push("🚨 Mission aborted due to critical system health".to_string());
+                      break;
+                  }
+
+                  if self.error_budget == 0 {
+                      mission_summary.push("⚠️ Error budget exhausted, switching to critical objectives only".to_string());
+
+                      // Only execute critical priority objectives
+                      if objective.priority < Priority::Critical {
+                          continue;
+                      }
+                  }
+
+                  match self.execute_objective(objective) {
+                      Ok(result) => {
+                          objectives_completed += 1;
+                          mission_summary.push(format!("✅ {}", result));
+                      }
+                      Err(SystemError::Critical { recovery_impossible: true, .. }) => {
+                          objectives_failed += 1;
+                          mission_summary.push("🚨 Critical unrecoverable error - aborting mission".to_string());
+                          break;
+                      }
+                      Err(error) => {
+                          objectives_failed += 1;
+                          mission_summary.push(format!("❌ Objective failed: {}", error));
+
+                          // For critical errors that might be recoverable, try emergency procedures
+                          if let SystemError::Critical { recovery_impossible: false, .. } = error {
+                              if let Ok(()) = self.emergency_recovery() {
+                                  mission_summary.push("🔧 Emergency recovery successful".to_string());
+                              } else {
+                                  mission_summary.push("💀 Emergency recovery failed".to_string());
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+
+              let final_report = format!(
+                  "📊 Mission Summary:\n\
+                   Objectives completed: {}\n\
+                   Objectives failed: {}\n\
+                   System health: {:.1}%\n\
+                   Error budget remaining: {}\n\
+                   Warnings: {}\n\
+                   Final position: {:?}\n\
+                   \n{}",
+                  objectives_completed,
+                  objectives_failed,
+                  self.system_health,
+                  self.error_budget,
+                  self.warning_count,
+                  self.robot.inner.position,
+                  mission_summary.join("\n")
+              );
+
+              Ok(final_report)
+          }
+
+          fn emergency_recovery(&mut self) -> SystemResult<()> {
+              println!("🚨 Initiating emergency recovery procedures...");
+
+              // Attempt system health recovery
+              self.robot.attempt_hardware_recovery()
+                  .map_err(|e| self.convert_robot_error_to_system_error(e))?;
+
+              // Attempt energy recovery
+              self.robot.attempt_energy_recovery()
+                  .map_err(|e| self.convert_robot_error_to_system_error(e))?;
+
+              // Move to safe position
+              self.robot.attempt_movement_recovery()
+                  .map_err(|e| self.convert_robot_error_to_system_error(e))?;
+
+              // Boost system health if recovery was successful
+              self.system_health += 20.0;
+              self.system_health = self.system_health.min(100.0);
+
+              println!("✅ Emergency recovery completed");
+              Ok(())
+          }
+
+          fn generate_error_report(&self) -> String {
+              let mut report = String::from("📋 System Error Report:\n\n");
+
+              let critical_errors = self.error_log.iter()
+                  .filter(|e| matches!(e, SystemError::Critical { .. }))
+                  .count();
+
+              let recoverable_errors = self.error_log.iter()
+                  .filter(|e| matches!(e, SystemError::Recoverable { .. }))
+                  .count();
+
+              report.push_str(&format!("Critical errors: {}\n", critical_errors));
+              report.push_str(&format!("Recoverable errors: {}\n", recoverable_errors));
+              report.push_str(&format!("Warnings: {}\n\n", self.warning_count));
+
+              report.push_str("Recent errors:\n");
+              for error in self.error_log.iter().rev().take(5) {
+                  report.push_str(&format!("  - {}\n", error));
+              }
+
+              report
+          }
+      }
+
+      fn main() {
+          println!("🛡️ Complete Fault-Tolerant Robot System Demo");
+
+          let mut system = FaultTolerantRobotSystem::new();
+
+          // Add mission objectives
+          let objectives = vec![
+              MissionObjective {
+                  id: "nav_to_first_item".to_string(),
+                  objective_type: ObjectiveType::Navigate,
+                  target_position: (4, 1),
+                  priority: Priority::High,
+                  required_resources: vec!["navigation".to_string()],
+                  estimated_energy_cost: 25,
+              },
+              MissionObjective {
+                  id: "collect_result_core".to_string(),
+                  objective_type: ObjectiveType::CollectItem("result_core".to_string()),
+                  target_position: (4, 1),
+                  priority: Priority::Critical,
+                  required_resources: vec!["scanner".to_string()],
+                  estimated_energy_cost: 15,
+              },
+              MissionObjective {
+                  id: "open_first_door".to_string(),
+                  objective_type: ObjectiveType::OpenDoor,
+                  target_position: (5, 4),
+                  priority: Priority::Medium,
+                  required_resources: vec!["door_interface".to_string()],
+                  estimated_energy_cost: 20,
+              },
+              MissionObjective {
+                  id: "collect_error_handler".to_string(),
+                  objective_type: ObjectiveType::CollectItem("error_handler".to_string()),
+                  target_position: (14, 3),
+                  priority: Priority::High,
+                  required_resources: vec!["navigation".to_string(), "scanner".to_string()],
+                  estimated_energy_cost: 35,
+              },
+              MissionObjective {
+                  id: "emergency_position".to_string(),
+                  objective_type: ObjectiveType::EmergencyEvacuation,
+                  target_position: (15, 11),
+                  priority: Priority::Critical,
+                  required_resources: vec!["navigation".to_string()],
+                  estimated_energy_cost: 40,
+              },
+          ];
+
+          for objective in objectives {
+              system.add_mission_objective(objective);
+          }
+
+          // Execute the mission
+          println!("\n=== Mission Execution ===");
+          match system.execute_mission() {
+              Ok(report) => {
+                  println!("{}", report);
+              }
+              Err(e) => {
+                  println!("💀 Complete mission failure: {}", e);
+              }
+          }
+
+          // Generate error report
+          println!("\n=== Error Analysis ===");
+          println!("{}", system.generate_error_report());
+
+          println!("\n🏁 Fault-tolerant system demonstration complete!");
+      }
+      ```
+
+    completion_message: |
+      🎉 **Outstanding!** You've built a complete fault-tolerant robot system!
+
+      **What you accomplished:**
+      - Comprehensive error taxonomy and classification
+      - Priority-based mission planning with error budgets
+      - Automatic error recovery and emergency procedures
+      - System health monitoring and degradation handling
+      - Production-ready error logging and reporting
+
+      **You're now ready for async programming with Tokio!**
+
+    start_task_message: "Let's build a complete production-ready fault-tolerant system!"
+
+starting_code: |
+  // Level 10: Advanced Error Handling
+  // Build fault-tolerant robot systems with comprehensive error handling
+
+  use std::fmt;
+  use std::error::Error;
+
+  // TODO: Task 1 - Define custom error types
+  // #[derive(Debug, Clone)]
+  // enum RobotError {
+  //     InsufficientEnergy { required: u32, available: u32 },
+  //     PathBlocked { position: (i32, i32), obstacle: String },
+  //     InvalidCommand { command: String },
+  //     SystemFailure { component: String },
+  // }
+
+  // TODO: Task 2 - Implement Error trait
+  // impl fmt::Display for RobotError {
+  //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+  //         match self {
+  //             RobotError::InsufficientEnergy { required, available } => {
+  //                 write!(f, "Need {} energy, have {}", required, available)
+  //             }
+  //             // Add other error cases...
+  //         }
+  //     }
+  // }
+
+  fn main() {
+      println!("Level 10: Advanced Error Handling");
+
+      // TODO: Task 1 - Use Result for error handling
+      // let move_result: Result<(i32, i32), RobotError> = move_robot((0, 0), "east", 50);
+      // match move_result {
+      //     Ok(pos) => println!("Moved to: {:?}", pos),
+      //     Err(e) => println!("Move failed: {:?}", e),
+      // }
+
+      // TODO: Task 3 - Use ? operator for error propagation
+      // let mission_result = execute_mission().await;
+      // match mission_result {
+      //     Ok(report) => println!("Mission: {}", report),
+      //     Err(e) => println!("Mission failed: {}", e),
+      // }
+
+      // TODO: Task 4 - Implement error recovery
+      // let recovery_robot = RecoveryRobot::new();
+      // recovery_robot.retry_with_recovery(|robot| {
+      //     robot.move_to((10, 10))
+      // }, "movement");
+
+      // TODO: Task 5 - Complete fault-tolerant system
+      // let mut system = FaultTolerantRobotSystem::new();
+      // system.execute_mission();
+
+      println!("Complete all tasks to master advanced error handling!");
+  }
+
+achievement_message: "🎉 Incredible! You've mastered advanced error handling and built production-ready fault-tolerant systems!"
+next_level_hint: "Next: Level 11 - Async programming with Tokio for concurrent robot operations!"
+completion_flag: "goal"

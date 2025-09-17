@@ -164,4 +164,34 @@ impl Robot {
     pub fn has_scanner(&self) -> bool {
         true // Scanner is always available in the new design
     }
+
+    // Check if robot has door key capability
+    pub fn has_door_key(&self) -> bool {
+        self.inventory.contains("door_key")
+    }
+
+    // Get positions within door opening range (adjacent positions)
+    pub fn get_door_positions(&self, grid_width: i32, grid_height: i32) -> Vec<Pos> {
+        let mut positions = Vec::new();
+        let directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]; // up, right, down, left
+
+        for (dx, dy) in directions {
+            let pos = Pos {
+                x: self.pos.x + dx,
+                y: self.pos.y + dy,
+            };
+
+            if pos.x >= 0 && pos.y >= 0 && pos.x < grid_width && pos.y < grid_height {
+                positions.push(pos);
+            }
+        }
+
+        positions
+    }
+
+    // Check if robot can open door at position
+    pub fn can_open_door_at(&self, target: Pos) -> bool {
+        let distance = self.distance_to(target);
+        distance <= 1 && (self.has_door_key() || self.upgrades.scanner_level > 0)
+    }
 }

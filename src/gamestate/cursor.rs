@@ -6,12 +6,13 @@ use log::{debug, warn, error};
 impl Game {
     // Update window position for coordinate transformations (throttled to 1x per second, more during rapid clicking)
     pub fn update_window_coordinates(&mut self) {
-        // Skip coordinate updates entirely if window isn't active to prevent alt-tab crashes
-        if !crate::coordinate_system::CoordinateTransformer::is_game_window_active(self.enable_coordinate_logs) {
+        // Check window activity but don't skip entirely - just be more cautious
+        let window_active = crate::coordinate_system::CoordinateTransformer::is_game_window_active(self.enable_coordinate_logs);
+        if !window_active {
             if self.enable_coordinate_logs {
-                debug!("Skipping coordinate update - window not active (preventing alt-tab crashes)");
+                debug!("Window not fully active - proceeding with cautious coordinate update");
             }
-            return;
+            // Continue with update but maybe with reduced frequency
         }
         
         let current_time = macroquad::prelude::get_time();
@@ -30,7 +31,7 @@ impl Game {
             let update_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 self.coordinate_transformer.update_window_info();
             }));
-            
+
             match update_result {
                 Ok(_) => {
                     self.last_window_update_time = current_time;

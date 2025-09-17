@@ -23,10 +23,12 @@ pub fn mouse_to_grid_position(
     line_height: f32,
     scroll_offset: usize
 ) -> Option<(usize, usize)> {
+    use crate::font_scaling::scale_size;
+
     let (editor_x, editor_y, editor_width, _editor_height) = editor_bounds;
-    let line_number_width = 35.0; // scale_size(35.0) - approximate
-    let grid_start_x = editor_x + line_number_width + 5.0; // scale_size(5.0) - approximate
-    let grid_start_y = editor_y + 55.0 + 12.0; // account for title and scale_size(12.0)
+    let line_number_width = scale_size(28.0); // Match the actual line number width from drawing code
+    let grid_start_x = editor_x + line_number_width + scale_size(4.0); // Match text_x calculation
+    let grid_start_y = editor_y + scale_size(50.0) + scale_size(10.0); // Match exact drawing coordinates
     
     // Check if mouse is within the text area
     if mouse_x < grid_start_x || mouse_x > editor_x + editor_width - 20.0 {
@@ -40,7 +42,13 @@ pub fn mouse_to_grid_position(
     let col = ((mouse_x - grid_start_x) / char_width) as usize;
     let row = ((mouse_y - grid_start_y) / line_height) as usize;
     let actual_line = row + scroll_offset;
-    
+
+    // Debug logging to find the off-by-one issue
+    debug!("mouse_to_grid_position: mouse=({:.2}, {:.2}), grid_start=({:.2}, {:.2}), char_width={:.2}, line_height={:.2}",
+           mouse_x, mouse_y, grid_start_x, grid_start_y, char_width, line_height);
+    debug!("Calculated: raw_row={}, raw_col={}, actual_line={}, scroll_offset={}",
+           row, col, actual_line, scroll_offset);
+
     Some((actual_line, col))
 }
 

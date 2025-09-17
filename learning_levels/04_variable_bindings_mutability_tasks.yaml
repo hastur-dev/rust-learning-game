@@ -1,0 +1,404 @@
+name: "Level 4: Variable Bindings and Mutability"
+grid_size: "9x7"
+start_position: [0, 0]
+max_turns: 120
+fog_of_war: false
+income_per_square: 1
+message: |
+  🔒 **LEVEL 4: Variable Bindings and Mutability**
+
+  Learn Rust's memory safety through immutable-by-default variables and explicit mutability!
+
+  Master variable bindings, shadowing, and scope to prevent common programming bugs.
+
+hint_message: |
+  **Variable Tips:**
+  - Variables are immutable by default (`let x = 5;`)
+  - Use `mut` for mutable variables (`let mut y = 10;`)
+  - Shadowing allows redefining variables with `let`
+  - Block scope `{}` creates new variable contexts
+  - Constants use `const` and must have explicit types
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/variable_bindings.html"
+obstacles: 3
+
+items:
+  - name: "immutable_token"
+    item_file: "items/immutable.rs"
+    spawn_randomly: false
+    location: [2, 1]
+  - name: "mutable_token"
+    item_file: "items/mutable.rs"
+    spawn_randomly: false
+    location: [6, 2]
+  - name: "shadow_token"
+    item_file: "items/shadow.rs"
+    spawn_randomly: false
+    location: [1, 5]
+  - name: "scope_token"
+    item_file: "items/scope.rs"
+    spawn_randomly: false
+    location: [7, 5]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [8, 6]
+
+tasks:
+  - name: "Immutable Variable Bindings"
+    task_file: "learning_tests::level4_task1_immutable::level4_task1_tests"
+    task_message: |
+      ## Task 1: Immutable Variable Bindings
+
+      By default, Rust variables are immutable - they cannot be changed after creation. This prevents many bugs!
+
+      **Your goal:** Create immutable variables and understand why immutability is the default.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Immutable variables - cannot be changed after binding
+          let robot_name = "Ferris";
+          let robot_id = 12345;
+          let energy_level = 100;
+
+          println!("Robot name: {}", robot_name);
+          println!("Robot ID: {}", robot_id);
+          println!("Energy level: {}", energy_level);
+
+          // This would cause a compilation error:
+          // robot_id = 54321;  // Cannot assign twice to immutable variable
+
+          // Demonstrate that this is safe - we know these values won't change
+          let calculated_value = robot_id * 2;
+          println!("Calculated value: {}", calculated_value);
+
+          // We can rely on immutable values in our logic
+          if energy_level == 100 {
+              println!("Robot is fully charged!");
+          }
+      }
+      ```
+
+      **Key concepts:**
+      - `let` creates immutable bindings by default
+      - Immutability prevents accidental changes
+      - Compiler catches attempts to modify immutable variables
+      - Immutability enables optimization and reasoning about code
+
+    completion_message: |
+      ✅ **Excellent!** You understand immutable variables!
+
+      **What you learned:**
+      - Immutable variables prevent bugs
+      - `let` creates immutable bindings
+      - Compiler enforces immutability
+      - Benefits of immutable-by-default design
+
+    start_task_message: "Let's learn why Rust makes variables immutable by default!"
+
+  - name: "Mutable Variable Bindings"
+    task_file: "learning_tests::level4_task2_mutable::level4_task2_tests"
+    task_message: |
+      ## Task 2: Mutable Variable Bindings
+
+      When you need to change a variable's value, you must explicitly declare it as mutable with `mut`.
+
+      **Your goal:** Create mutable variables and demonstrate how to modify them safely.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Mutable variables - can be changed after creation
+          let mut robot_position = 0;
+          let mut energy_level = 100;
+          let mut is_active = true;
+
+          println!("Initial position: {}", robot_position);
+          println!("Initial energy: {}", energy_level);
+          println!("Initially active: {}", is_active);
+
+          // Now we can modify these variables
+          robot_position += 5;
+          energy_level -= 10;
+          is_active = false;
+
+          println!("New position: {}", robot_position);
+          println!("New energy: {}", energy_level);
+          println!("Currently active: {}", is_active);
+
+          // Multiple modifications are allowed
+          for i in 1..=3 {
+              robot_position += i;
+              energy_level -= 5;
+              println!("Step {}: position = {}, energy = {}", i, robot_position, energy_level);
+          }
+
+          // But we still have type safety
+          // robot_position = "invalid";  // This would be a compilation error
+      }
+      ```
+
+      **Key concepts:**
+      - `let mut` creates mutable bindings
+      - Mutability must be explicit and intentional
+      - Type safety is still enforced
+      - Mutable variables can be modified after creation
+
+    completion_message: |
+      ✅ **Great work!** You understand mutable variables!
+
+      **What you learned:**
+      - `mut` keyword enables mutability
+      - Explicit mutability makes intentions clear
+      - Type safety is maintained
+      - Balancing safety with flexibility
+
+    start_task_message: "Time to learn about explicit mutability with the mut keyword!"
+
+  - name: "Variable Shadowing"
+    task_file: "learning_tests::level4_task3_shadowing::level4_task3_tests"
+    task_message: |
+      ## Task 3: Variable Shadowing
+
+      Shadowing allows you to reuse variable names by creating new variables with the same name.
+
+      **Your goal:** Use variable shadowing to transform data while reusing names.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Original variable
+          let robot_data = "12345";
+          println!("Robot data as string: {}", robot_data);
+
+          // Shadow the variable with a different type
+          let robot_data: i32 = robot_data.parse().expect("Failed to parse");
+          println!("Robot data as number: {}", robot_data);
+
+          // Shadow again with a calculation
+          let robot_data = robot_data * 2 + 100;
+          println!("Robot data calculated: {}", robot_data);
+
+          // Shadowing vs mutation example
+          let value = 10;
+          println!("Original value: {}", value);
+
+          let value = value + 5;  // This creates a new variable
+          println!("Shadowed value: {}", value);
+
+          let value = format!("The answer is {}", value);
+          println!("Final shadowed value: {}", value);
+
+          // Demonstrate scope with shadowing
+          {
+              let value = "Inside block";
+              println!("Block value: {}", value);
+          }
+          // Original value is restored outside the block
+          println!("Outside block value: {}", value);
+      }
+      ```
+
+      **Key concepts:**
+      - Shadowing reuses names while creating new variables
+      - Can change types when shadowing
+      - Different from mutation - creates new variables
+      - Useful for data transformations
+
+    completion_message: |
+      ✅ **Perfect!** You've mastered variable shadowing!
+
+      **What you learned:**
+      - Shadowing vs mutation differences
+      - Type changes through shadowing
+      - Block scope and shadowing
+      - Practical uses for data transformation
+
+    start_task_message: "Let's explore variable shadowing and how it differs from mutation!"
+
+  - name: "Variable Scope and Blocks"
+    task_file: "learning_tests::level4_task4_scope::level4_task4_tests"
+    task_message: |
+      ## Task 4: Variable Scope and Blocks
+
+      Variables have scope - they're only accessible within the block where they're defined.
+
+      **Your goal:** Understand how scope works with blocks and variable lifetime.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          let outer_variable = "I'm in the outer scope";
+          println!("Outer scope: {}", outer_variable);
+
+          // Create a new scope with curly braces
+          {
+              let inner_variable = "I'm in the inner scope";
+              println!("Inner scope: {}", inner_variable);
+
+              // Can access outer variables from inner scope
+              println!("Accessing outer from inner: {}", outer_variable);
+
+              // Shadow outer variable in inner scope
+              let outer_variable = "I'm shadowing the outer variable";
+              println!("Shadowed in inner: {}", outer_variable);
+
+              // Mutable variable in inner scope
+              let mut counter = 0;
+              for i in 1..=3 {
+                  counter += i;
+                  println!("Counter in loop: {}", counter);
+              }
+          } // inner_variable goes out of scope here
+
+          // Back in outer scope
+          println!("Back to outer scope: {}", outer_variable);
+
+          // This would cause a compilation error:
+          // println!("{}", inner_variable);  // Not accessible here
+
+          // Function scope example
+          let result = calculate_something();
+          println!("Function result: {}", result);
+      }
+
+      fn calculate_something() -> i32 {
+          let local_value = 42;
+          let calculation = local_value * 2;
+          calculation  // Return the calculation
+          // local_value goes out of scope here
+      }
+      ```
+
+    completion_message: |
+      ✅ **Excellent!** You understand variable scope!
+
+      **What you learned:**
+      - Block scope with curly braces `{}`
+      - Inner scopes can access outer variables
+      - Variables are dropped when leaving scope
+      - Function scope and local variables
+
+    start_task_message: "Let's explore how variable scope works with blocks and functions!"
+
+  - name: "Constants and Naming Conventions"
+    task_file: "learning_tests::level4_task5_constants::level4_task5_tests"
+    task_message: |
+      ## Task 5: Constants and Naming Conventions
+
+      Constants are values that never change and are known at compile time.
+
+      **Your goal:** Learn about constants, static variables, and Rust naming conventions.
+
+      **Requirements:**
+      ```rust
+      // Constants are declared outside functions and use SCREAMING_SNAKE_CASE
+      const MAX_ENERGY: i32 = 1000;
+      const ROBOT_NAME: &str = "Ferris";
+      const PI: f64 = 3.141592653589793;
+
+      fn main() {
+          println!("Maximum energy: {}", MAX_ENERGY);
+          println!("Robot name: {}", ROBOT_NAME);
+          println!("Pi value: {}", PI);
+
+          // Constants can be used in calculations
+          let half_max_energy = MAX_ENERGY / 2;
+          let circle_area = PI * 5.0 * 5.0;  // radius = 5.0
+
+          println!("Half max energy: {}", half_max_energy);
+          println!("Circle area: {}", circle_area);
+
+          // Demonstrate naming conventions
+          let snake_case_variable = "variables use snake_case";
+          let another_example = 42;
+
+          println!("Variable: {}", snake_case_variable);
+          println!("Another: {}", another_example);
+
+          // Constants vs immutable variables
+          let immutable_var = 100;  // Value determined at runtime
+          // const RUNTIME_VALUE = immutable_var;  // This won't work!
+
+          // Constants are compile-time values
+          const COMPILE_TIME: i32 = 50 + 50;  // This works
+          println!("Compile-time constant: {}", COMPILE_TIME);
+
+          // Show the difference in scope
+          {
+              const BLOCK_CONSTANT: i32 = 999;
+              println!("Block constant: {}", BLOCK_CONSTANT);
+
+              // Constants are available everywhere in their scope
+              let calculation = MAX_ENERGY + COMPILE_TIME + BLOCK_CONSTANT;
+              println!("Combined calculation: {}", calculation);
+          }
+      }
+      ```
+
+    completion_message: |
+      🎉 **Outstanding!** You've mastered variable bindings and mutability!
+
+      **What you accomplished:**
+      - Understanding immutable-by-default variables
+      - Using explicit mutability with `mut`
+      - Variable shadowing for transformations
+      - Block scope and variable lifetime
+      - Constants and naming conventions
+
+      **You're ready for type casting and conversions!**
+
+    start_task_message: "Let's learn about constants and Rust's naming conventions!"
+
+starting_code: |
+  // Level 4: Variable Bindings and Mutability
+  // Learn Rust's memory safety through variable binding rules
+
+  // TODO: Task 5 - Add constants here (outside functions)
+  // const MAX_ENERGY: i32 = 1000;
+  // const ROBOT_NAME: &str = "Ferris";
+
+  fn main() {
+      println!("Level 4: Variable Bindings and Mutability");
+
+      // TODO: Task 1 - Create immutable variables
+      // let robot_name = "Ferris";
+      // let robot_id = 12345;
+      // println!("Robot: {} (ID: {})", robot_name, robot_id);
+
+      // TODO: Task 2 - Create mutable variables
+      // let mut energy_level = 100;
+      // let mut position = 0;
+      // energy_level -= 10;
+      // position += 5;
+      // println!("Energy: {}, Position: {}", energy_level, position);
+
+      // TODO: Task 3 - Demonstrate shadowing
+      // let data = "123";
+      // let data: i32 = data.parse().expect("Parse error");
+      // let data = data * 2;
+      // println!("Transformed data: {}", data);
+
+      // TODO: Task 4 - Show scope with blocks
+      // {
+      //     let inner_value = "Inside block";
+      //     println!("Inner: {}", inner_value);
+      // }
+
+      // TODO: Task 5 - Use constants
+      // println!("Max energy: {}", MAX_ENERGY);
+      // println!("Robot name: {}", ROBOT_NAME);
+
+      println!("Complete all tasks to master variable bindings!");
+  }
+
+  // TODO: Task 4 - Helper function for scope demonstration
+  // fn calculate_something() -> i32 {
+  //     let local_value = 42;
+  //     local_value * 2
+  // }
+
+achievement_message: "🎉 Fantastic! You've mastered Rust's variable binding system and memory safety!"
+next_level_hint: "Next: Type casting, conversions, and type transformations!"
+completion_flag: "goal"

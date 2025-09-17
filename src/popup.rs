@@ -288,9 +288,11 @@ impl PopupSystem {
                        mouse_y < popup_y || mouse_y > popup_y + popup_height {
                         self.close();
                         return PopupAction::Dismissed;
+                    } else {
+                        // Click is inside popup area - dismiss the popup
+                        self.close();
+                        return PopupAction::Dismissed;
                     }
-                    // Always consume mouse click when popup is showing, regardless of where clicked
-                    return PopupAction::None;
                 }
             } // End of if let Some(ref popup) = self.current_popup
             

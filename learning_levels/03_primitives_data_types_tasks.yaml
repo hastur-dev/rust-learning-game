@@ -1,0 +1,339 @@
+name: "Level 3: Primitives and Data Types"
+grid_size: "8x6"
+start_position: [0, 0]
+max_turns: 100
+fog_of_war: true
+income_per_square: 1
+message: |
+  📊 **LEVEL 3: Primitives and Data Types**
+
+  Master Rust's primitive data types and learn how they prevent common programming errors!
+
+  Complete all 5 tasks to understand integers, floats, booleans, characters, and type inference.
+
+hint_message: |
+  **Data Type Tips:**
+  - Rust has signed (i8, i16, i32, i64) and unsigned (u8, u16, u32, u64) integers
+  - Floating point types: f32 (32-bit) and f64 (64-bit, default)
+  - Boolean type: bool (true/false)
+  - Character type: char (Unicode, 4 bytes)
+  - Type inference lets Rust figure out types automatically
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/primitives.html"
+obstacles: 2
+
+items:
+  - name: "integer_sample"
+    item_file: "items/integer.rs"
+    spawn_randomly: false
+    location: [6, 1]
+  - name: "float_sample"
+    item_file: "items/float.rs"
+    spawn_randomly: false
+    location: [1, 4]
+  - name: "boolean_sample"
+    item_file: "items/boolean.rs"
+    spawn_randomly: false
+    location: [6, 4]
+  - name: "char_sample"
+    item_file: "items/character.rs"
+    spawn_randomly: false
+    location: [3, 5]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [7, 5]
+
+tasks:
+  - name: "Integer Types and Literals"
+    task_file: "learning_tests::level3_task1_integers::level3_task1_tests"
+    task_message: |
+      ## Task 1: Work with Integer Types
+
+      Integers are whole numbers. Rust has many integer types to prevent overflow bugs!
+
+      **Your goal:** Declare variables using different integer types and print their values.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Signed integers (can be negative)
+          let signed: i32 = -42;
+          let large_signed: i64 = -1_000_000;
+
+          // Unsigned integers (only positive)
+          let unsigned: u32 = 255;
+          let small_unsigned: u8 = 200;
+
+          println!("Signed i32: {}", signed);
+          println!("Large i64: {}", large_signed);
+          println!("Unsigned u32: {}", unsigned);
+          println!("Small u8: {}", small_unsigned);
+      }
+      ```
+
+      **Key concepts:**
+      - `i32`, `i64` = signed integers (with negative values)
+      - `u32`, `u8` = unsigned integers (positive only)
+      - Number separators: `1_000_000` is the same as `1000000`
+
+    completion_message: |
+      ✅ **Excellent!** You've mastered integer types!
+
+      **What you learned:**
+      - Different integer sizes (8, 16, 32, 64 bits)
+      - Signed vs unsigned integers
+      - Type annotations and inference
+      - Number literal formatting
+
+    start_task_message: "Let's explore Rust's integer types and their safety features!"
+
+  - name: "Floating Point Numbers"
+    task_file: "learning_tests::level3_task2_floats::level3_task2_tests"
+    task_message: |
+      ## Task 2: Floating Point Numbers
+
+      Floating point numbers represent decimal values. Rust has f32 and f64 types.
+
+      **Your goal:** Work with floating point numbers and understand precision differences.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // f64 is the default floating point type (double precision)
+          let pi: f64 = 3.141592653589793;
+          let e = 2.71828; // Type inferred as f64
+
+          // f32 is single precision (less precise, smaller size)
+          let pi_f32: f32 = 3.14159;
+
+          // Scientific notation
+          let large_num: f64 = 1.23e6; // 1,230,000
+
+          println!("Pi (f64): {}", pi);
+          println!("E (inferred): {}", e);
+          println!("Pi (f32): {}", pi_f32);
+          println!("Large number: {}", large_num);
+
+          // Floating point arithmetic
+          let sum = pi + e;
+          println!("Pi + E = {}", sum);
+      }
+      ```
+
+      **Key concepts:**
+      - `f64` = 64-bit floating point (default, more precise)
+      - `f32` = 32-bit floating point (less precise, smaller)
+      - Scientific notation: `1.23e6`
+      - Floating point arithmetic
+
+    completion_message: |
+      ✅ **Great work!** You understand floating point numbers!
+
+      **What you learned:**
+      - f32 vs f64 precision differences
+      - Scientific notation
+      - Floating point arithmetic
+      - Default type inference for decimals
+
+    start_task_message: "Time to work with decimal numbers and floating point precision!"
+
+  - name: "Boolean Logic"
+    task_file: "learning_tests::level3_task3_booleans::level3_task3_tests"
+    task_message: |
+      ## Task 3: Boolean Values and Logic
+
+      Booleans represent true/false values and are essential for conditional logic.
+
+      **Your goal:** Create boolean variables and demonstrate logical operations.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Basic boolean values
+          let is_rust_awesome: bool = true;
+          let is_difficult: bool = false;
+
+          // Boolean operations
+          let both_true = is_rust_awesome && is_difficult; // AND
+          let either_true = is_rust_awesome || is_difficult; // OR
+          let not_difficult = !is_difficult; // NOT
+
+          println!("Rust is awesome: {}", is_rust_awesome);
+          println!("Rust is difficult: {}", is_difficult);
+          println!("Both true: {}", both_true);
+          println!("Either true: {}", either_true);
+          println!("Not difficult: {}", not_difficult);
+
+          // Comparison operations result in booleans
+          let x = 10;
+          let y = 20;
+          let is_greater = x > y;
+          let is_equal = x == y;
+
+          println!("{} > {}: {}", x, y, is_greater);
+          println!("{} == {}: {}", x, y, is_equal);
+      }
+      ```
+
+    completion_message: |
+      ✅ **Perfect!** You've mastered boolean logic!
+
+      **What you learned:**
+      - Boolean type: `bool`
+      - Logical operators: `&&` (AND), `||` (OR), `!` (NOT)
+      - Comparison operators: `>`, `<`, `==`, `!=`
+      - Using booleans in conditional logic
+
+    start_task_message: "Let's explore boolean values and logical operations!"
+
+  - name: "Character Type and Unicode"
+    task_file: "learning_tests::level3_task4_characters::level3_task4_tests"
+    task_message: |
+      ## Task 4: Character Type and Unicode
+
+      Rust's `char` type represents Unicode characters, not just ASCII!
+
+      **Your goal:** Work with character literals including Unicode and emoji.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Basic ASCII characters
+          let letter: char = 'A';
+          let digit: char = '7';
+          let symbol: char = '$';
+
+          // Unicode characters
+          let heart: char = '♥';
+          let lambda: char = 'λ';
+
+          // Emoji (also Unicode!)
+          let crab: char = '🦀';  // Rust's mascot
+          let robot: char = '🤖';
+
+          println!("Letter: {}", letter);
+          println!("Digit: {}", digit);
+          println!("Symbol: {}", symbol);
+          println!("Heart: {}", heart);
+          println!("Lambda: {}", lambda);
+          println!("Crab (Rust): {}", crab);
+          println!("Robot: {}", robot);
+
+          // Characters are 4 bytes in Rust (full Unicode support)
+          println!("Size of char: {} bytes", std::mem::size_of::<char>());
+      }
+      ```
+
+      **Key concepts:**
+      - `char` type uses single quotes: `'A'`
+      - Unicode support (not just ASCII)
+      - Emoji and symbols work natively
+      - Each char is 4 bytes (32-bit Unicode)
+
+    completion_message: |
+      ✅ **Awesome!** You understand character types and Unicode!
+
+      **What you learned:**
+      - `char` type with single quotes
+      - Unicode and emoji support
+      - Character vs string differences
+      - Memory size of characters (4 bytes)
+
+    start_task_message: "Let's explore characters, Unicode, and even emoji in Rust!"
+
+  - name: "Type Inference and Annotations"
+    task_file: "learning_tests::level3_task5_type_inference::level3_task5_tests"
+    task_message: |
+      ## Task 5: Type Inference and Annotations
+
+      Rust can often figure out types automatically, but sometimes you need to be explicit!
+
+      **Your goal:** Demonstrate both type inference and explicit type annotations.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Type inference - Rust figures out the types
+          let inferred_int = 42;        // i32 by default
+          let inferred_float = 3.14;    // f64 by default
+          let inferred_bool = true;     // bool
+          let inferred_char = 'R';      // char
+
+          println!("Inferred integer: {} (type: i32)", inferred_int);
+          println!("Inferred float: {} (type: f64)", inferred_float);
+          println!("Inferred bool: {} (type: bool)", inferred_bool);
+          println!("Inferred char: {} (type: char)", inferred_char);
+
+          // Explicit type annotations
+          let explicit_u64: u64 = 1000;
+          let explicit_f32: f32 = 2.5;
+          let explicit_i8: i8 = -128;
+
+          println!("Explicit u64: {}", explicit_u64);
+          println!("Explicit f32: {}", explicit_f32);
+          println!("Explicit i8: {}", explicit_i8);
+
+          // Type annotations needed for ambiguous cases
+          let parsed_number: i32 = "42".parse().expect("Failed to parse");
+          println!("Parsed number: {}", parsed_number);
+
+          // Suffix notation (alternative to annotations)
+          let suffix_u32 = 100u32;
+          let suffix_f32 = 3.14f32;
+          println!("Suffix u32: {}", suffix_u32);
+          println!("Suffix f32: {}", suffix_f32);
+      }
+      ```
+
+    completion_message: |
+      🎉 **Outstanding!** You've mastered Rust's type system basics!
+
+      **What you accomplished:**
+      - Understanding type inference vs explicit annotations
+      - Working with all primitive types
+      - Using suffix notation for type specification
+      - Parsing strings to numbers
+
+      **You're ready for more advanced type concepts!**
+
+    start_task_message: "Let's explore how Rust handles type inference and annotations!"
+
+starting_code: |
+  // Level 3: Primitives and Data Types
+  // Learn Rust's fundamental data types and type system
+
+  fn main() {
+      println!("Level 3: Exploring Rust's primitive types!");
+
+      // TODO: Task 1 - Work with integer types
+      // let signed: i32 = -42;
+      // let unsigned: u32 = 255;
+      // println!("Signed: {}, Unsigned: {}", signed, unsigned);
+
+      // TODO: Task 2 - Work with floating point numbers
+      // let pi: f64 = 3.141592653589793;
+      // let e = 2.71828;  // Type inferred
+      // println!("Pi: {}, E: {}", pi, e);
+
+      // TODO: Task 3 - Work with boolean values
+      // let is_rust_fun: bool = true;
+      // let logical_and = is_rust_fun && false;
+      // println!("Rust is fun: {}, AND result: {}", is_rust_fun, logical_and);
+
+      // TODO: Task 4 - Work with character types
+      // let rust_crab: char = '🦀';
+      // let letter: char = 'A';
+      // println!("Rust crab: {}, Letter: {}", rust_crab, letter);
+
+      // TODO: Task 5 - Demonstrate type inference and annotations
+      // let inferred = 42;           // i32 inferred
+      // let explicit: u64 = 1000;    // u64 explicit
+      // println!("Inferred: {}, Explicit: {}", inferred, explicit);
+
+      println!("Complete all tasks to master primitive types!");
+  }
+
+achievement_message: "🎉 Fantastic! You've mastered Rust's primitive types and type system!"
+next_level_hint: "Next: Variable bindings, mutability, and scope!"
+completion_flag: "goal"

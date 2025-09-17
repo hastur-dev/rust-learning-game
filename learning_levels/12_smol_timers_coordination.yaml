@@ -1,0 +1,322 @@
+name: "Level 12: Smol Timers and Coordination"
+description: "Master timing operations and task coordination with Smol runtime"
+max_turns: 300
+width: 10
+height: 8
+start: [0, 0]
+
+# Larger grid requiring timed coordination
+grid:
+  - ["S", ".", ".", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", "E", ".", ".", ".", "E", "#", ".", "."]
+  - [".", ".", "D", ".", "#", ".", "D", ".", ".", "."]
+  - ["E", ".", ".", ".", ".", ".", ".", ".", "E", "."]
+  - [".", ".", ".", "#", "D", "#", ".", ".", ".", "."]
+  - [".", "E", ".", ".", ".", ".", ".", "E", ".", "."]
+  - [".", ".", "D", ".", "#", ".", "D", ".", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", ".", ".", "G"]
+
+items:
+  - name: "timer_tip"
+    pos: [2, 1]
+  - name: "timeout_tip"
+    pos: [8, 1]
+  - name: "coordination_tip"
+    pos: [4, 4]
+  - name: "racing_tip"
+    pos: [6, 6]
+  - name: "parallel_tip"
+    pos: [9, 7]
+
+enemies:
+  - start_position: [2, 1]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [6, 1]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [0, 3]
+    movement_pattern: "vertical"
+  - start_position: [8, 3]
+    movement_pattern: "horizontal"
+  - start_position: [1, 5]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [7, 5]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+
+doors:
+  - position: [2, 2]
+    initially_open: false
+  - position: [6, 2]
+    initially_open: false
+  - position: [4, 4]
+    initially_open: false
+  - position: [2, 6]
+    initially_open: false
+  - position: [6, 6]
+    initially_open: false
+
+completion_flag: "goal"
+completion_message: |
+  ⏰ **LEVEL 12: Smol Timers and Coordination**
+
+  Master timing operations and task coordination patterns with Smol!
+
+  **📋 TASK 1: Create Timed Robot Patrol**
+  Use Smol timers to create a patrol system with regular timing.
+
+  Required:
+  ```rust
+  use futures_lite::future;
+
+  async fn timed_patrol() {
+      let patrol_points = vec![(2, 2), (8, 2), (8, 6), (2, 6)];
+
+      for point in patrol_points {
+          println!("Patrolling to point {:?}", point);
+          robot.move_to(point.0, point.1).await;
+
+          // Wait at patrol point
+          smol::Timer::after(Duration::from_millis(800)).await;
+
+          // Quick scan at each point
+          let scan_result = robot.scan("all");
+          println!("Patrol scan: {}", scan_result);
+      }
+  }
+  ```
+
+  **📋 TASK 2: Implement Timeout Operations**
+  Use racing with timers to implement timeout behavior.
+
+  Required:
+  ```rust
+  async fn scan_with_timeout() -> Result<String, &'static str> {
+      let scan_future = async {
+          smol::Timer::after(Duration::from_millis(300)).await;
+          robot.scan("deep_scan")
+      };
+
+      let timeout_future = async {
+          smol::Timer::after(Duration::from_secs(1)).await;
+          "timeout"
+      };
+
+      // Race between scan and timeout
+      match future::race(scan_future, timeout_future).await {
+          future::Either::Left(scan_result) => {
+              println!("Scan completed: {}", scan_result);
+              Ok(scan_result)
+          }
+          future::Either::Right(_) => {
+              println!("Scan timeout - using quick scan");
+              Err("timeout")
+          }
+      }
+  }
+  ```
+
+  **📋 TASK 3: Coordinate Multiple Timed Tasks**
+  Create multiple tasks that coordinate using timers and racing.
+
+  Required:
+  ```rust
+  async fn coordinated_exploration() {
+      // Task 1: Regular scanning
+      let scanner_task = smol::spawn(async {
+          loop {
+              smol::Timer::after(Duration::from_millis(400)).await;
+              let scan = robot.scan("all");
+              if scan.contains("enemy") {
+                  println!("⚠️ Enemy detected!");
+              }
+              if scan.contains("item") {
+                  println!("📦 Item found!");
+                  break; // Exit when item found
+              }
+          }
+      });
+
+      // Task 2: Movement with delays
+      let movement_task = smol::spawn(async {
+          for direction in ["right", "right", "down", "down"] {
+              robot.move_direction(direction).await;
+              smol::Timer::after(Duration::from_millis(600)).await;
+          }
+      });
+
+      // Task 3: Door monitoring
+      let door_task = smol::spawn(async {
+          loop {
+              smol::Timer::after(Duration::from_millis(200)).await;
+              if robot.scan("all").contains("door") {
+                  robot.open_door().await;
+                  println!("Door opened!");
+              }
+          }
+      });
+
+      // Wait for movement to complete or scanner to find item
+      future::race(scanner_task, movement_task).await;
+  }
+  ```
+
+  **📋 TASK 4: Create Adaptive Timing System**
+  Implement a system that adapts timing based on conditions.
+
+  Required:
+  ```rust
+  async fn adaptive_robot_behavior() {
+      let mut reaction_time = Duration::from_millis(200);
+      let mut enemy_nearby = false;
+
+      loop {
+          let scan_result = robot.scan("all");
+
+          // Adapt timing based on environment
+          if scan_result.contains("enemy") {
+              enemy_nearby = true;
+              reaction_time = Duration::from_millis(50); // Fast reactions
+              println!("Enemy detected - switching to fast mode");
+          } else if enemy_nearby {
+              reaction_time = Duration::from_millis(100); // Medium speed
+              enemy_nearby = false;
+              println!("Enemy gone - medium speed");
+          } else {
+              reaction_time = Duration::from_millis(300); // Slow, efficient mode
+          }
+
+          // Act based on scan
+          if scan_result.contains("door") {
+              robot.open_door().await;
+          } else {
+              robot.move_toward_goal().await;
+          }
+
+          // Wait with adaptive timing
+          smol::Timer::after(reaction_time).await;
+
+          if robot.at_goal() {
+              break;
+          }
+      }
+  }
+  ```
+
+  **📋 TASK 5: Implement Parallel Task Racing**
+  Create multiple parallel tasks and use racing to coordinate them.
+
+  Required:
+  ```rust
+  async fn parallel_operations() {
+      // Multiple exploration strategies
+      let strategy_a = smol::spawn(async {
+          // Direct path strategy
+          for _ in 0..5 {
+              robot.move_right().await;
+              smol::Timer::after(Duration::from_millis(200)).await;
+          }
+          for _ in 0..5 {
+              robot.move_down().await;
+              smol::Timer::after(Duration::from_millis(200)).await;
+          }
+          "direct_path"
+      });
+
+      let strategy_b = smol::spawn(async {
+          // Scanning strategy
+          loop {
+              let scan = robot.scan("all");
+              if scan.contains("clear_path") {
+                  robot.move_toward_goal().await;
+                  break;
+              }
+              smol::Timer::after(Duration::from_millis(300)).await;
+          }
+          "scan_path"
+      });
+
+      let strategy_c = smol::spawn(async {
+          // Wait for item collection
+          loop {
+              if robot.items_collected() >= 3 {
+                  break;
+              }
+              smol::Timer::after(Duration::from_millis(100)).await;
+          }
+          "item_path"
+      });
+
+      // Race all strategies
+      let winner = future::race(future::race(strategy_a, strategy_b), strategy_c).await;
+
+      match winner {
+          future::Either::Left(future::Either::Left(result)) => {
+              println!("Strategy A won: {}", result);
+          }
+          future::Either::Left(future::Either::Right(result)) => {
+              println!("Strategy B won: {}", result);
+          }
+          future::Either::Right(result) => {
+              println!("Strategy C won: {}", result);
+          }
+      }
+  }
+  ```
+
+  **🎯 Goal: Use timers and coordination to efficiently navigate the maze and collect all items!**
+
+achievement_message: "Outstanding! You've mastered timing and coordination with Smol!"
+next_level_hint: "Next: Level 13 - Channels and shared state management"
+
+starting_code: |
+  // Level 12: Smol Timers and Coordination
+  // Master timing operations and task coordination
+
+  use std::time::Duration;
+  use futures_lite::future;
+
+  // TODO: Task 1 - Create timed patrol function
+  // async fn timed_patrol() {
+  //     let patrol_points = vec![(2, 2), (8, 2), (8, 6), (2, 6)];
+  //     // Implement patrol with timers
+  // }
+
+  // TODO: Task 2 - Create timeout scanning
+  // async fn scan_with_timeout() -> Result<String, &'static str> {
+  //     // Implement scan with racing timeout
+  // }
+
+  // TODO: Task 3 - Create coordinated exploration
+  // async fn coordinated_exploration() {
+  //     // Multiple coordinated tasks
+  // }
+
+  // TODO: Task 4 - Create adaptive timing system
+  // async fn adaptive_robot_behavior() {
+  //     // Adaptive timing based on conditions
+  // }
+
+  // TODO: Task 5 - Create parallel racing operations
+  // async fn parallel_operations() {
+  //     // Multiple racing strategies
+  // }
+
+  fn main() {
+      println!("Level 12: Smol Timers and Coordination");
+
+      smol::block_on(async {
+          println!("Master timing and coordination patterns!");
+
+          // TODO: Task 1 - Run timed patrol
+          // timed_patrol().await;
+
+          // TODO: Task 3 - Run coordinated exploration
+          // coordinated_exploration().await;
+
+          // TODO: Task 5 - Run parallel operations
+          // parallel_operations().await;
+
+          println!("Navigate using sophisticated timing control!");
+      })
+  }
+
+rust_docs_url: "https://docs.rs/smol/latest/smol/"

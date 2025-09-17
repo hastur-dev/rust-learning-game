@@ -73,7 +73,7 @@ impl CoordinateTransformer {
         #[cfg(windows)]
         {
             use winapi::um::winuser::{GetForegroundWindow, IsWindow, IsWindowVisible, IsIconic};
-            
+
             unsafe {
                 // Get the currently active foreground window
                 let hwnd = GetForegroundWindow();
@@ -81,25 +81,27 @@ impl CoordinateTransformer {
                     if enable_logs {
                         debug!("No foreground window found");
                     }
-                    return false;
+                    // Return true instead of false - be more permissive for mouse input
+                    return true;
                 }
-                
+
                 // Check if the window is valid, visible, and not minimized
                 let is_valid = IsWindow(hwnd) != 0;
                 let is_visible = IsWindowVisible(hwnd) != 0;
                 let is_minimized = IsIconic(hwnd) != 0;
-                
-                let is_active = is_valid && is_visible && !is_minimized;
-                
+
+                // Be more permissive - only block if actually minimized
+                let is_active = is_valid && (is_visible || !is_minimized);
+
                 if enable_logs {
-                    debug!("Window status: valid={}, visible={}, minimized={}, active={}", 
+                    debug!("Window status: valid={}, visible={}, minimized={}, active={}",
                            is_valid, is_visible, is_minimized, is_active);
                 }
-                
+
                 is_active
             }
         }
-        
+
         #[cfg(not(windows))]
         {
             if enable_logs {

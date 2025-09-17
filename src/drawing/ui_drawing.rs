@@ -3,6 +3,7 @@ use crate::gamestate::{Game, RustFunction};
 use crate::gamestate::types::EditorTab;
 use crate::font_scaling::*;
 
+
 pub fn draw_game_info(game: &Game) {
     let scale = ScaledMeasurements::new();
     let padding = scale.padding;
@@ -87,93 +88,13 @@ pub fn draw_function_definitions(game: &mut Game) {
     let def_x = screen_width() * 0.5 + scale.padding; // Position on left side of right half
     let def_y = scale.padding + scale_size(100.0);
     
-    // Draw tabs before the main content
-    let tab_height = scale_size(40.0);
-    draw_editor_tabs(game, def_x - scale.padding, def_y - scale.padding - tab_height, def_width + scale.padding * 2.0, tab_height);
-    
     draw_rectangle(def_x - scale.padding, def_y - scale.padding, def_width + scale.padding * 2.0, def_height + scale.padding * 2.0, Color::new(0.0, 0.0, 0.0, 0.8));
     draw_rectangle_lines(def_x - scale.padding, def_y - scale.padding, def_width + scale.padding * 2.0, def_height + scale.padding * 2.0, scale_size(2.0), WHITE);
-    
-    match game.editor_tab {
-        EditorTab::Commands => {
-            draw_commands_content(game, def_x, def_y, def_width, def_height, &scale);
-        }
-        EditorTab::Logs => {
-            draw_logs_content(game, def_x, def_y, def_width, def_height, &scale);
-        }
-        EditorTab::Tasks => {
-            draw_tasks_content(game, def_x, def_y, def_width, def_height, &scale);
-        }
-        EditorTab::Editor => {
-            draw_editor_content(game, def_x, def_y, def_width, def_height, &scale);
-        }
-    }
+
+    // Always draw editor content (no tabs)
+    draw_editor_content(game, def_x, def_y, def_width, def_height, &scale);
 }
 
-fn draw_editor_tabs(game: &Game, tab_x: f32, tab_y: f32, total_width: f32, tab_height: f32) {
-    let tab_width = total_width / 4.0; // Four tabs now
-    
-    // Commands Tab
-    let commands_active = game.editor_tab == EditorTab::Commands;
-    let commands_color = if commands_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
-    let commands_text_color = if commands_active { YELLOW } else { LIGHTGRAY };
-    
-    draw_rectangle(tab_x, tab_y, tab_width, tab_height, commands_color);
-    draw_rectangle_lines(tab_x, tab_y, tab_width, tab_height, scale_size(2.0), 
-                        if commands_active { YELLOW } else { GRAY });
-    draw_scaled_text("COMMANDS", tab_x + scale_size(5.0), tab_y + scale_size(25.0), 14.0, commands_text_color);
-    
-    // Logs Tab
-    let logs_active = game.editor_tab == EditorTab::Logs;
-    let logs_color = if logs_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
-    let logs_text_color = if logs_active { YELLOW } else { LIGHTGRAY };
-    
-    draw_rectangle(tab_x + tab_width, tab_y, tab_width, tab_height, logs_color);
-    draw_rectangle_lines(tab_x + tab_width, tab_y, tab_width, tab_height, scale_size(2.0), 
-                        if logs_active { YELLOW } else { GRAY });
-    
-    // Show log count indicator
-    let log_count = game.println_outputs.len() + game.error_outputs.len();
-    let logs_text = if log_count > 0 {
-        format!("LOGS ({})", log_count)
-    } else {
-        "LOGS".to_string()
-    };
-    draw_scaled_text(&logs_text, tab_x + tab_width + scale_size(5.0), tab_y + scale_size(25.0), 14.0, logs_text_color);
-    
-    // Tasks Tab
-    let tasks_active = game.editor_tab == EditorTab::Tasks;
-    let tasks_color = if tasks_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
-    let tasks_text_color = if tasks_active { YELLOW } else { LIGHTGRAY };
-    
-    draw_rectangle(tab_x + tab_width * 2.0, tab_y, tab_width, tab_height, tasks_color);
-    draw_rectangle_lines(tab_x + tab_width * 2.0, tab_y, tab_width, tab_height, scale_size(2.0), 
-                        if tasks_active { YELLOW } else { GRAY });
-    
-    // Show current task indicator if applicable
-    let tasks_text = if let Some(level_spec) = game.levels.get(game.level_idx) {
-        if !level_spec.tasks.is_empty() {
-            let completed_tasks = level_spec.tasks.iter().filter(|t| t.completed).count();
-            format!("TASKS ({}/{})", completed_tasks, level_spec.tasks.len())
-        } else {
-            "TASKS".to_string()
-        }
-    } else {
-        "TASKS".to_string()
-    };
-    draw_scaled_text(&tasks_text, tab_x + tab_width * 2.0 + scale_size(5.0), tab_y + scale_size(25.0), 12.0, tasks_text_color);
-    
-    // Editor Tab
-    let editor_active = game.editor_tab == EditorTab::Editor;
-    let editor_color = if editor_active { Color::new(0.2, 0.2, 0.4, 0.9) } else { Color::new(0.1, 0.1, 0.1, 0.8) };
-    let editor_text_color = if editor_active { YELLOW } else { LIGHTGRAY };
-    
-    draw_rectangle(tab_x + tab_width * 3.0, tab_y, tab_width, tab_height, editor_color);
-    draw_rectangle_lines(tab_x + tab_width * 3.0, tab_y, tab_width, tab_height, scale_size(2.0), 
-                        if editor_active { YELLOW } else { GRAY });
-    
-    draw_scaled_text("EDITOR", tab_x + tab_width * 3.0 + scale_size(5.0), tab_y + scale_size(25.0), 12.0, editor_text_color);
-}
 
 fn draw_commands_content(game: &Game, def_x: f32, def_y: f32, def_width: f32, def_height: f32, scale: &ScaledMeasurements) {
     draw_scaled_text("FUNCTION DEFINITIONS", def_x, def_y, 20.0, YELLOW);
@@ -524,43 +445,23 @@ fn wrap_log_text(text: &str, max_width: f32, font_size: f32) -> Vec<String> {
 
 pub fn draw_tabbed_sidebar(game: &mut Game) {
     let scale = ScaledMeasurements::new();
-    
+
     // Define sidebar position and dimensions (same as old function definitions area)
     let sidebar_x = screen_width() * 0.5 + scale.padding;
     let sidebar_y = scale.padding + scale_size(100.0);
     let sidebar_width = screen_width() * 0.25;
     let sidebar_height = screen_height() * 0.6;
-    
-    // Tab dimensions  
-    let tab_height = scale_size(40.0);
-    let tab_y = sidebar_y - scale.padding - tab_height;
-    
-    // Draw tabs above the sidebar
-    draw_editor_tabs(game, sidebar_x - scale.padding, tab_y, sidebar_width + scale.padding * 2.0, tab_height);
-    
+
     // Draw the main sidebar background
-    draw_rectangle(sidebar_x - scale.padding, sidebar_y - scale.padding, 
-                   sidebar_width + scale.padding * 2.0, sidebar_height + scale.padding * 2.0, 
+    draw_rectangle(sidebar_x - scale.padding, sidebar_y - scale.padding,
+                   sidebar_width + scale.padding * 2.0, sidebar_height + scale.padding * 2.0,
                    Color::new(0.0, 0.0, 0.0, 0.8));
-    draw_rectangle_lines(sidebar_x - scale.padding, sidebar_y - scale.padding, 
-                        sidebar_width + scale.padding * 2.0, sidebar_height + scale.padding * 2.0, 
+    draw_rectangle_lines(sidebar_x - scale.padding, sidebar_y - scale.padding,
+                        sidebar_width + scale.padding * 2.0, sidebar_height + scale.padding * 2.0,
                         scale_size(2.0), WHITE);
-    
-    // Draw the selected tab content (this takes the full sidebar area)
-    match game.editor_tab {
-        EditorTab::Commands => {
-            draw_commands_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
-        }
-        EditorTab::Logs => {
-            draw_logs_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
-        }
-        EditorTab::Tasks => {
-            draw_tasks_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
-        }
-        EditorTab::Editor => {
-            draw_editor_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
-        }
-    }
+
+    // Always draw editor content (no tabs)
+    draw_editor_content(game, sidebar_x, sidebar_y, sidebar_width, sidebar_height, &scale);
 }
 
 // Removed draw_code_editor_standalone - now integrated into tabbed interface as Editor tab

@@ -1509,6 +1509,7 @@ fn window_conf() -> Conf {
         window_height: settings.window_height,
         window_resizable: true,
         fullscreen: settings.fullscreen,
+        high_dpi: true, // Enable high DPI awareness to fix coordinate misalignment
         ..Default::default()
     }
 }
@@ -2155,6 +2156,9 @@ async fn desktop_main() {
         
         // Apply font scaling immediately
         font_scaling::set_user_font_multiplier(cached.font_size_multiplier);
+
+        // Invalidate font cache to ensure UI positioning updates
+        game.invalidate_font_cache();
     }
     
     info!("Game initialized successfully");
@@ -2299,6 +2303,7 @@ async fn desktop_main() {
                 game.draw_popups();
 
                 // Game input handling
+                debug!("Input gating: shop_open={}, popup_handled_input={}", shop_open, popup_handled_input);
                 if !shop_open && !popup_handled_input {
                     // Check for file changes
                     if let Some(ref receiver) = game.file_watcher_receiver {
@@ -2333,48 +2338,19 @@ async fn desktop_main() {
                         debug!("Pausing coordinate updates for {:.1} seconds due to system key combination", coordinate_safe_period);
                     } else {
                         debug!("Still in system key safety period ({:.1}s remaining)", coordinate_safe_period - time_since_system_keys);
+                        // Still try to update coordinates even during safety period to maintain mouse functionality
+                        game.update_window_coordinates();
                     }
                     
                     if is_mouse_button_pressed(MouseButton::Left) {
-                        debug!("Left mouse button pressed at ({:.2}, {:.2})", mouse_x, mouse_y);
+                        debug!("Left mouse button pressed at ({:.2}, {:.2}) - input allowed!", mouse_x, mouse_y);
                         
                         // Tab click handling (above sidebar area)
-                        let sidebar_x = screen_width() * 0.5 + 16.0; // Match sidebar position  
+                        let sidebar_x = screen_width() * 0.5 + 16.0; // Match sidebar position
                         let sidebar_width = screen_width() * 0.25;
-                        let tab_height = 40.0;
-                        let tab_y = 16.0 + 100.0 - 16.0 - tab_height; // Above the sidebar area
-                        let tab_width = (sidebar_width + 32.0) / 4.0; // Four tabs now
-                        
-                        // Commands tab click
-                        if mouse_x >= sidebar_x - 16.0 && mouse_x <= sidebar_x - 16.0 + tab_width &&
-                           mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
-                            game.editor_tab = gamestate::types::EditorTab::Commands;
-                            debug!("Switched to Commands tab");
-                        }
-                        // Logs tab click
-                        else if mouse_x >= sidebar_x - 16.0 + tab_width && mouse_x <= sidebar_x - 16.0 + tab_width * 2.0 &&
-                                mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
-                            game.editor_tab = gamestate::types::EditorTab::Logs;
-                            debug!("Switched to Logs tab");
-                        }
-                        // Tasks tab click
-                        else if mouse_x >= sidebar_x - 16.0 + tab_width * 2.0 && mouse_x <= sidebar_x - 16.0 + tab_width * 3.0 &&
-                                mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
-                            game.editor_tab = gamestate::types::EditorTab::Tasks;
-                            debug!("Switched to Tasks tab");
-                        }
-                        // Editor tab click
-                        else if mouse_x >= sidebar_x - 16.0 + tab_width * 3.0 && mouse_x <= sidebar_x - 16.0 + (sidebar_width + 32.0) &&
-                                mouse_y >= tab_y && mouse_y <= tab_y + tab_height {
-                            game.editor_tab = gamestate::types::EditorTab::Editor;
-                            debug!("Switched to Editor tab");
-                        }
-                        
-                        // Function definitions click handling is now integrated into tabbed editor
-                        // TODO: Add click handling for function buttons within the Commands tab
-                        
-                        // Editor click handling (when Editor tab is active)
-                        if game.editor_tab == gamestate::types::EditorTab::Editor {
+
+                        // Editor click handling (simplified - no tabs)
+                        {
                             let editor_x = sidebar_x; // Use sidebar position when Editor tab is active
                             let editor_y = 16.0 + 100.0; // Match PADDING constant
                             let editor_width = sidebar_width;

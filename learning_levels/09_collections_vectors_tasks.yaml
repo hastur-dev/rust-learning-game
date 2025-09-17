@@ -1,0 +1,920 @@
+name: "Level 9: Collections and Vectors"
+grid_size: "15x10"
+start_position: [0, 0]
+max_turns: 300
+fog_of_war: false
+income_per_square: 4
+message: |
+  📦 **LEVEL 9: Collections and Vectors**
+
+  Master Rust's collection types to manage multiple items, paths, and robot data efficiently!
+
+  Build inventory systems, path planning, and data processing using Vec, HashMap, and HashSet.
+
+hint_message: |
+  **Collection Tips:**
+  - Vec<T> for ordered, growable arrays
+  - HashMap<K, V> for key-value storage
+  - HashSet<T> for unique value collections
+  - Use .iter() and .into_iter() for processing
+  - Collect results with .collect()
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/std/vec.html"
+obstacles: 15
+
+enemies:
+  - start_position: [5, 2]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [10, 4]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [3, 7]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [12, 8]
+    movement_pattern: "file:movement_patterns/horizontal_patrol.rs"
+  - start_position: [7, 6]
+    movement_pattern: "file:movement_patterns/vertical_patrol.rs"
+
+doors:
+  - position: [8, 1]
+    initially_open: false
+  - position: [4, 5]
+    initially_open: false
+  - position: [11, 7]
+    initially_open: false
+  - position: [6, 9]
+    initially_open: false
+
+items:
+  - name: "vector_core"
+    item_file: "items/vector_data.rs"
+    spawn_randomly: false
+    location: [3, 1]
+  - name: "hashmap_engine"
+    item_file: "items/hashmap_data.rs"
+    spawn_randomly: false
+    location: [13, 3]
+  - name: "iterator_module"
+    item_file: "items/iterator_data.rs"
+    spawn_randomly: false
+    location: [2, 8]
+  - name: "collection_analyzer"
+    item_file: "items/collection_data.rs"
+    spawn_randomly: false
+    location: [12, 2]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [14, 9]
+
+tasks:
+  - name: "Vector Basics and Dynamic Arrays"
+    task_file: "learning_tests::level9_task1_vectors::level9_task1_tests"
+    task_message: |
+      ## Task 1: Vector Basics and Dynamic Arrays
+
+      Master Vec<T> for storing and manipulating collections of robot data.
+
+      **Your goal:** Use vectors to manage robot paths, inventory, and scan results.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          println!("=== Robot Path Planning with Vectors ===");
+
+          // Create vector of positions for robot path
+          let mut path: Vec<(i32, i32)> = Vec::new();
+
+          // Add waypoints to the path
+          path.push((0, 0)); // Start
+          path.push((3, 1)); // First item
+          path.push((13, 3)); // Second item
+          path.push((2, 8)); // Third item
+          path.push((14, 9)); // Goal
+
+          println!("Planned path has {} waypoints", path.len());
+
+          // Display the path
+          for (index, (x, y)) in path.iter().enumerate() {
+              println!("Waypoint {}: ({}, {})", index + 1, x, y);
+          }
+
+          // Calculate path distances
+          let mut total_distance = 0;
+          for i in 1..path.len() {
+              let (prev_x, prev_y) = path[i - 1];
+              let (curr_x, curr_y) = path[i];
+              let distance = (curr_x - prev_x).abs() + (curr_y - prev_y).abs();
+              total_distance += distance;
+              println!("Segment {} distance: {}", i, distance);
+          }
+
+          println!("Total path distance: {}", total_distance);
+
+          // Robot inventory using Vec
+          let mut inventory: Vec<String> = vec![];
+
+          // Simulate collecting items
+          let items = vec!["vector_core", "hashmap_engine", "iterator_module", "collection_analyzer"];
+
+          for item in items.iter() {
+              inventory.push(item.to_string());
+              println!("Collected: {}", item);
+              println!("Inventory size: {}", inventory.len());
+          }
+
+          // Check inventory contents
+          println!("Final inventory: {:?}", inventory);
+
+          // Remove and use items
+          if let Some(item) = inventory.pop() {
+              println!("Used item: {}", item);
+          }
+
+          // Check if specific item exists
+          if inventory.contains(&"vector_core".to_string()) {
+              println!("Vector core still available!");
+          }
+
+          // Create scan results vector
+          let scan_results: Vec<String> = vec![
+              "Enemy at (5, 2)".to_string(),
+              "Door at (8, 1)".to_string(),
+              "Item at (3, 1)".to_string(),
+              "Wall at (7, 3)".to_string(),
+          ];
+
+          println!("Scan detected {} objects:", scan_results.len());
+          for result in &scan_results {
+              println!("  - {}", result);
+          }
+
+          // Filter scan results
+          let enemies: Vec<_> = scan_results.iter()
+              .filter(|s| s.contains("Enemy"))
+              .collect();
+
+          println!("Enemies detected: {}", enemies.len());
+      }
+      ```
+
+    completion_message: |
+      ✅ **Excellent!** You've mastered vector basics!
+
+      **What you learned:**
+      - Creating and manipulating Vec<T>
+      - Adding elements with push()
+      - Iterating with .iter() and enumerate()
+      - Vector indexing and length checking
+
+    start_task_message: "Let's master vectors for robot path planning and inventory!"
+
+  - name: "HashMap for Key-Value Data Storage"
+    task_file: "learning_tests::level9_task2_hashmaps::level9_task2_tests"
+    task_message: |
+      ## Task 2: HashMap for Key-Value Data Storage
+
+      Use HashMap<K, V> to create efficient lookup systems for robot data.
+
+      **Your goal:** Build robot databases using HashMap for fast data retrieval.
+
+      **Requirements:**
+      ```rust
+      use std::collections::HashMap;
+
+      fn main() {
+          println!("=== Robot Database with HashMap ===");
+
+          // Create robot position tracking system
+          let mut robot_positions: HashMap<String, (i32, i32)> = HashMap::new();
+
+          // Add robot positions
+          robot_positions.insert("MainRobot".to_string(), (0, 0));
+          robot_positions.insert("ScoutBot".to_string(), (5, 2));
+          robot_positions.insert("CollectorBot".to_string(), (10, 4));
+
+          println!("Tracking {} robots", robot_positions.len());
+
+          // Access robot positions
+          if let Some(pos) = robot_positions.get("MainRobot") {
+              println!("MainRobot is at: {:?}", pos);
+          }
+
+          // Update positions
+          robot_positions.insert("MainRobot".to_string(), (3, 1));
+          println!("MainRobot moved to: {:?}", robot_positions["MainRobot"]);
+
+          // Create item database
+          let mut item_database: HashMap<String, u32> = HashMap::new();
+          item_database.insert("vector_core".to_string(), 100);
+          item_database.insert("hashmap_engine".to_string(), 150);
+          item_database.insert("iterator_module".to_string(), 75);
+          item_database.insert("collection_analyzer".to_string(), 200);
+
+          println!("\n=== Item Values ===");
+          for (item_name, value) in &item_database {
+              println!("{}: {} credits", item_name, value);
+          }
+
+          // Calculate total inventory value
+          let total_value: u32 = item_database.values().sum();
+          println!("Total item value: {} credits", total_value);
+
+          // Enemy threat level mapping
+          let mut threat_levels: HashMap<(i32, i32), u32> = HashMap::new();
+          threat_levels.insert((5, 2), 3); // Guard
+          threat_levels.insert((10, 4), 5); // Chaser
+          threat_levels.insert((3, 7), 2); // Spiral
+          threat_levels.insert((12, 8), 4); // Patrol
+          threat_levels.insert((7, 6), 3); // Vertical
+
+          println!("\n=== Threat Assessment ===");
+          for ((x, y), threat) in &threat_levels {
+              println!("Position ({}, {}): Threat level {}", x, y, threat);
+          }
+
+          // Find highest threat
+          let max_threat = threat_levels.values().max().unwrap_or(&0);
+          println!("Maximum threat level: {}", max_threat);
+
+          // Door key requirements
+          let mut door_keys: HashMap<(i32, i32), String> = HashMap::new();
+          door_keys.insert((8, 1), "Red Key".to_string());
+          door_keys.insert((4, 5), "Blue Key".to_string());
+          door_keys.insert((11, 7), "Green Key".to_string());
+          door_keys.insert((6, 9), "Master Key".to_string());
+
+          // Check if we can open doors
+          let available_keys = vec!["Red Key", "Blue Key"];
+          let mut accessible_doors = 0;
+
+          for ((x, y), required_key) in &door_keys {
+              if available_keys.contains(&required_key.as_str()) {
+                  println!("Can open door at ({}, {}) with {}", x, y, required_key);
+                  accessible_doors += 1;
+              } else {
+                  println!("Need {} for door at ({}, {})", required_key, x, y);
+              }
+          }
+
+          println!("Accessible doors: {}/{}", accessible_doors, door_keys.len());
+
+          // Resource management
+          let mut resources: HashMap<String, i32> = HashMap::new();
+          resources.insert("Energy".to_string(), 100);
+          resources.insert("Health".to_string(), 100);
+          resources.insert("Scan Range".to_string(), 3);
+
+          // Update resources
+          *resources.get_mut("Energy").unwrap() -= 25;
+          *resources.get_mut("Health").unwrap() -= 10;
+
+          println!("\n=== Resource Status ===");
+          for (resource, amount) in &resources {
+              println!("{}: {}", resource, amount);
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Great work!** You've mastered HashMap operations!
+
+      **What you learned:**
+      - Creating HashMap<K, V> collections
+      - Inserting and retrieving values
+      - Iterating over key-value pairs
+      - Using HashMap for efficient lookups
+
+    start_task_message: "Let's build efficient data lookup systems with HashMap!"
+
+  - name: "HashSet and Unique Collections"
+    task_file: "learning_tests::level9_task3_hashsets::level9_task3_tests"
+    task_message: |
+      ## Task 3: HashSet and Unique Collections
+
+      Master HashSet<T> for tracking unique items, visited locations, and avoiding duplicates.
+
+      **Your goal:** Use HashSet to manage unique robot data and avoid duplicate processing.
+
+      **Requirements:**
+      ```rust
+      use std::collections::HashSet;
+
+      fn main() {
+          println!("=== Robot Exploration with HashSet ===");
+
+          // Track visited positions to avoid revisiting
+          let mut visited_positions: HashSet<(i32, i32)> = HashSet::new();
+
+          // Exploration path
+          let exploration_moves = vec![
+              (0, 0), (1, 0), (2, 0), (3, 1), // Move to first item
+              (3, 2), (4, 2), (5, 2), (5, 2), // Repeated position
+              (6, 2), (7, 2), (8, 2), (9, 2), (10, 2), // Move across
+              (3, 1), // Revisit first item position
+          ];
+
+          println!("Processing {} movement commands...", exploration_moves.len());
+
+          for (x, y) in exploration_moves {
+              if visited_positions.insert((x, y)) {
+                  println!("New position visited: ({}, {})", x, y);
+              } else {
+                  println!("Already visited ({}, {}) - skipping", x, y);
+              }
+          }
+
+          println!("Total unique positions visited: {}", visited_positions.len());
+
+          // Track collected item types to avoid duplicates
+          let mut collected_item_types: HashSet<String> = HashSet::new();
+
+          let items_found = vec![
+              "vector_core", "hashmap_engine", "vector_core", // Duplicate
+              "iterator_module", "collection_analyzer", "hashmap_engine", // Duplicate
+          ];
+
+          println!("\n=== Item Collection (No Duplicates) ===");
+          for item in items_found {
+              if collected_item_types.insert(item.to_string()) {
+                  println!("Collected new item type: {}", item);
+              } else {
+                  println!("Already have {}, leaving duplicate", item);
+              }
+          }
+
+          println!("Unique item types collected: {}", collected_item_types.len());
+
+          // Enemy tracking - avoid duplicate alerts
+          let mut alerted_enemies: HashSet<(i32, i32)> = HashSet::new();
+
+          let enemy_sightings = vec![
+              (5, 2), (10, 4), (5, 2), // Duplicate sighting
+              (3, 7), (12, 8), (7, 6), (5, 2), // Another duplicate
+          ];
+
+          println!("\n=== Enemy Alert System ===");
+          for enemy_pos in enemy_sightings {
+              if alerted_enemies.insert(enemy_pos) {
+                  println!("🚨 NEW THREAT at ({}, {})", enemy_pos.0, enemy_pos.1);
+              } else {
+                  println!("Already tracking enemy at ({}, {})", enemy_pos.0, enemy_pos.1);
+              }
+          }
+
+          // Set operations
+          let level_doors: HashSet<(i32, i32)> = vec![
+              (8, 1), (4, 5), (11, 7), (6, 9)
+          ].into_iter().collect();
+
+          let accessible_doors: HashSet<(i32, i32)> = vec![
+              (8, 1), (4, 5) // Have keys for these
+          ].into_iter().collect();
+
+          // Find doors we can't access
+          let locked_doors: HashSet<_> = level_doors.difference(&accessible_doors).collect();
+          println!("\n=== Door Analysis ===");
+          println!("Total doors: {}", level_doors.len());
+          println!("Accessible doors: {}", accessible_doors.len());
+          println!("Locked doors: {}", locked_doors.len());
+
+          for door_pos in locked_doors {
+              println!("  Locked door at: {:?}", door_pos);
+          }
+
+          // Check if all doors are accessible
+          if accessible_doors.is_superset(&level_doors) {
+              println!("✅ All doors accessible!");
+          } else {
+              println!("❌ Some doors remain locked");
+          }
+
+          // Required vs collected items
+          let required_items: HashSet<String> = vec![
+              "vector_core".to_string(),
+              "hashmap_engine".to_string(),
+              "iterator_module".to_string(),
+              "collection_analyzer".to_string(),
+          ].into_iter().collect();
+
+          let mission_complete = required_items.is_subset(&collected_item_types);
+          println!("\n=== Mission Status ===");
+          println!("Required items: {}", required_items.len());
+          println!("Collected items: {}", collected_item_types.len());
+          println!("Mission complete: {}", mission_complete);
+
+          // Find missing items
+          let missing_items: HashSet<_> = required_items.difference(&collected_item_types).collect();
+          if !missing_items.is_empty() {
+              println!("Still need to collect:");
+              for item in missing_items {
+                  println!("  - {}", item);
+              }
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Perfect!** You've mastered HashSet for unique collections!
+
+      **What you learned:**
+      - Using HashSet<T> for unique values
+      - Set operations (difference, union, intersection)
+      - Avoiding duplicate processing
+      - Efficient membership testing
+
+    start_task_message: "Let's use HashSet to track unique robot data efficiently!"
+
+  - name: "Iterator Methods and Data Processing"
+    task_file: "learning_tests::level9_task4_iterators::level9_task4_tests"
+    task_message: |
+      ## Task 4: Iterator Methods and Data Processing
+
+      Master Rust iterators for efficient data processing and transformations.
+
+      **Your goal:** Use iterator methods to process robot data, filter results, and transform collections.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          println!("=== Robot Data Processing with Iterators ===");
+
+          // Robot scan data processing
+          let scan_data = vec![
+              ("Enemy", 5, 2, 3),    // (type, x, y, threat_level)
+              ("Item", 3, 1, 0),
+              ("Enemy", 10, 4, 5),
+              ("Door", 8, 1, 0),
+              ("Item", 13, 3, 0),
+              ("Enemy", 3, 7, 2),
+              ("Wall", 7, 3, 0),
+              ("Door", 4, 5, 0),
+          ];
+
+          println!("Processing {} scan results...", scan_data.len());
+
+          // Filter enemies and sort by threat level
+          let mut enemies: Vec<_> = scan_data.iter()
+              .filter(|(obj_type, _, _, _)| *obj_type == "Enemy")
+              .collect();
+
+          enemies.sort_by(|a, b| b.3.cmp(&a.3)); // Sort by threat level (descending)
+
+          println!("\n=== Enemy Threat Analysis ===");
+          for (i, (_, x, y, threat)) in enemies.iter().enumerate() {
+              println!("Priority {}: Enemy at ({}, {}) - Threat: {}", i + 1, x, y, threat);
+          }
+
+          // Find all items and calculate distances from robot
+          let robot_pos = (0, 0);
+          let items_with_distance: Vec<_> = scan_data.iter()
+              .filter(|(obj_type, _, _, _)| *obj_type == "Item")
+              .map(|(_, x, y, _)| {
+                  let distance = (robot_pos.0 - x).abs() + (robot_pos.1 - y).abs();
+                  ((x, y), distance)
+              })
+              .collect();
+
+          println!("\n=== Item Collection Route ===");
+          for ((x, y), distance) in &items_with_distance {
+              println!("Item at ({}, {}) - Distance: {}", x, y, distance);
+          }
+
+          // Find nearest item
+          let nearest_item = items_with_distance.iter()
+              .min_by(|a, b| a.1.cmp(&b.1));
+
+          if let Some(((x, y), distance)) = nearest_item {
+              println!("Nearest item: ({}, {}) at distance {}", x, y, distance);
+          }
+
+          // Energy consumption analysis
+          let moves = vec![
+              ("right", 5),   // (direction, energy_cost)
+              ("up", 3),
+              ("right", 8),
+              ("down", 2),
+              ("right", 12),
+              ("up", 7),
+          ];
+
+          let total_energy: i32 = moves.iter().map(|(_, cost)| cost).sum();
+          let expensive_moves: Vec<_> = moves.iter()
+              .filter(|(_, cost)| *cost > 5)
+              .collect();
+
+          println!("\n=== Energy Analysis ===");
+          println!("Total energy cost: {}", total_energy);
+          println!("Expensive moves (>5 energy):");
+          for (direction, cost) in expensive_moves {
+              println!("  {} direction: {} energy", direction, cost);
+          }
+
+          // Path optimization - find efficient route
+          let waypoints = vec![(3, 1), (13, 3), (2, 8), (14, 9)];
+          let path_segments: Vec<_> = waypoints.windows(2)
+              .map(|segment| {
+                  let (x1, y1) = segment[0];
+                  let (x2, y2) = segment[1];
+                  let distance = (x2 - x1).abs() + (y2 - y1).abs();
+                  (segment[0], segment[1], distance)
+              })
+              .collect();
+
+          println!("\n=== Path Optimization ===");
+          for (start, end, distance) in &path_segments {
+              println!("From {:?} to {:?}: {} units", start, end, distance);
+          }
+
+          let total_path_distance: i32 = path_segments.iter().map(|(_, _, d)| d).sum();
+          println!("Total path distance: {} units", total_path_distance);
+
+          // Resource management with iterators
+          let resources = vec![
+              ("Energy", 75),
+              ("Health", 90),
+              ("Ammo", 15),
+              ("Fuel", 60),
+          ];
+
+          // Find critical resources (below 50)
+          let critical_resources: Vec<_> = resources.iter()
+              .filter(|(_, amount)| *amount < 50)
+              .collect();
+
+          println!("\n=== Resource Status ===");
+          if critical_resources.is_empty() {
+              println!("All resources above critical levels");
+          } else {
+              println!("Critical resources:");
+              for (resource, amount) in critical_resources {
+                  println!("  {}: {}", resource, amount);
+              }
+          }
+
+          // Inventory value calculation
+          let inventory = vec![
+              ("vector_core", 100, 1),      // (item, value, quantity)
+              ("hashmap_engine", 150, 1),
+              ("energy_cell", 25, 3),
+              ("repair_kit", 50, 2),
+          ];
+
+          let total_value: i32 = inventory.iter()
+              .map(|(_, value, qty)| value * qty)
+              .sum();
+
+          let most_valuable = inventory.iter()
+              .max_by(|a, b| (a.1 * a.2).cmp(&(b.1 * b.2)));
+
+          println!("\n=== Inventory Analysis ===");
+          println!("Total inventory value: {} credits", total_value);
+          if let Some((item, value, qty)) = most_valuable {
+              println!("Most valuable: {} x{} = {} credits", item, qty, value * qty);
+          }
+
+          // Complex data transformation
+          let mission_data: Vec<_> = scan_data.iter()
+              .enumerate()
+              .filter(|(_, (obj_type, _, _, _))| *obj_type != "Wall")
+              .map(|(index, (obj_type, x, y, priority))| {
+                  format!("Scan #{}: {} at ({}, {}) priority:{}",
+                         index + 1, obj_type, x, y, priority)
+              })
+              .collect();
+
+          println!("\n=== Mission Report ===");
+          for report in mission_data.iter().take(5) {
+              println!("  {}", report);
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Amazing!** You've mastered iterator methods!
+
+      **What you learned:**
+      - Iterator methods: filter, map, collect
+      - Data transformation and processing
+      - Sorting and finding min/max values
+      - Chaining iterator operations
+
+    start_task_message: "Let's master iterator methods for efficient data processing!"
+
+  - name: "Advanced Collection Operations and Real-World Usage"
+    task_file: "learning_tests::level9_task5_advanced_collections::level9_task5_tests"
+    task_message: |
+      ## Task 5: Advanced Collection Operations and Real-World Usage
+
+      Combine all collection types to build a sophisticated robot management system.
+
+      **Your goal:** Create a complete robot fleet management system using all collection types.
+
+      **Requirements:**
+      ```rust
+      use std::collections::{HashMap, HashSet, VecDeque};
+
+      #[derive(Debug, Clone)]
+      struct Robot {
+          id: String,
+          position: (i32, i32),
+          energy: u32,
+          inventory: Vec<String>,
+          visited_positions: HashSet<(i32, i32)>,
+      }
+
+      struct FleetCommand {
+          robots: HashMap<String, Robot>,
+          task_queue: VecDeque<String>,
+          completed_objectives: HashSet<String>,
+          resource_cache: HashMap<String, u32>,
+      }
+
+      impl FleetCommand {
+          fn new() -> Self {
+              FleetCommand {
+                  robots: HashMap::new(),
+                  task_queue: VecDeque::new(),
+                  completed_objectives: HashSet::new(),
+                  resource_cache: HashMap::new(),
+              }
+          }
+
+          fn add_robot(&mut self, id: String, start_pos: (i32, i32)) {
+              let robot = Robot {
+                  id: id.clone(),
+                  position: start_pos,
+                  energy: 100,
+                  inventory: Vec::new(),
+                  visited_positions: HashSet::new(),
+              };
+              self.robots.insert(id, robot);
+          }
+
+          fn assign_task(&mut self, task: String) {
+              self.task_queue.push_back(task);
+          }
+
+          fn execute_next_task(&mut self) -> Option<String> {
+              if let Some(task) = self.task_queue.pop_front() {
+                  // Find best robot for task
+                  let best_robot_id = self.find_optimal_robot(&task)?;
+
+                  if let Some(robot) = self.robots.get_mut(&best_robot_id) {
+                      println!("Assigning '{}' to robot {}", task, robot.id);
+
+                      // Execute task
+                      match task.as_str() {
+                          "collect_vector_core" => {
+                              robot.position = (3, 1);
+                              robot.inventory.push("vector_core".to_string());
+                              robot.energy -= 20;
+                          }
+                          "collect_hashmap_engine" => {
+                              robot.position = (13, 3);
+                              robot.inventory.push("hashmap_engine".to_string());
+                              robot.energy -= 30;
+                          }
+                          "collect_iterator_module" => {
+                              robot.position = (2, 8);
+                              robot.inventory.push("iterator_module".to_string());
+                              robot.energy -= 25;
+                          }
+                          "collect_collection_analyzer" => {
+                              robot.position = (12, 2);
+                              robot.inventory.push("collection_analyzer".to_string());
+                              robot.energy -= 35;
+                          }
+                          _ => println!("Unknown task: {}", task),
+                      }
+
+                      robot.visited_positions.insert(robot.position);
+                      self.completed_objectives.insert(task.clone());
+                      Some(format!("Task '{}' completed by {}", task, robot.id))
+                  } else {
+                      None
+                  }
+              } else {
+                  None
+              }
+          }
+
+          fn find_optimal_robot(&self, task: &str) -> Option<String> {
+              // Find robot with highest energy and shortest path
+              self.robots.iter()
+                  .filter(|(_, robot)| robot.energy > 30)
+                  .max_by(|(_, a), (_, b)| a.energy.cmp(&b.energy))
+                  .map(|(id, _)| id.clone())
+          }
+
+          fn get_fleet_status(&self) -> HashMap<String, String> {
+              self.robots.iter()
+                  .map(|(id, robot)| {
+                      let status = format!(
+                          "Pos: {:?}, Energy: {}, Items: {}, Visited: {}",
+                          robot.position,
+                          robot.energy,
+                          robot.inventory.len(),
+                          robot.visited_positions.len()
+                      );
+                      (id.clone(), status)
+                  })
+                  .collect()
+          }
+
+          fn consolidate_inventory(&self) -> HashMap<String, u32> {
+              let mut consolidated = HashMap::new();
+
+              for robot in self.robots.values() {
+                  for item in &robot.inventory {
+                      *consolidated.entry(item.clone()).or_insert(0) += 1;
+                  }
+              }
+
+              consolidated
+          }
+
+          fn get_exploration_coverage(&self) -> HashSet<(i32, i32)> {
+              self.robots.values()
+                  .flat_map(|robot| robot.visited_positions.iter())
+                  .cloned()
+                  .collect()
+          }
+
+          fn optimize_fleet_positions(&mut self) {
+              // Spread robots across the level for better coverage
+              let target_positions = vec![(0, 0), (7, 0), (14, 0), (0, 9), (14, 9)];
+
+              for (i, robot) in self.robots.values_mut().enumerate() {
+                  if i < target_positions.len() {
+                      robot.position = target_positions[i];
+                      robot.visited_positions.insert(robot.position);
+                      robot.energy = robot.energy.saturating_sub(10);
+                  }
+              }
+          }
+      }
+
+      fn main() {
+          println!("🤖 Advanced Robot Fleet Management System");
+
+          let mut fleet = FleetCommand::new();
+
+          // Initialize robot fleet
+          fleet.add_robot("Alpha".to_string(), (0, 0));
+          fleet.add_robot("Beta".to_string(), (7, 5));
+          fleet.add_robot("Gamma".to_string(), (14, 9));
+          fleet.add_robot("Delta".to_string(), (5, 2));
+
+          println!("Fleet initialized with {} robots", fleet.robots.len());
+
+          // Queue up collection tasks
+          let tasks = vec![
+              "collect_vector_core",
+              "collect_hashmap_engine",
+              "collect_iterator_module",
+              "collect_collection_analyzer",
+          ];
+
+          for task in tasks {
+              fleet.assign_task(task.to_string());
+          }
+
+          println!("Queued {} tasks", fleet.task_queue.len());
+
+          // Execute all tasks
+          println!("\n=== Task Execution ===");
+          while let Some(result) = fleet.execute_next_task() {
+              println!("✅ {}", result);
+          }
+
+          // Fleet status report
+          println!("\n=== Fleet Status Report ===");
+          let status_map = fleet.get_fleet_status();
+          for (robot_id, status) in status_map {
+              println!("{}: {}", robot_id, status);
+          }
+
+          // Consolidated inventory
+          let inventory = fleet.consolidate_inventory();
+          println!("\n=== Fleet Inventory ===");
+          let total_items: u32 = inventory.values().sum();
+          println!("Total items collected: {}", total_items);
+          for (item, count) in inventory {
+              println!("  {}: {}", item, count);
+          }
+
+          // Exploration coverage
+          let coverage = fleet.get_exploration_coverage();
+          println!("\n=== Exploration Coverage ===");
+          println!("Unique positions visited: {}", coverage.len());
+
+          // Show some visited positions
+          let sample_positions: Vec<_> = coverage.iter().take(10).collect();
+          println!("Sample positions: {:?}", sample_positions);
+
+          // Mission completion analysis
+          let required_objectives: HashSet<String> = tasks.iter()
+              .map(|s| s.to_string())
+              .collect();
+
+          let completion_rate = (fleet.completed_objectives.len() as f32 /
+                               required_objectives.len() as f32) * 100.0;
+
+          println!("\n=== Mission Analysis ===");
+          println!("Objectives completed: {}/{}",
+                   fleet.completed_objectives.len(),
+                   required_objectives.len());
+          println!("Completion rate: {:.1}%", completion_rate);
+
+          if fleet.completed_objectives == required_objectives {
+              println!("🎉 ALL OBJECTIVES COMPLETED!");
+          } else {
+              let missing: HashSet<_> = required_objectives
+                  .difference(&fleet.completed_objectives)
+                  .collect();
+              println!("Missing objectives: {:?}", missing);
+          }
+
+          // Optimize fleet for next mission
+          println!("\n=== Fleet Optimization ===");
+          fleet.optimize_fleet_positions();
+
+          let optimized_status = fleet.get_fleet_status();
+          println!("Fleet repositioned for optimal coverage:");
+          for (robot_id, status) in optimized_status {
+              println!("  {}: {}", robot_id, status);
+          }
+
+          // Performance metrics
+          let total_energy_used: u32 = fleet.robots.values()
+              .map(|robot| 100 - robot.energy)
+              .sum();
+
+          let avg_energy_efficiency = total_energy_used as f32 / fleet.robots.len() as f32;
+
+          println!("\n=== Performance Metrics ===");
+          println!("Total energy consumed: {}", total_energy_used);
+          println!("Average energy per robot: {:.1}", avg_energy_efficiency);
+          println!("Fleet operational efficiency: {:.1}%",
+                   (400.0 - total_energy_used as f32) / 4.0);
+      }
+      ```
+
+    completion_message: |
+      🎉 **Outstanding!** You've mastered advanced collection operations!
+
+      **What you accomplished:**
+      - Combined Vec, HashMap, HashSet, and VecDeque effectively
+      - Built a complete robot fleet management system
+      - Implemented task queuing and resource optimization
+      - Used iterators for data analysis and reporting
+      - Created efficient algorithms using collection operations
+
+      **You're ready for advanced error handling and Result types!**
+
+    start_task_message: "Let's build a complete robot fleet management system!"
+
+starting_code: |
+  // Level 9: Collections and Vectors
+  // Master Rust's collection types for robot data management
+
+  use std::collections::{HashMap, HashSet, VecDeque};
+
+  fn main() {
+      println!("Level 9: Collections and Vectors");
+
+      // TODO: Task 1 - Use vectors for robot paths
+      // let mut path: Vec<(i32, i32)> = Vec::new();
+      // path.push((0, 0));
+      // path.push((3, 1));
+      // println!("Path has {} waypoints", path.len());
+
+      // TODO: Task 2 - Use HashMap for key-value storage
+      // let mut robot_positions: HashMap<String, (i32, i32)> = HashMap::new();
+      // robot_positions.insert("MainRobot".to_string(), (0, 0));
+      // println!("Tracking {} robots", robot_positions.len());
+
+      // TODO: Task 3 - Use HashSet for unique collections
+      // let mut visited_positions: HashSet<(i32, i32)> = HashSet::new();
+      // visited_positions.insert((0, 0));
+      // visited_positions.insert((1, 0));
+      // println!("Visited {} unique positions", visited_positions.len());
+
+      // TODO: Task 4 - Use iterators for data processing
+      // let scan_data = vec![("Enemy", 5, 2), ("Item", 3, 1), ("Door", 8, 1)];
+      // let enemies: Vec<_> = scan_data.iter()
+      //     .filter(|(obj_type, _, _)| *obj_type == "Enemy")
+      //     .collect();
+      // println!("Found {} enemies", enemies.len());
+
+      // TODO: Task 5 - Advanced fleet management
+      // let mut fleet = FleetCommand::new();
+      // fleet.add_robot("Alpha".to_string(), (0, 0));
+      // fleet.assign_task("collect_item".to_string());
+
+      println!("Complete all tasks to master collections!");
+  }
+
+achievement_message: "🎉 Incredible! You've mastered Rust's collection types and built sophisticated data management systems!"
+next_level_hint: "Next: Level 10 - Advanced error handling with Result and custom error types!"
+completion_flag: "goal"

@@ -1,0 +1,274 @@
+# Level 17: Log Library Basics
+# This level teaches the fundamentals of Rust's log library for collecting and managing log output
+# Players will learn to capture stdout, use different log levels, and set up logging infrastructure
+
+level_id: 17
+name: "Robot Diagnostic System Override"
+description: "Your robot's diagnostic system is malfunctioning! Use Rust's log library to capture and repair critical system outputs before total shutdown"
+next_level: 18
+
+# Grid layout: 12x8 with logging stations and diagnostic equipment
+grid:
+  width: 12
+  height: 8
+  start_position: [1, 1]
+
+walls:
+  - [0, 0, 11, 0]    # Top wall
+  - [0, 7, 11, 7]    # Bottom wall
+  - [0, 0, 0, 7]     # Left wall
+  - [11, 0, 11, 7]   # Right wall
+  - [3, 2, 8, 2]     # Central divider
+  - [3, 5, 8, 5]     # Lower divider
+  - [5, 3, 5, 4]     # Vertical separator
+
+# Items teach different aspects of logging
+items:
+  # Task 1: Basic log setup and trace capture
+  - position: [2, 1]
+    item_type: "malfunctioning_diagnostic_terminal"
+    name: "Emergency Diagnostic Terminal"
+    description: "CRITICAL: Robot's main diagnostic system is failing! This emergency terminal shows vital signs that must be captured before the data is lost forever."
+    content: |
+      ⚠️  EMERGENCY DIAGNOSTIC STREAM ⚠️
+      [TRACE] Battery voltage: 11.2V (dropping rapidly)
+      [TRACE] Core temperature: 78°C (rising)
+      [TRACE] Memory fragmentation: 23%
+      [TRACE] Sensor array: 8/12 sensors responding
+
+      🔧 MISSION: Your robot is experiencing critical system failures!
+      The built-in diagnostics are corrupted. You must implement a backup logging system
+      to capture these vital diagnostic traces before complete system failure.
+
+      🎯 OBJECTIVE: Setup emergency logging system
+      - Initialize env_logger to capture emergency diagnostics
+      - Use log::trace!() to record each vital sign measurement
+      - Create diagnostic capture function that saves robot state
+      - Print "Emergency diagnostics online - robot stabilizing" when successful
+
+      ⏰ TIME CRITICAL: Without proper logging, the robot will lose all system awareness!
+    requirements:
+      - "Use env_logger::init() to initialize logging"
+      - "Implement log::trace!() macro calls"
+      - "Handle RUST_LOG environment variable"
+      - "Create diagnostic capture function"
+
+  # Task 2: Multiple log levels
+  - position: [9, 1]
+    item_type: "robot_status_command_center"
+    name: "Robot Command Center Interface"
+    description: "The robot's command center is receiving mixed signals! Different subsystems are reporting at various urgency levels."
+    content: |
+      🚨 ROBOT COMMAND CENTER - MIXED SIGNALS DETECTED 🚨
+
+      [DEBUG] Motor calibration sequence initiated - fine-tuning movement precision
+      [INFO] Navigation system fully operational - ready for mission commands
+      [WARN] Battery at 15% - recommend charging station visit soon
+      [ERROR] Critical sensor malfunction detected in proximity unit 3
+
+      🤖 SITUATION: Your robot's command center is overwhelmed with status reports!
+      Different robot subsystems are sending messages at different priority levels,
+      but they're all mixed together. The robot can't prioritize actions without
+      proper log level filtering.
+
+      🎯 MISSION: Implement priority-based logging system
+      - Use log::debug!() for fine-tuning and calibration data
+      - Use log::info!() for normal operational status updates
+      - Use log::warn!() for concerning but non-critical issues
+      - Use log::error!() for critical failures requiring immediate action
+      - Create filtering system so robot can focus on urgent matters first
+
+      🏆 SUCCESS CONDITION: Robot can now prioritize responses based on log severity!
+    requirements:
+      - "Implement all log level macros (debug, info, warn, error)"
+      - "Create severity-based logging functions"
+      - "Demonstrate log level filtering"
+      - "Handle conditional logging logic"
+
+  # Task 3: Structured logging with key-value pairs
+  - position: [2, 6]
+    item_type: "telemetry_data"
+    name: "Robot Telemetry Stream"
+    description: "Structured telemetry data requiring key-value logging format"
+    content: |
+      // Telemetry data in key-value format
+      Telemetry Stream:
+      timestamp=1634567890
+      robot_id=R2D7
+      position_x=15.7
+      position_y=23.4
+      battery_level=67
+      temperature=42.5C
+
+      Task: Implement structured logging with key-value pairs using log targets
+      Requirements:
+      - Use log macros with key-value syntax
+      - Implement target-specific logging
+      - Create telemetry logging module
+      - Format structured log entries properly
+    requirements:
+      - "Implement structured logging with key=value syntax"
+      - "Use log target parameter for categorization"
+      - "Create telemetry-specific logging module"
+      - "Format and validate log entry structure"
+
+  # Task 4: Custom log formatting and output redirection
+  - position: [9, 6]
+    item_type: "log_formatter"
+    name: "Custom Log Format Generator"
+    description: "System requiring custom log formatting and output redirection"
+    content: |
+      // Log entries requiring custom formatting
+      Raw Log Data:
+      [2023-10-18 14:30:22] ROBOT_001 MOVE (10,5) -> (12,7) SUCCESS 1.2s
+      [2023-10-18 14:30:25] ROBOT_001 SCAN area=zone_b items=3 energy_used=5%
+      [2023-10-18 14:30:28] ROBOT_001 ERROR obstacle_detected pos=(13,7) retrying
+
+      Task: Create custom log formatter and redirect output to file
+      Requirements:
+      - Implement custom log formatting function
+      - Redirect logs to file instead of stdout
+      - Create timestamped log entries
+      - Handle log rotation and file management
+    requirements:
+      - "Create custom log formatting with timestamp and robot ID"
+      - "Implement file-based log output redirection"
+      - "Handle log file rotation and management"
+      - "Create structured log entry parser"
+
+  # Task 5: Advanced logging with modules and performance
+  - position: [5, 3]
+    item_type: "robot_optimization_core"
+    name: "Robot Performance Optimization Core"
+    description: "FINAL CHALLENGE: The robot's AI core needs performance monitoring to optimize itself for the mission ahead!"
+    content: |
+      🚀 ROBOT SELF-OPTIMIZATION PROTOCOL INITIATED 🚀
+
+      Performance Analysis Required:
+      🧠 AI Module: avg_response: 156ms, calls: 89 (SLOW - needs optimization)
+      🎯 Navigation: avg_response: 12ms, calls: 1534 (EXCELLENT)
+      👁️ Sensors: avg_response: 3ms, calls: 8921 (OPTIMAL)
+      🦾 Movement: avg_response: 45ms, calls: 342 (ACCEPTABLE)
+
+      🤖 FINAL MISSION: Your robot has learned to diagnose itself, but now it needs
+      to become SELF-OPTIMIZING! The AI core needs advanced logging to monitor
+      its own performance and automatically improve its response times.
+
+      🎯 OBJECTIVE: Build advanced self-monitoring system
+      - Create module-specific loggers (navigation::, sensors::, movement::, ai::)
+      - Implement performance timing that measures each module's efficiency
+      - Use lazy evaluation to avoid slowing down the robot during logging
+      - Configure different log levels per module (AI needs DEBUG, sensors need WARN)
+
+      🏆 ULTIMATE GOAL: Robot becomes self-aware of its own performance and can
+      autonomously optimize itself for maximum mission efficiency!
+    requirements:
+      - "Implement module-specific logging targets"
+      - "Create performance timing and measurement logging"
+      - "Use lazy evaluation for expensive log operations"
+      - "Configure different log levels per module"
+
+# Enemies represent logging challenges and errors
+enemies:
+  - position: [4, 4]
+    enemy_type: "log_overflow"
+    name: "Log Buffer Overflow"
+    health: 30
+    description: "Excessive logging causing buffer overflow - defeat by implementing rate limiting"
+
+  - position: [7, 4]
+    enemy_type: "silent_error"
+    name: "Silent Error Bug"
+    health: 25
+    description: "Errors not being logged properly - defeat by ensuring all error paths log appropriately"
+
+  - position: [6, 1]
+    enemy_type: "performance_drain"
+    name: "Logging Performance Drain"
+    health: 35
+    description: "Logging impacting performance - defeat by optimizing log calls and using lazy evaluation"
+
+# Doors represent progression through logging concepts
+doors:
+  - position: [1, 3]
+    door_type: "trace_door"
+    name: "Trace Level Access"
+    key_requirement: "Basic logging setup with trace level capture"
+    description: "Unlock advanced logging levels"
+
+  - position: [10, 3]
+    door_type: "structured_door"
+    name: "Structured Logging Gate"
+    key_requirement: "Multi-level logging implementation"
+    description: "Access to structured and formatted logging"
+
+  - position: [5, 6]
+    door_type: "performance_door"
+    name: "Performance Logging Chamber"
+    key_requirement: "Custom formatting and file output"
+    description: "Enter advanced performance monitoring area"
+
+# Task definitions with learning objectives
+tasks:
+  - id: 1
+    name: "Initialize Basic Logging"
+    description: "Set up env_logger and capture diagnostic output with trace-level logging"
+    requirements:
+      - "Initialize env_logger in main function"
+      - "Use log::trace!() macro to capture system diagnostics"
+      - "Handle RUST_LOG environment variable for log level control"
+      - "Create diagnostic message capture function"
+    item_location: [2, 1]
+    completion_message: "Basic logging system established! Robot diagnostics now captured at trace level."
+
+  - id: 2
+    name: "Implement Multi-Level Logging"
+    description: "Create comprehensive logging using all severity levels with proper filtering"
+    requirements:
+      - "Implement log::debug!(), log::info!(), log::warn!(), log::error!() macros"
+      - "Create functions for each log severity level"
+      - "Demonstrate log level filtering capabilities"
+      - "Handle conditional logging based on severity thresholds"
+    item_location: [9, 1]
+    completion_message: "Multi-level logging active! All system events properly categorized by severity."
+
+  - id: 3
+    name: "Structured Telemetry Logging"
+    description: "Implement structured logging with key-value pairs for telemetry data"
+    requirements:
+      - "Use structured logging with key=value syntax in log macros"
+      - "Implement target-specific logging for categorization"
+      - "Create dedicated telemetry logging module"
+      - "Format and validate structured log entries"
+    item_location: [2, 6]
+    completion_message: "Structured logging deployed! Telemetry data now properly formatted and categorized."
+
+  - id: 4
+    name: "Custom Log Formatting"
+    description: "Create custom log formatter and redirect output to files with rotation"
+    requirements:
+      - "Implement custom log formatting with timestamps and robot IDs"
+      - "Redirect log output to files instead of stdout"
+      - "Handle log file rotation and management"
+      - "Create structured log entry parser for analysis"
+    item_location: [9, 6]
+    completion_message: "Custom logging system operational! Logs formatted and archived efficiently."
+
+  - id: 5
+    name: "Advanced Performance Logging"
+    description: "Implement module-specific logging with performance metrics and optimization"
+    requirements:
+      - "Create module-specific logging targets and filters"
+      - "Implement performance timing and measurement logging"
+      - "Use lazy evaluation for expensive log message generation"
+      - "Configure different log levels per module"
+    item_location: [5, 3]
+    completion_message: "Advanced logging mastered! Performance monitored and optimized across all modules."
+
+completion_requirements:
+  - "Complete all 5 logging tasks"
+  - "Defeat all logging-related enemies"
+  - "Open all progression doors"
+  - "Demonstrate understanding of log levels, formatting, and performance optimization"
+
+final_message: "Level 17 Complete: Log Library Mastery achieved! You've mastered Rust's logging ecosystem from basic trace capture to advanced performance monitoring. Ready for direct memory management!"
