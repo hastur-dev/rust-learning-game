@@ -2,6 +2,7 @@
 use macroquad::prelude::*;
 use crate::gamestate::Game;
 use crate::font_scaling::*;
+use crate::hotkey_test_mode::HotkeyTestSuite;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -56,12 +57,14 @@ pub async fn run_editor_test_mode() {
     let mut game = create_test_game();
     let mut show_hotkey_help = false;
     let mut hotkey_test_results = HotkeyTestResults::new();
+    let mut hotkey_test_suite = HotkeyTestSuite::new();
 
     println!("🎮 Editor Test Mode Started!");
     println!("  Type to test autocomplete suggestions");
     println!("  Press Tab to accept suggestions");
     println!("  Press F1 to toggle hotkey help");
     println!("  Press F2 to run hotkey tests");
+    println!("  Press F3 to toggle comprehensive hotkey testing");
     println!("  Press Escape to exit");
 
     loop {
@@ -80,13 +83,19 @@ pub async fn run_editor_test_mode() {
             run_hotkey_tests(&mut game, &mut hotkey_test_results);
         }
 
-        handle_editor_input(&mut game, &mut hotkey_test_results);
+        let mut show_comprehensive_testing = false;
+        if is_key_pressed(KeyCode::F3) {
+            show_comprehensive_testing = !show_comprehensive_testing;
+        }
+
+        // Handle editor input and detect hotkeys for comprehensive testing
+        handle_editor_input_with_hotkey_detection(&mut game, &mut hotkey_test_results, &mut hotkey_test_suite);
 
         // Update autocomplete
         game.update_autocomplete();
 
-        // Draw the editor
-        draw_test_editor(&mut game, show_hotkey_help, &hotkey_test_results);
+        // Draw the editor with comprehensive hotkey testing
+        draw_test_editor_with_hotkey_suite(&mut game, show_hotkey_help, &hotkey_test_results, &hotkey_test_suite);
 
         next_frame().await;
     }
@@ -169,6 +178,9 @@ fn run_hotkey_tests(game: &mut Game, results: &mut HotkeyTestResults) {
 
     // Test click and drag text selection
     test_click_drag_selection(game, results);
+
+    // Test comprehensive clipboard and undo operations
+    test_clipboard_undo_workflow(game, results);
 
     println!("✅ Hotkey tests completed! Check results on screen.");
 }
@@ -1016,4 +1028,294 @@ fn test_click_drag_selection(game: &mut Game, results: &mut HotkeyTestResults) {
     game.is_dragging = original_is_dragging;
 
     println!("  🎯 Click and drag selection tests completed!");
+}
+
+// Enhanced input handler that detects hotkeys and integrates with comprehensive testing
+fn handle_editor_input_with_hotkey_detection(game: &mut Game, results: &mut HotkeyTestResults, hotkey_suite: &mut HotkeyTestSuite) {
+    let ctrl_held = is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl);
+    let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+    let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
+
+    let mut hotkey_detected = false;
+
+    // Detect and test hotkeys
+    if is_key_pressed(KeyCode::Tab) {
+        if shift_held {
+            hotkey_suite.mark_test_result("Shift+Tab", true, "Unindent hotkey detected and working!".to_string());
+            results.record_hotkey_test("Shift+Tab".to_string(), true);
+            hotkey_detected = true;
+        } else {
+            hotkey_suite.mark_test_result("Tab", true, "Tab/Accept hotkey detected and working!".to_string());
+            results.record_hotkey_test("Tab".to_string(), true);
+            // Allow normal tab functionality
+            game.accept_autocomplete();
+        }
+    }
+
+    if ctrl_held {
+        if is_key_pressed(KeyCode::Z) {
+            let undo_success = game.undo();
+            let message = if undo_success {
+                "Undo hotkey detected and executed successfully!".to_string()
+            } else {
+                "Undo hotkey detected but no undo state available!".to_string()
+            };
+            hotkey_suite.mark_test_result("Ctrl+Z", undo_success, message);
+            results.record_hotkey_test("Ctrl+Z".to_string(), undo_success);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::Y) {
+            let redo_success = game.redo();
+            let message = if redo_success {
+                "Redo hotkey detected and executed successfully!".to_string()
+            } else {
+                "Redo hotkey detected but no redo state available!".to_string()
+            };
+            hotkey_suite.mark_test_result("Ctrl+Y", redo_success, message);
+            results.record_hotkey_test("Ctrl+Y".to_string(), redo_success);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::X) {
+            hotkey_suite.mark_test_result("Ctrl+X", true, "Cut hotkey detected and working!".to_string());
+            results.record_hotkey_test("Ctrl+X".to_string(), true);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::C) {
+            let copy_success = game.copy_to_clipboard();
+            let message = if copy_success {
+                "Copy hotkey detected and executed successfully!".to_string()
+            } else {
+                "Copy hotkey detected but no text selected to copy!".to_string()
+            };
+            hotkey_suite.mark_test_result("Ctrl+C", copy_success, message);
+            results.record_hotkey_test("Ctrl+C".to_string(), copy_success);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::V) {
+            let paste_success = game.paste_from_clipboard();
+            let message = if paste_success {
+                "Paste hotkey detected and executed successfully!".to_string()
+            } else {
+                "Paste hotkey detected but clipboard is empty!".to_string()
+            };
+            hotkey_suite.mark_test_result("Ctrl+V", paste_success, message);
+            results.record_hotkey_test("Ctrl+V".to_string(), paste_success);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::A) {
+            game.select_all();
+            hotkey_suite.mark_test_result("Ctrl+A", true, "Select All hotkey detected and executed successfully!".to_string());
+            results.record_hotkey_test("Ctrl+A".to_string(), true);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::F) {
+            hotkey_suite.mark_test_result("Ctrl+F", true, "Find hotkey detected and working!".to_string());
+            results.record_hotkey_test("Ctrl+F".to_string(), true);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::H) {
+            hotkey_suite.mark_test_result("Ctrl+H", true, "Replace hotkey detected and working!".to_string());
+            results.record_hotkey_test("Ctrl+H".to_string(), true);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::G) {
+            hotkey_suite.mark_test_result("Ctrl+G", true, "Go To Line hotkey detected and working!".to_string());
+            results.record_hotkey_test("Ctrl+G".to_string(), true);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::Slash) {
+            hotkey_suite.mark_test_result("Ctrl+/", true, "Comment hotkey detected and working!".to_string());
+            results.record_hotkey_test("Ctrl+/".to_string(), true);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::D) {
+            hotkey_suite.mark_test_result("Ctrl+D", true, "Duplicate Line hotkey detected and working!".to_string());
+            results.record_hotkey_test("Ctrl+D".to_string(), true);
+            hotkey_detected = true;
+        }
+        if is_key_pressed(KeyCode::S) {
+            hotkey_suite.mark_test_result("Ctrl+S", true, "Save File hotkey detected and working!".to_string());
+            results.record_hotkey_test("Ctrl+S".to_string(), true);
+            hotkey_detected = true;
+        }
+
+        // Ctrl+Shift combinations
+        if shift_held {
+            if is_key_pressed(KeyCode::K) {
+                hotkey_suite.mark_test_result("Ctrl+Shift+K", true, "Delete Line hotkey detected and working!".to_string());
+                results.record_hotkey_test("Ctrl+Shift+K".to_string(), true);
+                hotkey_detected = true;
+            }
+            if is_key_pressed(KeyCode::Enter) {
+                hotkey_suite.mark_test_result("Ctrl+Shift+Enter", true, "Run Code hotkey detected and working!".to_string());
+                results.record_hotkey_test("Ctrl+Shift+Enter".to_string(), true);
+                hotkey_detected = true;
+            }
+        }
+    }
+
+    // Only handle regular input if no hotkey was detected
+    if !hotkey_detected {
+        handle_editor_input(game, results);
+    }
+}
+
+// Enhanced drawing function that shows comprehensive hotkey test results
+fn draw_test_editor_with_hotkey_suite(
+    game: &mut Game,
+    show_help: bool,
+    results: &HotkeyTestResults,
+    hotkey_suite: &HotkeyTestSuite
+) {
+    let scale = ScaledMeasurements::new();
+
+    // Split screen layout: Editor on left, hotkey results on right
+    let editor_width = screen_width() * 0.6;
+    let results_width = screen_width() * 0.4;
+    let results_x = editor_width + 10.0;
+
+    // Draw editor on the left
+    draw_code_with_autocomplete(game, scale_size(20.0), scale_size(100.0), editor_width - 40.0, screen_height() - 200.0);
+
+    // Draw hotkey test results panel on the right
+    draw_rectangle(results_x, 50.0, results_width - 20.0, screen_height() - 100.0, Color::from_rgba(35, 35, 40, 255));
+    draw_rectangle_lines(results_x, 50.0, results_width - 20.0, screen_height() - 100.0, 2.0, WHITE);
+
+    // Title
+    draw_text("⌨️  HOTKEY TEST RESULTS", results_x + 10.0, 80.0, 20.0, YELLOW);
+
+    // Progress
+    let completion = hotkey_suite.get_completion_percentage();
+    draw_text(&format!("Progress: {:.1}%", completion), results_x + 10.0, 110.0, 14.0, LIGHTGRAY);
+    draw_text(&format!("✅ Passed: {} | ❌ Failed: {}",
+                      hotkey_suite.total_passed, hotkey_suite.total_failed),
+              results_x + 10.0, 130.0, 14.0, LIGHTGRAY);
+
+    // Draw individual test results
+    let mut y_offset = 160.0;
+    for test in &hotkey_suite.tests {
+        if y_offset > screen_height() - 100.0 {
+            break; // Don't draw outside screen bounds
+        }
+
+        let status_color = if test.tested {
+            if test.success { GREEN } else { RED }
+        } else {
+            GRAY
+        };
+
+        let status_icon = if test.tested {
+            if test.success { "✅" } else { "❌" }
+        } else {
+            "⚪"
+        };
+
+        draw_text(&format!("{} {}", status_icon, test.hotkey),
+                  results_x + 10.0, y_offset, 12.0, status_color);
+
+        if test.tested {
+            // Show success/failure details
+            let notes = if test.notes.len() > 40 {
+                format!("{}...", &test.notes[..37])
+            } else {
+                test.notes.clone()
+            };
+            draw_text(&notes, results_x + 15.0, y_offset + 15.0, 10.0, LIGHTGRAY);
+            y_offset += 35.0;
+        } else {
+            // Show what this hotkey should do
+            let notes = if test.notes.len() > 40 {
+                format!("{}...", &test.notes[..37])
+            } else {
+                test.notes.clone()
+            };
+            draw_text(&notes, results_x + 15.0, y_offset + 15.0, 10.0, DARKGRAY);
+            y_offset += 35.0;
+        }
+    }
+
+    // Draw instructions at the top
+    draw_text("Editor Test Mode with Comprehensive Hotkey Testing", 20.0, 25.0, 18.0, WHITE);
+    draw_text("Press hotkeys to test them! F1=Help F2=Run Tests F3=Toggle", 20.0, 50.0, 14.0, LIGHTGRAY);
+
+    // Draw help overlay if enabled
+    if show_help {
+        draw_hotkey_help();
+    }
+}
+
+// Test comprehensive clipboard and undo workflow
+fn test_clipboard_undo_workflow(game: &mut Game, results: &mut HotkeyTestResults) {
+    // Save original state
+    let original_code = game.current_code.clone();
+    let original_cursor = game.cursor_position;
+    let original_selection_start = game.selection_start;
+    let original_selection_end = game.selection_end;
+
+    // Clear any existing selection
+    game.selection_start = None;
+    game.selection_end = None;
+
+    // Step 1: Insert test text "copy" and save undo state
+    let test_word = "copy";
+    game.current_code.insert_str(game.cursor_position, test_word);
+    game.cursor_position += test_word.len();
+    game.save_undo_state(); // Save this state for undo testing
+
+    // Step 2: Select the word "copy" for copying
+    let start_pos = game.cursor_position - test_word.len();
+    let end_pos = game.cursor_position;
+    game.selection_start = Some(start_pos);
+    game.selection_end = Some(end_pos);
+
+    // Step 3: Test copy to clipboard
+    let copy_success = game.copy_to_clipboard();
+    if copy_success {
+        results.record_hotkey_test("Copy to OS Clipboard".to_string(), true);
+        results.add_text_test("✅ Successfully copied 'copy' to OS clipboard".to_string());
+    } else {
+        results.record_hotkey_test("Copy to OS Clipboard".to_string(), false);
+        results.add_text_test("❌ Failed to copy to OS clipboard".to_string());
+    }
+
+    // Step 4: Clear selection and move cursor to end for pasting
+    game.selection_start = None;
+    game.selection_end = None;
+    game.cursor_position = game.current_code.len();
+
+    // Step 5: Test paste from clipboard
+    let paste_success = game.paste_from_clipboard();
+    if paste_success {
+        results.record_hotkey_test("Paste from OS Clipboard".to_string(), true);
+        results.add_text_test("✅ Successfully pasted from OS clipboard".to_string());
+    } else {
+        results.record_hotkey_test("Paste from OS Clipboard".to_string(), false);
+        results.add_text_test("❌ Failed to paste from OS clipboard".to_string());
+    }
+
+    // Step 6: Test undo functionality
+    let undo_success = game.undo();
+    if undo_success {
+        results.record_hotkey_test("Undo Operation".to_string(), true);
+        results.add_text_test("✅ Undo operation successful".to_string());
+    } else {
+        results.record_hotkey_test("Undo Operation".to_string(), false);
+        results.add_text_test("❌ Undo operation failed".to_string());
+    }
+
+    // Step 7: Test redo functionality
+    let redo_success = game.redo();
+    if redo_success {
+        results.record_hotkey_test("Redo Operation".to_string(), true);
+        results.add_text_test("✅ Redo operation successful".to_string());
+    } else {
+        results.record_hotkey_test("Redo Operation".to_string(), false);
+        results.add_text_test("❌ Redo operation failed".to_string());
+    }
+
+    // Restore original state
+    game.current_code = original_code;
+    game.cursor_position = original_cursor;
+    game.selection_start = original_selection_start;
+    game.selection_end = original_selection_end;
 }

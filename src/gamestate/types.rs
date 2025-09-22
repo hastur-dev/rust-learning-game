@@ -27,6 +27,14 @@ pub enum RustFunction {
 }
 
 #[derive(Clone, Debug)]
+pub struct UndoState {
+    pub code: String,
+    pub cursor_position: usize,
+    pub selection_start: Option<usize>,
+    pub selection_end: Option<usize>,
+}
+
+#[derive(Clone, Debug)]
 pub struct FunctionCall {
     pub function: RustFunction,
     pub direction: Option<(i32, i32)>, // for move, scan, and laser direction
@@ -120,6 +128,9 @@ pub struct Game {
     pub autocomplete_enabled: bool,   // Global autocomplete enable/disable
     // Hotkey system
     pub hotkey_system: crate::hotkeys::HotkeySystem,
+    // Undo functionality (clipboard now uses OS)
+    pub undo_stack: Vec<UndoState>,
+    pub redo_stack: Vec<UndoState>,
 }
 
 // Learning level configuration

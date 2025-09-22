@@ -360,7 +360,8 @@ impl Game {
     
     pub fn get_selection_bounds(&self) -> Option<(usize, usize)> {
         if let (Some(start), Some(end)) = (self.selection_start, self.selection_end) {
-            if start != end {
+            // During mouse drag, allow even zero-width selections for visual feedback
+            if start != end || self.is_dragging {
                 Some((start.min(end), start.max(end)))
             } else {
                 None
@@ -573,6 +574,14 @@ impl Game {
 
             println!("🖱️  Mouse at ({:.1}, {:.1}), moved {:.1}px from start", mouse_x, mouse_y, moved_distance);
 
+            // Always update cursor position to follow mouse, even before threshold
+            let old_cursor = self.cursor_position;
+            self.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
+            let new_cursor = self.cursor_position;
+
+            // Always update selection_end for immediate visual feedback
+            self.selection_end = Some(new_cursor);
+
             if moved_distance > drag_threshold {
                 if !self.is_dragging {
                     // Start dragging - selection start was already set in start_mouse_drag
@@ -581,19 +590,16 @@ impl Game {
                     println!("🖱️  Selection started at cursor position {}", self.selection_start.unwrap_or(0));
                 }
 
-                // Update selection end to current mouse position
-                let old_cursor = self.cursor_position;
-                self.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
-                let new_cursor = self.cursor_position;
-
-                // Update selection end
-                self.selection_end = Some(new_cursor);
                 println!("🖱️  Selection updated: {} to {}",
                     self.selection_start.unwrap_or(0), self.selection_end.unwrap_or(0));
-
-                // Restore cursor to selection end
-                self.cursor_position = new_cursor;
+            } else {
+                // Before threshold: still show selection for immediate visual feedback
+                println!("🖱️  Cursor moved to position {} with selection preview: {} to {}",
+                    new_cursor, self.selection_start.unwrap_or(0), self.selection_end.unwrap_or(0));
             }
+
+            // Always keep cursor at current mouse position
+            self.cursor_position = new_cursor;
         }
     }
 

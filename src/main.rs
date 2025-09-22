@@ -308,6 +308,7 @@ mod autocomplete;
 mod hotkeys;
 mod test_runner;
 mod editor_test_mode;
+mod hotkey_test_mode;
 
 use level::*;
 use item::*;
@@ -1664,6 +1665,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
 
                     game.current_code.insert(game.cursor_position, character);
                     game.cursor_position += 1;
+                    game.save_undo_state_if_needed(false); // Save undo state for typing
                     code_modified = true;
                 }
             }
@@ -1675,6 +1677,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
                 }
                 game.current_code.insert(game.cursor_position, ' ');
                 game.cursor_position += 1;
+                game.save_undo_state_if_needed(false); // Save undo state for space
                 code_modified = true;
             }
 
@@ -1687,6 +1690,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
                     }
                     game.current_code.insert_str(game.cursor_position, "    ");
                     game.cursor_position += 4;
+                    game.save_undo_state_if_needed(false); // Save undo state for tab
                     code_modified = true;
                 }
             }
@@ -1694,6 +1698,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
             // Backspace handling
             if is_key_pressed(KeyCode::Backspace) {
                 if !game.delete_selection() && game.cursor_position > 0 {
+                    game.save_undo_state_if_needed(true); // Save undo state before backspace
                     game.current_code.remove(game.cursor_position - 1);
                     game.cursor_position -= 1;
                     code_modified = true;
@@ -1707,11 +1712,13 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
                 }
                 game.current_code.insert(game.cursor_position, '\n');
                 game.cursor_position += 1;
+                game.save_undo_state_if_needed(false); // Save undo state for newline
                 code_modified = true;
             }
 
             // Arrow key navigation with selection support
             let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+            let ctrl_held = is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl);
 
             if is_key_pressed(KeyCode::Up) {
                 game.move_cursor_up_with_selection(shift_held);
@@ -1724,6 +1731,37 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
             }
             if is_key_pressed(KeyCode::Right) {
                 game.move_cursor_right_with_selection(shift_held);
+            }
+
+            // Hotkey support for clipboard and undo operations
+            if ctrl_held {
+                if is_key_pressed(KeyCode::C) {
+                    if game.copy_to_clipboard() {
+                        println!("📋 Copied selected text to clipboard!");
+                    }
+                }
+                if is_key_pressed(KeyCode::V) {
+                    if game.paste_from_clipboard() {
+                        println!("📋 Pasted text from clipboard!");
+                        code_modified = true;
+                    }
+                }
+                if is_key_pressed(KeyCode::Z) {
+                    if game.undo() {
+                        println!("↶ Undo successful!");
+                        code_modified = true;
+                    }
+                }
+                if is_key_pressed(KeyCode::Y) {
+                    if game.redo() {
+                        println!("↷ Redo successful!");
+                        code_modified = true;
+                    }
+                }
+                if is_key_pressed(KeyCode::A) {
+                    game.select_all();
+                    println!("📝 Selected all text!");
+                }
             }
 
             // Update autocomplete if code modified
@@ -1856,6 +1894,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
 
                     game.current_code.insert(game.cursor_position, character);
                     game.cursor_position += 1;
+                    game.save_undo_state_if_needed(false); // Save undo state for typing
                     code_modified = true;
                 }
             }
@@ -1867,6 +1906,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
                 }
                 game.current_code.insert(game.cursor_position, ' ');
                 game.cursor_position += 1;
+                game.save_undo_state_if_needed(false); // Save undo state for space
                 code_modified = true;
             }
 
@@ -1879,6 +1919,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
                     }
                     game.current_code.insert_str(game.cursor_position, "    ");
                     game.cursor_position += 4;
+                    game.save_undo_state_if_needed(false); // Save undo state for tab
                     code_modified = true;
                 }
             }
@@ -1886,6 +1927,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
             // Backspace handling
             if is_key_pressed(KeyCode::Backspace) {
                 if !game.delete_selection() && game.cursor_position > 0 {
+                    game.save_undo_state_if_needed(true); // Save undo state before backspace
                     game.current_code.remove(game.cursor_position - 1);
                     game.cursor_position -= 1;
                     code_modified = true;

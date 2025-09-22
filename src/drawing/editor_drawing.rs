@@ -7,7 +7,8 @@ fn get_absolute_position(line_index: usize, col: usize, lines: &[&str]) -> usize
     let mut pos = 0;
     for i in 0..line_index.min(lines.len()) {
         pos += lines[i].len();
-        if i < lines.len() - 1 || line_index >= lines.len() {
+        // Only add newline if there's actually a next line (not at the end of file)
+        if i < lines.len() - 1 {
             pos += 1; // Add newline character
         }
     }
@@ -164,6 +165,8 @@ pub fn draw_code_editor(game: &mut Game) {
                 
                 // Check if this position is selected
                 let absolute_pos = get_absolute_position(line_index, col, &lines);
+
+                // Enhanced selection detection - check raw selection values too
                 let is_selected = if let Some((sel_start, sel_end)) = game.get_selection_bounds() {
                     let selected = absolute_pos >= sel_start && absolute_pos < sel_end;
                     if selected && line_index == 0 && col < 5 { // Debug first few chars
@@ -172,7 +175,22 @@ pub fn draw_code_editor(game: &mut Game) {
                     }
                     selected
                 } else {
-                    false
+                    // Also check raw selection state for debugging (less spam)
+                    if line_index == 0 && col == 0 && game.selection_start.is_some() || game.selection_end.is_some() {
+                        println!("🎨 No selection bounds but has raw values: start={:?}, end={:?}",
+                                game.selection_start, game.selection_end);
+                    }
+
+                    // Fallback: check raw selection values for immediate visual feedback
+                    if let (Some(start), Some(end)) = (game.selection_start, game.selection_end) {
+                        let selected = absolute_pos >= start.min(end) && absolute_pos < start.max(end);
+                        if selected && line_index == 0 && col < 5 {
+                            println!("🎨 Raw selection: pos {} selected in range {}-{}", absolute_pos, start.min(end), start.max(end));
+                        }
+                        selected
+                    } else {
+                        false
+                    }
                 };
                 
                 // Draw selection background - make it more visible

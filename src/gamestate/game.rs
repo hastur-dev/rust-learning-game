@@ -84,6 +84,9 @@ impl Game {
             autocomplete_engine: crate::autocomplete::AutocompleteEngine::new(),
             autocomplete_enabled: true,   // Enable autocomplete by default
             hotkey_system: crate::hotkeys::HotkeySystem::new(),
+            // Initialize undo functionality
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
         }
     }
 
@@ -714,5 +717,186 @@ impl Game {
 
     pub fn is_vscode_available(&self) -> bool {
         self.autocomplete_engine.is_vscode_available()
+    }
+
+    // Clipboard and Undo/Redo functionality
+    pub fn save_undo_state(&mut self) {
+        let undo_state = UndoState {
+            code: self.current_code.clone(),
+            cursor_position: self.cursor_position,
+            selection_start: self.selection_start,
+            selection_end: self.selection_end,
+        };
+
+        self.undo_stack.push(undo_state);
+        // Clear redo stack when new action is performed
+        self.redo_stack.clear();
+
+        // Limit undo stack size to prevent memory issues
+        if self.undo_stack.len() > 100 {
+            self.undo_stack.remove(0);
+        }
+
+        println!("📚 Undo state saved. Stack size: {}", self.undo_stack.len());
+    }
+
+    // Smart undo state saving for typing operations
+    pub fn save_undo_state_if_needed(&mut self, force: bool) {
+        // Always save if forced (e.g., before backspace, paste)
+        if force {
+            self.save_undo_state();
+            return;
+        }
+
+        // For typing: only save if this is the start of a new typing session
+        // or if significant time has passed since last action
+        if self.undo_stack.is_empty() {
+            // First action ever
+            self.save_undo_state();
+        } else if let Some(last_undo) = self.undo_stack.last() {
+            // Save if the code has changed significantly or cursor jumped
+            let code_length_diff = (self.current_code.len() as i32 - last_undo.code.len() as i32).abs();
+            let cursor_jump = (self.cursor_position as i32 - last_undo.cursor_position as i32).abs();
+
+            // Save undo state if:
+            // 1. Code length changed significantly (> 10 chars)
+            // 2. Cursor jumped significantly (> 5 positions without typing)
+            // 3. It's been a while since last save (we could add timing later)
+            if code_length_diff > 10 || cursor_jump > 5 {
+                self.save_undo_state();
+            }
+        }
+    }
+
+    pub fn copy_to_clipboard(&mut self) -> bool {
+        if let Some((start, end)) = self.get_selection_bounds() {
+            let selected_text = self.current_code[start..end].to_string();
+
+            // Use OS clipboard
+            if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                if clipboard.set_text(&selected_text).is_ok() {
+                    println!("📋 Copied to OS clipboard: '{}'", selected_text);
+                    true
+                } else {
+                    println!("❌ Failed to copy to OS clipboard");
+                    false
+                }
+            } else {
+                println!("❌ Failed to access OS clipboard");
+                false
+            }
+        } else {
+            println!("📋 No text selected for copy");
+            false
+        }
+    }
+
+    pub fn cut_to_clipboard(&mut self) -> bool {
+        if self.copy_to_clipboard() {
+            self.save_undo_state();
+            if let Some((start, end)) = self.get_selection_bounds() {
+                self.current_code.drain(start..end);
+                self.cursor_position = start;
+                self.clear_selection();
+                self.ensure_cursor_visible();
+                println!("✂️ Cut text to clipboard");
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    pub fn paste_from_clipboard(&mut self) -> bool {
+        // Get text from OS clipboard
+        if let Ok(mut clipboard) = arboard::Clipboard::new() {
+            if let Ok(clipboard_text) = clipboard.get_text() {
+                if !clipboard_text.is_empty() {
+                    self.save_undo_state();
+
+                    // Delete selection if exists
+                    if self.delete_selection() {
+                        // Selection already deleted by delete_selection
+                    }
+
+                    // Insert clipboard content at cursor position
+                    self.current_code.insert_str(self.cursor_position, &clipboard_text);
+                    self.cursor_position += clipboard_text.len();
+                    self.clear_selection();
+                    self.ensure_cursor_visible();
+
+                    println!("📋 Pasted from OS clipboard: '{}'", clipboard_text);
+                    true
+                } else {
+                    println!("📋 OS clipboard is empty");
+                    false
+                }
+            } else {
+                println!("❌ Failed to read from OS clipboard");
+                false
+            }
+        } else {
+            println!("❌ Failed to access OS clipboard");
+            false
+        }
+    }
+
+    pub fn undo(&mut self) -> bool {
+        if let Some(undo_state) = self.undo_stack.pop() {
+            // Save current state to redo stack
+            let redo_state = UndoState {
+                code: self.current_code.clone(),
+                cursor_position: self.cursor_position,
+                selection_start: self.selection_start,
+                selection_end: self.selection_end,
+            };
+            self.redo_stack.push(redo_state);
+
+            // Restore previous state
+            self.current_code = undo_state.code;
+            self.cursor_position = undo_state.cursor_position;
+            self.selection_start = undo_state.selection_start;
+            self.selection_end = undo_state.selection_end;
+            self.ensure_cursor_visible();
+            println!("↶ Undo performed");
+            true
+        } else {
+            println!("↶ Nothing to undo");
+            false
+        }
+    }
+
+    pub fn redo(&mut self) -> bool {
+        if let Some(redo_state) = self.redo_stack.pop() {
+            // Save current state to undo stack
+            let undo_state = UndoState {
+                code: self.current_code.clone(),
+                cursor_position: self.cursor_position,
+                selection_start: self.selection_start,
+                selection_end: self.selection_end,
+            };
+            self.undo_stack.push(undo_state);
+
+            // Restore redo state
+            self.current_code = redo_state.code;
+            self.cursor_position = redo_state.cursor_position;
+            self.selection_start = redo_state.selection_start;
+            self.selection_end = redo_state.selection_end;
+            self.ensure_cursor_visible();
+            println!("↷ Redo performed");
+            true
+        } else {
+            println!("↷ Nothing to redo");
+            false
+        }
+    }
+
+    pub fn select_all(&mut self) {
+        self.selection_start = Some(0);
+        self.selection_end = Some(self.current_code.len());
+        self.cursor_position = self.current_code.len();
+        println!("🔲 Selected all text ({} characters)", self.current_code.len());
     }
 }
