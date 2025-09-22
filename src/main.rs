@@ -309,6 +309,8 @@ mod hotkeys;
 mod test_runner;
 mod editor_test_mode;
 mod hotkey_test_mode;
+mod learning_level_solutions;
+mod learning_test_runner;
 
 use level::*;
 use item::*;
@@ -2766,6 +2768,7 @@ async fn desktop_main() {
     let debug_all_levels = args.contains(&"--debug".to_string());
     let editor_test_mode = args.contains(&"--editor-test".to_string());
     let command_test_mode = args.contains(&"--command-test".to_string());
+    let learning_test_mode = args.contains(&"--test-learning-levels".to_string());
     
     // Initialize logging with appropriate level based on command line args
     let log_level = if enable_all_logs {
@@ -2789,6 +2792,13 @@ async fn desktop_main() {
     if command_test_mode {
         info!("Starting Robot Command Test Mode");
         run_command_test_mode(enable_all_logs).await;
+        return;
+    }
+
+    // Check for learning levels test mode
+    if learning_test_mode {
+        info!("Starting Learning Levels Test Mode");
+        learning_test_runner::run_learning_level_tests().await;
         return;
     }
 

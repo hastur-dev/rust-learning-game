@@ -605,14 +605,18 @@ impl Game {
 
     pub fn end_mouse_drag(&mut self) {
         self.mouse_drag_start = None;
-        self.is_dragging = false;
 
-        // If we have a selection but start equals end, clear it
-        if let Some((start, end)) = self.get_selection_bounds() {
-            if start == end {
-                self.clear_selection();
-            }
+        // If dragging actually happened, keep the selection
+        if self.is_dragging {
+            // Real drag occurred - keep the selection
+            println!("🖱️  Drag ended - keeping selection");
+        } else {
+            // It was just a click - clear any selection
+            self.clear_selection();
+            println!("🖱️  Click ended - clearing selection");
         }
+
+        self.is_dragging = false;
     }
 
     pub fn select_left(&mut self) {
