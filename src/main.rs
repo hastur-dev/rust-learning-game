@@ -304,6 +304,10 @@ mod cache;
 mod progressive_loader;
 mod coordinate_system;
 mod learning_tests;
+mod autocomplete;
+mod hotkeys;
+mod test_runner;
+mod editor_test_mode;
 
 use level::*;
 use item::*;
@@ -846,55 +850,101 @@ fn try_scan(game: &mut Game, dir: (i32, i32)) -> String {
 }
 
 fn try_area_scan(game: &mut Game) -> String {
-    // Area scan for Level 2 - scans current position + 8 surrounding tiles
+    // Area scan for Level 2 - scans current position + 1 extra tile in each cardinal direction beyond known tiles
     let robot_pos = game.robot.get_position();
+    let robot_pos_struct = crate::item::Pos { x: robot_pos.0, y: robot_pos.1 };
     let mut items_found = Vec::new();
     let mut obstacles_found = Vec::new();
     let mut empty_count = 0;
     let mut walls_found = 0;
     let mut out_of_bounds = 0;
-    
-    // Define 3x3 area around robot (including center)
-    let scan_offsets = [
-        (-1, -1), (0, -1), (1, -1),  // Top row
-        (-1,  0), (0,  0), (1,  0),  // Middle row (including current)
-        (-1,  1), (0,  1), (1,  1),  // Bottom row
-    ];
-    
-    for (dx, dy) in scan_offsets.iter() {
-        let scan_pos = crate::item::Pos {
-            x: robot_pos.0 + dx,
-            y: robot_pos.1 + dy
-        };
-        
-        // Check if position is within grid bounds
-        if !game.grid.in_bounds(scan_pos) {
-            out_of_bounds += 1;
-            continue;
+    let mut tiles_revealed = 0;
+
+    // First, determine the current scan radius by checking how far we've already scanned
+    let cardinal_directions = [(0, -1), (1, 0), (0, 1), (-1, 0)]; // North, East, South, West
+    let mut max_scan_distance = 0;
+
+    // Check how far out we've already scanned in each cardinal direction
+    for &(dx, dy) in &cardinal_directions {
+        let mut distance = 1;
+        loop {
+            let check_pos = crate::item::Pos {
+                x: robot_pos.0 + dx * distance,
+                y: robot_pos.1 + dy * distance
+            };
+
+            if !game.grid.in_bounds(check_pos) || !game.grid.known.contains(&check_pos) {
+                break;
+            }
+            distance += 1;
         }
-        
-        // Reveal this tile
-        game.grid.reveal(scan_pos);
-        
-        // Check what's at this position
-        if game.grid.is_blocked(scan_pos) {
-            obstacles_found.push(format!("({}, {})", scan_pos.x, scan_pos.y));
-            walls_found += 1;
-        } else if let Some(item) = game.item_manager.get_item_at_position(scan_pos) {
-            items_found.push(format!("{} at ({}, {})", item.name, scan_pos.x, scan_pos.y));
-        } else {
-            empty_count += 1;
+        max_scan_distance = max_scan_distance.max(distance - 1);
+    }
+
+    // Scan 1 extra tile in each cardinal direction beyond what's already known
+    let new_scan_distance = max_scan_distance + 1;
+
+    // Scan in a cross pattern from the current position up to the new distance
+    for distance in 0..=new_scan_distance {
+        for &(dx, dy) in &cardinal_directions {
+            let scan_pos = crate::item::Pos {
+                x: robot_pos.0 + dx * distance,
+                y: robot_pos.1 + dy * distance
+            };
+
+            // Check if position is within grid bounds
+            if !game.grid.in_bounds(scan_pos) {
+                if distance == new_scan_distance {
+                    out_of_bounds += 1;
+                }
+                continue;
+            }
+
+            // Reveal this tile and count if it's newly revealed
+            if game.grid.reveal(scan_pos) {
+                tiles_revealed += 1;
+            }
+
+            // Only count and report tiles from the new scan distance
+            if distance == new_scan_distance {
+                // Check what's at this position
+                if game.grid.is_blocked(scan_pos) {
+                    obstacles_found.push(format!("({}, {})", scan_pos.x, scan_pos.y));
+                    walls_found += 1;
+                } else if let Some(item) = game.item_manager.get_item_at_position(scan_pos) {
+                    items_found.push(format!("{} at ({}, {})", item.name, scan_pos.x, scan_pos.y));
+                } else {
+                    empty_count += 1;
+                }
+            }
         }
     }
-    
+
+    // Also scan the current position if not already known
+    if game.grid.reveal(robot_pos_struct) {
+        tiles_revealed += 1;
+        if game.grid.is_blocked(robot_pos_struct) {
+            obstacles_found.push(format!("({}, {})", robot_pos_struct.x, robot_pos_struct.y));
+            walls_found += 1;
+        } else if let Some(item) = game.item_manager.get_item_at_position(robot_pos_struct) {
+            items_found.push(format!("{} at ({}, {})", item.name, robot_pos_struct.x, robot_pos_struct.y));
+        }
+    }
+
     // Build result message based on what was found
-    if !items_found.is_empty() {
-        format!("Found items: {}. Empty tiles: {}. Walls: {}.", 
+    let base_message = if !items_found.is_empty() {
+        format!("Found items: {}. Empty tiles: {}. Walls: {}.",
                 items_found.join(", "), empty_count, walls_found)
     } else if walls_found > 0 {
         format!("Empty tiles: {}. Found {} walls/obstacles.", empty_count, walls_found)
     } else {
         format!("All {} accessible tiles are empty.", empty_count)
+    };
+
+    if tiles_revealed > 0 {
+        format!("{}. Revealed {} new tiles.", base_message, tiles_revealed)
+    } else {
+        format!("{}. No new tiles revealed.", base_message)
     }
 }
 
@@ -1514,8 +1564,196 @@ fn window_conf() -> Conf {
     }
 }
 
+// Real editor test mode that uses actual game systems
+async fn run_real_editor_test_mode(enable_all_logs: bool) {
+    println!("🎮 REAL Editor Test Mode Started!");
+    println!("  🖱️  Click and DRAG to select text");
+    println!("  ⌨️  Hold Shift + Arrow keys to select text");
+    println!("  📝 Type to test autocomplete suggestions");
+    println!("  📋 Press Tab to accept suggestions");
+    println!("  ❌ Press Escape to exit");
+
+    // Use the same initialization as the main game but simplified
+    let loader = ProgressiveLoader::new();
+    let mut rng = StdRng::seed_from_u64(0xC0FFEE);
+
+    // Start with minimal embedded levels for immediate play
+    let core_levels = embedded_levels::get_embedded_level_specs();
+    let mut game = Game::new(core_levels.clone(), rng);
+
+    // Enable coordinate logs if --all-logs flag is present
+    game.enable_coordinate_logs = enable_all_logs;
+
+    // Force the editor to be active and set up a test level
+    game.code_editor_active = true;
+    game.current_code = r#"fn main() {
+    println!("Hello World!");
+    let message = String::new();
+    message.push_str("Test");
+
+    // Type here to test autocomplete:
+    // Try typing "pri" and press Tab
+    // Click and drag to select text
+    // Hold Shift + arrow keys to select lines
+
+}"#.to_string();
+    game.cursor_position = game.current_code.len() - 20; // Position near the comment
+
+    // Set up window
+    request_new_screen_size(1200.0, 800.0);
+
+    loop {
+        clear_background(Color::from_rgba(30, 30, 35, 255));
+
+        // Exit handling
+        if is_key_pressed(KeyCode::Escape) {
+            break;
+        }
+
+        // Mouse handling - EXACT same as main game
+        let (mouse_x, mouse_y) = mouse_position();
+
+        // Handle mouse button press - start of potential drag
+        if is_mouse_button_pressed(MouseButton::Left) {
+            // Editor area (full screen for test mode)
+            let editor_x = 50.0;
+            let editor_y = 100.0;
+            let editor_width = screen_width() - 100.0;
+            let editor_height = screen_height() - 150.0;
+
+            if mouse_x >= editor_x && mouse_x <= editor_x + editor_width &&
+               mouse_y >= editor_y && mouse_y <= editor_y + editor_height {
+
+                let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+                game.start_mouse_drag(mouse_x, mouse_y, editor_bounds);
+            }
+        }
+
+        // Handle mouse dragging for text selection
+        if is_mouse_button_down(MouseButton::Left) && game.mouse_drag_start.is_some() {
+            let editor_x = 50.0;
+            let editor_y = 100.0;
+            let editor_width = screen_width() - 100.0;
+            let editor_height = screen_height() - 150.0;
+            let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+
+            game.update_mouse_drag(mouse_x, mouse_y, editor_bounds);
+        }
+
+        // Handle mouse button release - end of drag
+        if is_mouse_button_released(MouseButton::Left) {
+            if game.mouse_drag_start.is_some() {
+                game.end_mouse_drag();
+            }
+        }
+
+        // Code editor input - EXACT same as main game
+        if game.code_editor_active {
+            let mut code_modified = false;
+
+            // Handle character input
+            let mut current_char_pressed = None;
+            while let Some(character) = get_char_pressed() {
+                if character.is_ascii() && !character.is_control() && character != ' ' {
+                    current_char_pressed = Some(character);
+
+                    // Delete selection first if it exists
+                    if game.delete_selection() {
+                        code_modified = true;
+                    }
+
+                    game.current_code.insert(game.cursor_position, character);
+                    game.cursor_position += 1;
+                    code_modified = true;
+                }
+            }
+
+            // Handle space and other input
+            if is_key_pressed(KeyCode::Space) {
+                if game.delete_selection() {
+                    code_modified = true;
+                }
+                game.current_code.insert(game.cursor_position, ' ');
+                game.cursor_position += 1;
+                code_modified = true;
+            }
+
+            // Tab key handling
+            if is_key_pressed(KeyCode::Tab) {
+                if !game.accept_autocomplete() {
+                    // Insert 4 spaces if no autocomplete
+                    if game.delete_selection() {
+                        code_modified = true;
+                    }
+                    game.current_code.insert_str(game.cursor_position, "    ");
+                    game.cursor_position += 4;
+                    code_modified = true;
+                }
+            }
+
+            // Backspace handling
+            if is_key_pressed(KeyCode::Backspace) {
+                if !game.delete_selection() && game.cursor_position > 0 {
+                    game.current_code.remove(game.cursor_position - 1);
+                    game.cursor_position -= 1;
+                    code_modified = true;
+                }
+            }
+
+            // Enter key handling
+            if is_key_pressed(KeyCode::Enter) {
+                if game.delete_selection() {
+                    code_modified = true;
+                }
+                game.current_code.insert(game.cursor_position, '\n');
+                game.cursor_position += 1;
+                code_modified = true;
+            }
+
+            // Arrow key navigation with selection support
+            let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+
+            if is_key_pressed(KeyCode::Up) {
+                game.move_cursor_up_with_selection(shift_held);
+            }
+            if is_key_pressed(KeyCode::Down) {
+                game.move_cursor_down_with_selection(shift_held);
+            }
+            if is_key_pressed(KeyCode::Left) {
+                game.move_cursor_left_with_selection(shift_held);
+            }
+            if is_key_pressed(KeyCode::Right) {
+                game.move_cursor_right_with_selection(shift_held);
+            }
+
+            // Update autocomplete if code modified
+            if code_modified {
+                game.update_autocomplete();
+            }
+        }
+
+        // Draw using the REAL game editor drawing system
+        let editor_x = 50.0;
+        let editor_y = 100.0;
+        let editor_width = screen_width() - 100.0;
+        let editor_height = screen_height() - 150.0;
+
+        // Draw title
+        draw_text("🎮 REAL Editor Test Mode", 20.0, 30.0, 24.0, GREEN);
+        draw_text("Click & Drag or Shift+Arrows to select text", 20.0, 60.0, 16.0, YELLOW);
+
+        // Draw the actual game editor
+        crate::drawing::editor_drawing::draw_code_editor(&mut game);
+
+        next_frame().await;
+    }
+
+    println!("✅ REAL Editor Test Mode Exited");
+}
+
 // Main function for desktop
 #[cfg(not(target_arch = "wasm32"))]
+
 #[macroquad::main(window_conf)]
 async fn main() {
     desktop_main().await;
@@ -2092,6 +2330,7 @@ async fn desktop_main() {
         args.get(pos + 1).cloned()
     }).flatten();
     let debug_all_levels = args.contains(&"--debug".to_string());
+    let editor_test_mode = args.contains(&"--editor-test".to_string());
     
     // Initialize logging with appropriate level based on command line args
     let log_level = if enable_all_logs {
@@ -2103,6 +2342,20 @@ async fn desktop_main() {
     env_logger::Builder::from_default_env()
         .filter_level(log_level)
         .init();
+
+    // Check for editor test mode early
+    if editor_test_mode {
+        info!("Starting REAL Editor Test Mode");
+        run_real_editor_test_mode(enable_all_logs).await;
+        return;
+    }
+
+    // Run autocomplete integration test at startup
+    if enable_all_logs {
+        info!("Running autocomplete integration test...");
+        test_runner::run_quick_smoke_test();
+        info!("Autocomplete test completed");
+    }
     
     if enable_all_logs {
         info!("All logs enabled, including detailed coordinate tracking and debug messages");
@@ -2316,6 +2569,17 @@ async fn desktop_main() {
                     // Mouse handling
                     let (mouse_x, mouse_y) = mouse_position();
                     trace!("Mouse position: ({:.2}, {:.2})", mouse_x, mouse_y);
+
+                    // Debug mouse button states
+                    if is_mouse_button_pressed(MouseButton::Left) {
+                        println!("🖱️  MOUSE PRESSED at ({:.1}, {:.1})", mouse_x, mouse_y);
+                    }
+                    if is_mouse_button_down(MouseButton::Left) {
+                        println!("🖱️  MOUSE DOWN at ({:.1}, {:.1})", mouse_x, mouse_y);
+                    }
+                    if is_mouse_button_released(MouseButton::Left) {
+                        println!("🖱️  MOUSE RELEASED at ({:.1}, {:.1})", mouse_x, mouse_y);
+                    }
                     
                     // Simplified system key checking - less aggressive to avoid crashes
                     let system_key_combination = false; // Temporarily disable complex key checking
@@ -2342,9 +2606,10 @@ async fn desktop_main() {
                         game.update_window_coordinates();
                     }
                     
+                    // Handle mouse button press - start of potential drag
                     if is_mouse_button_pressed(MouseButton::Left) {
                         debug!("Left mouse button pressed at ({:.2}, {:.2}) - input allowed!", mouse_x, mouse_y);
-                        
+
                         // Tab click handling (above sidebar area)
                         let sidebar_x = screen_width() * 0.5 + 16.0; // Match sidebar position
                         let sidebar_width = screen_width() * 0.25;
@@ -2355,24 +2620,24 @@ async fn desktop_main() {
                             let editor_y = 16.0 + 100.0; // Match PADDING constant
                             let editor_width = sidebar_width;
                             let editor_height = screen_height() * 0.6;
-                            
+
                             debug!("Editor bounds: x={:.2}, y={:.2}, w={:.2}, h={:.2}", editor_x, editor_y, editor_width, editor_height);
-                            
+
                             if mouse_x >= editor_x - 10.0 && mouse_x <= editor_x + editor_width + 10.0 &&
                                mouse_y >= editor_y - 10.0 && mouse_y <= editor_y + editor_height + 10.0 {
                                 debug!("Click detected in editor area, activating editor");
                                 game.code_editor_active = true;
-                                
-                                // Position cursor at click location
+
+                                // Start mouse drag for text selection
                                 let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
-                                debug!("Calling position_cursor_at_click with bounds: {:?}", editor_bounds);
-                                
+                                debug!("Starting mouse drag with bounds: {:?}", editor_bounds);
+
                                 match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                    game.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
+                                    game.start_mouse_drag(mouse_x, mouse_y, editor_bounds);
                                 })) {
-                                    Ok(_) => debug!("Cursor positioning completed successfully"),
+                                    Ok(_) => debug!("Mouse drag started successfully"),
                                     Err(e) => {
-                                        error!("Panic caught in position_cursor_at_click: {:?}", e);
+                                        error!("Panic caught in start_mouse_drag: {:?}", e);
                                         // Set safe defaults
                                         game.cursor_position = 0;
                                         if game.current_code.is_empty() {
@@ -2386,7 +2651,36 @@ async fn desktop_main() {
                             }
                         }
                     }
-                    
+
+                    // Handle mouse dragging for text selection
+                    if is_mouse_button_down(MouseButton::Left) && game.mouse_drag_start.is_some() {
+                        let sidebar_x = screen_width() * 0.5 + 16.0;
+                        let sidebar_width = screen_width() * 0.25;
+                        let editor_x = sidebar_x;
+                        let editor_y = 16.0 + 100.0;
+                        let editor_width = sidebar_width;
+                        let editor_height = screen_height() * 0.6;
+                        let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+
+                        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            game.update_mouse_drag(mouse_x, mouse_y, editor_bounds);
+                        })) {
+                            Ok(_) => debug!("Mouse drag updated successfully"),
+                            Err(e) => {
+                                error!("Panic caught in update_mouse_drag: {:?}", e);
+                                game.end_mouse_drag(); // Clean up on error
+                            }
+                        }
+                    }
+
+                    // Handle mouse button release - end of drag
+                    if is_mouse_button_released(MouseButton::Left) {
+                        if game.mouse_drag_start.is_some() {
+                            debug!("Left mouse button released - ending drag");
+                            game.end_mouse_drag();
+                        }
+                    }
+
                     // Code editor input
                     if game.code_editor_active {
                         let mut code_modified = false;
@@ -2476,35 +2770,54 @@ async fn desktop_main() {
                             code_modified = true;
                         }
                         
-                        // Handle tab key - insert 4 spaces for indentation
+                        // Handle tab key - try autocomplete first, then indentation
                         if is_key_pressed(KeyCode::Tab) {
-                            // Delete selection first if it exists
-                            if game.delete_selection() {
+                            // First, try to accept autocomplete suggestion
+                            if game.accept_autocomplete() {
+                                // Autocomplete was accepted
+                                code_modified = true;
+                            } else {
+                                // No autocomplete suggestion, proceed with indentation
+                                // Delete selection first if it exists
+                                if game.delete_selection() {
+                                    code_modified = true;
+                                }
+
+                                // Insert 4 spaces for tab
+                                let tab_spaces = "    "; // 4 spaces
+                                for (i, space) in tab_spaces.chars().enumerate() {
+                                    game.current_code.insert(game.cursor_position + i, space);
+                                }
+                                game.cursor_position += tab_spaces.len();
                                 code_modified = true;
                             }
-                            
-                            // Insert 4 spaces for tab
-                            let tab_spaces = "    "; // 4 spaces
-                            for (i, space) in tab_spaces.chars().enumerate() {
-                                game.current_code.insert(game.cursor_position + i, space);
-                            }
-                            game.cursor_position += tab_spaces.len();
-                            code_modified = true;
                         }
                         
                         // Arrow key navigation with selection support
                         let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
-                        
+
                         if is_key_pressed(KeyCode::Up) || game.should_repeat_up() {
+                            if shift_held {
+                                println!("⌨️  SHIFT+UP pressed - should extend selection");
+                            }
                             game.move_cursor_up_with_selection(shift_held);
                         }
                         if is_key_pressed(KeyCode::Down) || game.should_repeat_down() {
+                            if shift_held {
+                                println!("⌨️  SHIFT+DOWN pressed - should extend selection");
+                            }
                             game.move_cursor_down_with_selection(shift_held);
                         }
                         if is_key_pressed(KeyCode::Left) || game.should_repeat_left() {
+                            if shift_held {
+                                println!("⌨️  SHIFT+LEFT pressed - should extend selection");
+                            }
                             game.move_cursor_left_with_selection(shift_held);
                         }
                         if is_key_pressed(KeyCode::Right) || game.should_repeat_right() {
+                            if shift_held {
+                                println!("⌨️  SHIFT+RIGHT pressed - should extend selection");
+                            }
                             game.move_cursor_right_with_selection(shift_held);
                         }
                         
@@ -2531,6 +2844,8 @@ async fn desktop_main() {
                         // Auto-save on any modification
                         if code_modified {
                             game.save_robot_code();
+                            // Update autocomplete suggestions when code changes
+                            game.update_autocomplete();
                         }
                     }
                     

@@ -12,7 +12,7 @@ mod level14_task1_tests {
                        analyzer.code.contains("serde::{");
         assert!(
             has_serde,
-            "❌ You need to import serde (use serde::{Serialize, Deserialize})"
+            "❌ You need to import serde (use serde::{{Serialize, Deserialize}})"
         );
     }
 

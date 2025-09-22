@@ -165,15 +165,20 @@ pub fn draw_code_editor(game: &mut Game) {
                 // Check if this position is selected
                 let absolute_pos = get_absolute_position(line_index, col, &lines);
                 let is_selected = if let Some((sel_start, sel_end)) = game.get_selection_bounds() {
-                    absolute_pos >= sel_start && absolute_pos < sel_end
+                    let selected = absolute_pos >= sel_start && absolute_pos < sel_end;
+                    if selected && line_index == 0 && col < 5 { // Debug first few chars
+                        println!("🎨 Char at pos {} (line {}, col {}) is SELECTED (range: {}-{})",
+                                absolute_pos, line_index, col, sel_start, sel_end);
+                    }
+                    selected
                 } else {
                     false
                 };
                 
-                // Draw selection background
+                // Draw selection background - make it more visible
                 if is_selected {
-                    draw_rectangle(char_rect.x, char_rect.y, char_rect.w, char_rect.h, 
-                                 Color::new(0.2, 0.4, 0.8, 0.6));
+                    draw_rectangle(char_rect.x, char_rect.y, char_rect.w, char_rect.h,
+                                 Color::new(0.3, 0.5, 1.0, 0.8)); // Brighter blue with higher opacity
                 }
                 
                 // Draw character if it exists
@@ -195,34 +200,39 @@ pub fn draw_code_editor(game: &mut Game) {
             }
         }
     }
-    
+
+    // Calculate cursor position for both cursor drawing and autocomplete
+    let cursor_line = game.current_code[..game.cursor_position].matches('\n').count();
+    let line_start = game.current_code[..game.cursor_position].rfind('\n').map(|i| i + 1).unwrap_or(0);
+    let cursor_col = game.cursor_position - line_start;
+
     // Draw cursor when active - now grid-based
     if game.code_editor_active {
-        let cursor_line = game.current_code[..game.cursor_position].matches('\n').count();
-        let line_start = game.current_code[..game.cursor_position].rfind('\n').map(|i| i + 1).unwrap_or(0);
-        let cursor_col = game.cursor_position - line_start;
-        
         // Show cursor if it's in the visible area
         if cursor_line >= start_line && cursor_line < start_line + max_visible_lines {
             let visible_row = cursor_line - start_line;
             let cursor_x = grid_start_x + (cursor_col as f32 * char_width);
             let cursor_y = grid_start_y + (visible_row as f32 * char_height);
-            
+
             // Draw blinking cursor as a vertical line in the grid cell
             let time = get_time() as f32;
             if (time * 2.0) % 2.0 < 1.0 { // Blink every 0.5 seconds
                 draw_line(
-                    cursor_x, 
-                    cursor_y - scale_size(10.0), 
-                    cursor_x, 
-                    cursor_y + char_height - scale_size(10.0), 
-                    scale_size(2.0), 
+                    cursor_x,
+                    cursor_y - scale_size(10.0),
+                    cursor_x,
+                    cursor_y + char_height - scale_size(10.0),
+                    scale_size(2.0),
                     YELLOW
                 );
             }
         }
     }
-    
+
+    // Draw autocomplete suggestion
+    draw_autocomplete_suggestion(game, cursor_line, cursor_col, start_line, max_visible_lines,
+                                grid_start_x, grid_start_y, char_width, char_height);
+
     // Draw scroll indicator if there are more lines than visible
     if lines.len() > max_visible_lines {
         let scroll_bar_x = editor_x + editor_width - 12.0;
@@ -290,3 +300,101 @@ fn draw_execution_results(game: &Game, editor_x: f32, result_y: f32) {
         }
     }
 }
+
+fn draw_autocomplete_suggestion(
+    game: &Game,
+    cursor_line: usize,
+    cursor_col: usize,
+    start_line: usize,
+    max_visible_lines: usize,
+    grid_start_x: f32,
+    grid_start_y: f32,
+    char_width: f32,
+    char_height: f32,
+) {
+    // Only draw if autocomplete is enabled and there's a suggestion
+    if !game.autocomplete_enabled {
+        return;
+    }
+
+    if let Some(suggestion) = game.get_autocomplete_suggestion() {
+        // Check if cursor is in visible area
+        if cursor_line >= start_line && cursor_line < start_line + max_visible_lines {
+            let visible_row = cursor_line - start_line;
+
+            // Get the current word at cursor to know what to replace
+            let current_word = get_current_word_at_cursor_position(&game.current_code, game.cursor_position);
+
+            // Calculate where to draw the completion (after current partial word)
+            let completion_text = if suggestion.text.len() > current_word.len() {
+                &suggestion.text[current_word.len()..]
+            } else {
+                ""
+            };
+
+            if !completion_text.is_empty() {
+                let suggestion_x = grid_start_x + (cursor_col as f32 * char_width);
+                let suggestion_y = grid_start_y + (visible_row as f32 * char_height);
+
+                // Draw subtle background for the suggestion text (50% opacity)
+                let text_width = completion_text.len() as f32 * char_width;
+                draw_rectangle(
+                    suggestion_x,
+                    suggestion_y - char_height + scale_size(2.0),
+                    text_width,
+                    char_height,
+                    Color::from_rgba(100, 100, 200, 50) // Light blue background with 50% opacity
+                );
+
+                // Draw each character of the completion with 50% opacity overlay
+                let overlay_color = Color::from_rgba(150, 150, 255, 128); // Light blue with 50% opacity
+
+                for (i, ch) in completion_text.chars().enumerate() {
+                    let char_x = suggestion_x + (i as f32 * char_width);
+                    let char_y = suggestion_y;
+
+                    draw_scaled_text(&ch.to_string(), char_x, char_y, 12.0, overlay_color);
+                }
+
+                // Draw a small indicator showing the suggestion type
+                let type_indicator = match suggestion.kind {
+                    crate::autocomplete::SymbolKind::Function => "fn",
+                    crate::autocomplete::SymbolKind::Struct => "struct",
+                    crate::autocomplete::SymbolKind::Enum => "enum",
+                    crate::autocomplete::SymbolKind::Variable => "var",
+                    crate::autocomplete::SymbolKind::Keyword => "key",
+                    crate::autocomplete::SymbolKind::Type => "type",
+                };
+
+                let indicator_x = suggestion_x + (completion_text.len() as f32 * char_width) + scale_size(5.0);
+                let indicator_y = suggestion_y - scale_size(3.0);
+
+                // Draw type indicator with 50% opacity to match the overlay theme
+                draw_scaled_text(type_indicator, indicator_x, indicator_y, 8.0, Color::from_rgba(120, 120, 180, 128));
+            }
+        }
+    }
+}
+
+fn get_current_word_at_cursor_position(code: &str, cursor_position: usize) -> String {
+    let chars: Vec<char> = code.chars().collect();
+    let mut start = cursor_position;
+
+    // Find start of current word
+    while start > 0 {
+        let prev_char = chars[start - 1];
+        if prev_char.is_alphanumeric() || prev_char == '_' {
+            start -= 1;
+        } else {
+            break;
+        }
+    }
+
+    if start < cursor_position {
+        chars[start..cursor_position].iter().collect()
+    } else {
+        String::new()
+    }
+}
+
+

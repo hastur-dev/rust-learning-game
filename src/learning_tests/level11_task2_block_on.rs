@@ -85,7 +85,7 @@ mod level11_task2_tests {
 
         assert!(
             has_structure,
-            "❌ Your code should have proper structure: smol::block_on(async { ... }) with .await usage"
+            "❌ Your code should have proper structure: smol::block_on(async {{ ... }}) with .await usage"
         );
     }
 }

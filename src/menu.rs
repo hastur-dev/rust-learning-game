@@ -10,6 +10,7 @@ pub enum MenuState {
     MainMenu,
     Settings,
     LevelSelect,
+    HotkeySettings,
     InGame,
 }
 
@@ -33,6 +34,10 @@ pub enum MenuAction {
     DecreaseMusicVolume,
     IncreaseFontSize,
     DecreaseFontSize,
+    ToggleAutocomplete,
+    ToggleVSCodeIntegration,
+    OpenHotkeySettings,
+    BackToSettings,
 }
 
 #[derive(Clone, Debug)]
@@ -173,6 +178,8 @@ pub struct GameSettings {
     pub sfx_volume: f32,
     pub music_volume: f32,
     pub font_size_multiplier: f32,
+    pub autocomplete_enabled: bool,
+    pub vscode_integration_enabled: bool,
 }
 
 impl Default for GameSettings {
@@ -185,6 +192,8 @@ impl Default for GameSettings {
             sfx_volume: 0.7,
             music_volume: 0.5,
             font_size_multiplier: 1.0,
+            autocomplete_enabled: true,
+            vscode_integration_enabled: true,
         }
     }
 }
@@ -369,36 +378,36 @@ impl Menu {
             MenuAction::ToggleFullscreen,
         ));
 
-        // Volume controls
+        // Autocomplete toggle
         self.buttons.push(MenuButton::new(
-            format!("SFX Volume: {:.0}% (Click: +10%, Right-Click: -10%)", 
-                   self.settings.sfx_volume * 100.0),
+            format!("Autocomplete: {} (Click to Toggle)",
+                   if true { "On" } else { "Off" }), // TODO: Get actual autocomplete state
             screen_center_x - button_width / 2.0,
             start_y + button_spacing * 2.0,
             button_width,
             button_height,
-            MenuAction::IncreaseSfxVolume,
-        ));
-
-        self.buttons.push(MenuButton::new(
-            format!("Music Volume: {:.0}% (Click: +10%, Right-Click: -10%)", 
-                   self.settings.music_volume * 100.0),
-            screen_center_x - button_width / 2.0,
-            start_y + button_spacing * 3.0,
-            button_width,
-            button_height,
-            MenuAction::IncreaseMusicVolume,
+            MenuAction::ToggleAutocomplete,
         ));
 
         // Font size control
         self.buttons.push(MenuButton::new(
-            format!("Font Size: {:.0}% (Click: +10%, Right-Click: -10%)", 
+            format!("Font Size: {:.0}% (Click: +10%, Right-Click: -10%)",
                    self.settings.font_size_multiplier * 100.0),
+            screen_center_x - button_width / 2.0,
+            start_y + button_spacing * 3.0,
+            button_width,
+            button_height,
+            MenuAction::IncreaseFontSize,
+        ));
+
+        // Hotkey settings button
+        self.buttons.push(MenuButton::new(
+            "Hotkey Settings".to_string(),
             screen_center_x - button_width / 2.0,
             start_y + button_spacing * 4.0,
             button_width,
             button_height,
-            MenuAction::IncreaseFontSize,
+            MenuAction::OpenHotkeySettings,
         ));
 
         // Back button - context-aware
@@ -407,7 +416,7 @@ impl Menu {
         } else {
             ("Back to Main".to_string(), MenuAction::BackToMain)
         };
-        
+
         self.buttons.push(MenuButton::new(
             back_text,
             screen_center_x - button_width / 2.0,
@@ -418,6 +427,95 @@ impl Menu {
         ));
     }
 
+    pub fn setup_hotkey_settings_menu(&mut self) {
+        self.buttons.clear();
+
+        let screen_center_x = screen_width() / 2.0;
+        let button_width = scale_size(500.0);
+        let button_height = scale_size(50.0);
+        let button_spacing = scale_size(70.0);
+        let start_y = screen_height() / 2.0 - scale_size(200.0);
+
+        // Title info
+        self.buttons.push(MenuButton::new(
+            "HOTKEY SETTINGS".to_string(),
+            screen_center_x - button_width / 2.0,
+            start_y - button_spacing,
+            button_width,
+            button_height,
+            MenuAction::None,
+        ));
+
+        // Display current key bindings (first few important ones)
+        let key_bindings = vec![
+            ("Tab", "Accept Autocomplete / Indent"),
+            ("Ctrl+S", "Save File"),
+            ("Ctrl+Shift+Enter", "Run Code"),
+            ("Ctrl+`", "Toggle Editor"),
+            ("Ctrl+Z", "Undo"),
+            ("Ctrl+Y", "Redo"),
+        ];
+
+        for (i, (key, action)) in key_bindings.iter().enumerate() {
+            self.buttons.push(MenuButton::new(
+                format!("{}: {}", key, action),
+                screen_center_x - button_width / 2.0,
+                start_y + (i as f32 * button_spacing * 0.8),
+                button_width,
+                button_height * 0.8,
+                MenuAction::None,
+            ));
+        }
+
+        // Import buttons
+        let import_y = start_y + (key_bindings.len() as f32 * button_spacing * 0.8) + button_spacing;
+
+        self.buttons.push(MenuButton::new(
+            "Import VSCode Keybindings".to_string(),
+            screen_center_x - button_width / 2.0,
+            import_y,
+            button_width,
+            button_height,
+            MenuAction::None, // TODO: Add import actions
+        ));
+
+        self.buttons.push(MenuButton::new(
+            "Import Vim Settings".to_string(),
+            screen_center_x - button_width / 2.0,
+            import_y + button_spacing,
+            button_width,
+            button_height,
+            MenuAction::None, // TODO: Add import actions
+        ));
+
+        self.buttons.push(MenuButton::new(
+            "Import Emacs Settings".to_string(),
+            screen_center_x - button_width / 2.0,
+            import_y + button_spacing * 2.0,
+            button_width,
+            button_height,
+            MenuAction::None, // TODO: Add import actions
+        ));
+
+        // Reset and back buttons
+        self.buttons.push(MenuButton::new(
+            "Reset to Defaults".to_string(),
+            screen_center_x - button_width / 2.0,
+            import_y + button_spacing * 3.5,
+            button_width,
+            button_height,
+            MenuAction::None, // TODO: Add reset action
+        ));
+
+        self.buttons.push(MenuButton::new(
+            "Back to Settings".to_string(),
+            screen_center_x - button_width / 2.0,
+            import_y + button_spacing * 4.5,
+            button_width,
+            button_height,
+            MenuAction::BackToSettings,
+        ));
+    }
 
     pub fn check_screen_resize(&mut self) {
         let current_width = screen_width();
@@ -436,6 +534,7 @@ impl Menu {
                 MenuState::MainMenu => self.setup_main_menu(),
                 MenuState::Settings => self.setup_settings_menu(),
                 MenuState::LevelSelect => self.setup_level_select_menu(),
+                MenuState::HotkeySettings => self.setup_hotkey_settings_menu(),
                 MenuState::InGame => {}, // No menu to refresh
             }
         }
@@ -549,6 +648,7 @@ impl Menu {
                         return MenuAction::BackToMain;
                     }
                 },
+                MenuState::HotkeySettings => return MenuAction::BackToSettings,
                 _ => return MenuAction::BackToMain,
             }
         }
@@ -642,12 +742,27 @@ impl Menu {
                 let _ = self.settings.save(); // Save settings when changed
                 // Menu will be refreshed at end of update method
             },
+            MenuAction::ToggleAutocomplete => {
+                self.settings.autocomplete_enabled = !self.settings.autocomplete_enabled;
+                let _ = self.settings.save(); // Save settings when changed
+                // Menu will be refreshed at end of update method
+            },
+            MenuAction::OpenHotkeySettings => {
+                self.state = MenuState::HotkeySettings;
+                self.setup_hotkey_settings_menu();
+            },
+            MenuAction::BackToSettings => {
+                self.state = MenuState::Settings;
+                self.setup_settings_menu();
+            },
             _ => {}
         }
         
-        // Refresh menu if we're in Settings to ensure buttons stay visible
-        if matches!(self.state, MenuState::Settings) {
-            self.setup_settings_menu();
+        // Refresh menu if we're in Settings or HotkeySettings to ensure buttons stay visible
+        match self.state {
+            MenuState::Settings => self.setup_settings_menu(),
+            MenuState::HotkeySettings => self.setup_hotkey_settings_menu(),
+            _ => {}
         }
     }
 
@@ -670,6 +785,7 @@ impl Menu {
             },
             MenuState::Settings => self.draw_settings_menu(),
             MenuState::LevelSelect => self.draw_level_select_menu(),
+            MenuState::HotkeySettings => self.draw_hotkey_settings_menu(),
             MenuState::InGame => {}, // Game drawing handled elsewhere
         }
     }
@@ -875,5 +991,26 @@ impl Menu {
             
             draw_scaled_text(&count_text, count_x, bar_y + bar_height + scale_size(15.0), count_size, GRAY);
         }
+    }
+
+    fn draw_hotkey_settings_menu(&self) {
+        // Draw background
+        self.draw_background();
+
+        // Draw title
+        let title = "Hotkey Settings";
+        let title_size = 36.0;
+        let scaled_title_size = scale_font_size(title_size);
+        let title_dimensions = measure_text(title, None, scaled_title_size as u16, 1.0);
+        let title_x = (screen_width() - title_dimensions.width) / 2.0;
+        draw_scaled_text(title, title_x, scale_size(100.0), title_size, WHITE);
+
+        // Draw buttons
+        for button in &self.buttons {
+            button.draw();
+        }
+
+        // Draw instructions
+        draw_scaled_text("Configure keyboard shortcuts and import from other editors", scale_size(50.0), screen_height() - scale_size(50.0), 14.0, GRAY);
     }
 }

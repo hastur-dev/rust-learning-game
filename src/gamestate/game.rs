@@ -38,6 +38,8 @@ impl Game {
             cursor_position: 0,
             selection_start: None,
             selection_end: None,
+            mouse_drag_start: None,
+            is_dragging: false,
             code_scroll_offset: 0,
             code_lines_visible: 30, // Default number of lines visible
             enemy_step_paused: false,
@@ -79,6 +81,9 @@ impl Game {
             enable_coordinate_logs: false, // Default to disabled, enabled via --all-logs command line flag
             last_window_update_time: 0.0, // Initialize timer
             last_mouse_click_time: 0.0,   // Initialize click timer
+            autocomplete_engine: crate::autocomplete::AutocompleteEngine::new(),
+            autocomplete_enabled: true,   // Enable autocomplete by default
+            hotkey_system: crate::hotkeys::HotkeySystem::new(),
         }
     }
 
@@ -576,5 +581,138 @@ impl Game {
             self.show_level_complete();
             self.finish_level();
         }
+    }
+
+    // Autocomplete integration methods
+    pub fn update_autocomplete(&mut self) {
+        if self.autocomplete_enabled {
+            self.autocomplete_engine.update_suggestions(&self.current_code, self.cursor_position);
+
+            // Update user symbols occasionally for better completions (not every frame to avoid lag)
+            if self.turns % 5 == 0 {  // Every 5 game turns to avoid lag
+                self.autocomplete_engine.update_user_symbols(&self.current_code);
+            }
+        }
+    }
+
+    pub fn get_autocomplete_suggestion(&self) -> Option<&crate::autocomplete::AutocompleteSuggestion> {
+        if self.autocomplete_enabled {
+            self.autocomplete_engine.get_current_suggestion()
+        } else {
+            None
+        }
+    }
+
+    pub fn accept_autocomplete(&mut self) -> bool {
+        if self.autocomplete_enabled {
+            if let Some(completion) = self.autocomplete_engine.accept_suggestion() {
+                // Get the current word to replace
+                let current_word = self.get_current_word_at_cursor();
+                let start_pos = self.cursor_position - current_word.len();
+
+                // Remove the current partial word
+                for _ in 0..current_word.len() {
+                    if self.cursor_position > 0 {
+                        self.cursor_position -= 1;
+                        self.current_code.remove(self.cursor_position);
+                    }
+                }
+
+                // Insert the completion
+                for (i, ch) in completion.chars().enumerate() {
+                    self.current_code.insert(self.cursor_position + i, ch);
+                }
+                self.cursor_position += completion.len();
+
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn toggle_autocomplete(&mut self) {
+        self.autocomplete_enabled = !self.autocomplete_enabled;
+        if !self.autocomplete_enabled {
+            self.autocomplete_engine.clear_suggestion();
+        }
+    }
+
+    fn get_current_word_at_cursor(&self) -> String {
+        let chars: Vec<char> = self.current_code.chars().collect();
+        let mut start = self.cursor_position;
+
+        // Find start of current word
+        while start > 0 {
+            let prev_char = chars[start - 1];
+            if prev_char.is_alphanumeric() || prev_char == '_' {
+                start -= 1;
+            } else {
+                break;
+            }
+        }
+
+        if start < self.cursor_position {
+            chars[start..self.cursor_position].iter().collect()
+        } else {
+            String::new()
+        }
+    }
+
+    // Hotkey system integration methods
+    pub fn handle_hotkey(&mut self, key: macroquad::prelude::KeyCode, ctrl: bool, shift: bool, alt: bool) -> bool {
+        if let Some(action) = self.hotkey_system.get_action_for_input(key, ctrl, shift, alt) {
+            self.execute_hotkey_action(action)
+        } else {
+            false
+        }
+    }
+
+    fn execute_hotkey_action(&mut self, action: crate::hotkeys::EditorAction) -> bool {
+        match action {
+            crate::hotkeys::EditorAction::Accept => {
+                self.accept_autocomplete()
+            },
+            crate::hotkeys::EditorAction::ToggleEditor => {
+                self.code_editor_active = !self.code_editor_active;
+                true
+            },
+            crate::hotkeys::EditorAction::SaveFile => {
+                self.save_robot_code();
+                true
+            },
+            // Add more actions as needed
+            _ => false,
+        }
+    }
+
+    pub fn load_hotkey_config(&mut self) -> Result<(), String> {
+        self.hotkey_system.load_config()
+    }
+
+    pub fn save_hotkey_config(&self) -> Result<(), String> {
+        self.hotkey_system.save_config()
+    }
+
+    // Menu integration methods for autocomplete settings
+    pub fn apply_menu_settings(&mut self, settings: &crate::menu::GameSettings) {
+        self.autocomplete_enabled = settings.autocomplete_enabled;
+        self.autocomplete_engine.set_enabled(settings.autocomplete_enabled);
+        self.autocomplete_engine.set_vscode_enabled(settings.vscode_integration_enabled);
+    }
+
+    pub fn toggle_autocomplete_setting(&mut self) -> bool {
+        self.autocomplete_enabled = !self.autocomplete_enabled;
+        self.autocomplete_engine.set_enabled(self.autocomplete_enabled);
+        self.autocomplete_enabled
+    }
+
+    pub fn toggle_vscode_integration_setting(&mut self) -> bool {
+        let new_state = !self.autocomplete_engine.is_vscode_enabled();
+        self.autocomplete_engine.set_vscode_enabled(new_state);
+        new_state
+    }
+
+    pub fn is_vscode_available(&self) -> bool {
+        self.autocomplete_engine.is_vscode_available()
     }
 }

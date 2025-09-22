@@ -70,6 +70,8 @@ pub struct Game {
     pub cursor_position: usize,
     pub selection_start: Option<usize>, // Start of text selection (None = no selection)
     pub selection_end: Option<usize>,   // End of text selection (None = no selection)
+    pub mouse_drag_start: Option<(f32, f32)>, // Mouse position when drag started (None = no drag)
+    pub is_dragging: bool,              // Whether we're currently dragging to select text
     pub code_scroll_offset: usize, // Top line displayed in editor
     pub code_lines_visible: usize, // Number of lines visible in editor
     pub enemy_step_paused: bool,
@@ -113,6 +115,11 @@ pub struct Game {
     // Window tracking timer
     pub last_window_update_time: f64, // Time of last window coordinate update (for throttling)
     pub last_mouse_click_time: f64,   // Time of last mouse click (for click rate limiting)
+    // Autocomplete system
+    pub autocomplete_engine: crate::autocomplete::AutocompleteEngine,
+    pub autocomplete_enabled: bool,   // Global autocomplete enable/disable
+    // Hotkey system
+    pub hotkey_system: crate::hotkeys::HotkeySystem,
 }
 
 // Learning level configuration

@@ -540,12 +540,109 @@ impl Game {
         }
         self.cached_font_size
     }
-    
+
     pub fn get_cached_char_width(&mut self) -> f32 {
         if self.needs_font_refresh {
             self.refresh_font_measurements();
         }
         self.cached_char_width
+    }
+
+    // Mouse drag selection methods
+    pub fn start_mouse_drag(&mut self, mouse_x: f32, mouse_y: f32, editor_bounds: (f32, f32, f32, f32)) {
+        println!("🖱️  Starting mouse drag at ({:.1}, {:.1})", mouse_x, mouse_y);
+        self.mouse_drag_start = Some((mouse_x, mouse_y));
+        self.is_dragging = false; // Will become true when mouse moves
+
+        // Position cursor at click location and save this as our selection start
+        let initial_cursor = self.cursor_position;
+        self.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
+        println!("🖱️  Cursor moved from {} to {}", initial_cursor, self.cursor_position);
+
+        // Clear any existing selection and set the drag start position for selection
+        self.clear_selection();
+        // Store the click position as the potential selection start
+        self.selection_start = Some(self.cursor_position);
+    }
+
+    pub fn update_mouse_drag(&mut self, mouse_x: f32, mouse_y: f32, editor_bounds: (f32, f32, f32, f32)) {
+        if let Some((start_x, start_y)) = self.mouse_drag_start {
+            // Check if mouse has moved enough to start dragging
+            let drag_threshold = 3.0; // pixels
+            let moved_distance = ((mouse_x - start_x).powi(2) + (mouse_y - start_y).powi(2)).sqrt();
+
+            println!("🖱️  Mouse at ({:.1}, {:.1}), moved {:.1}px from start", mouse_x, mouse_y, moved_distance);
+
+            if moved_distance > drag_threshold {
+                if !self.is_dragging {
+                    // Start dragging - selection start was already set in start_mouse_drag
+                    println!("🖱️  Starting text selection (threshold exceeded)");
+                    self.is_dragging = true;
+                    println!("🖱️  Selection started at cursor position {}", self.selection_start.unwrap_or(0));
+                }
+
+                // Update selection end to current mouse position
+                let old_cursor = self.cursor_position;
+                self.position_cursor_at_click(mouse_x, mouse_y, editor_bounds);
+                let new_cursor = self.cursor_position;
+
+                // Update selection end
+                self.selection_end = Some(new_cursor);
+                println!("🖱️  Selection updated: {} to {}",
+                    self.selection_start.unwrap_or(0), self.selection_end.unwrap_or(0));
+
+                // Restore cursor to selection end
+                self.cursor_position = new_cursor;
+            }
+        }
+    }
+
+    pub fn end_mouse_drag(&mut self) {
+        self.mouse_drag_start = None;
+        self.is_dragging = false;
+
+        // If we have a selection but start equals end, clear it
+        if let Some((start, end)) = self.get_selection_bounds() {
+            if start == end {
+                self.clear_selection();
+            }
+        }
+    }
+
+    pub fn select_left(&mut self) {
+        if self.selection_start.is_none() {
+            self.selection_start = Some(self.cursor_position);
+        }
+        self.move_cursor_left();
+        self.selection_end = Some(self.cursor_position);
+        println!("⬅️  Selection: {:?} to {:?}", self.selection_start, self.selection_end);
+    }
+
+    pub fn select_right(&mut self) {
+        if self.selection_start.is_none() {
+            self.selection_start = Some(self.cursor_position);
+        }
+        self.move_cursor_right();
+        self.selection_end = Some(self.cursor_position);
+        println!("➡️  Selection: {:?} to {:?}", self.selection_start, self.selection_end);
+    }
+
+    pub fn select_up(&mut self) {
+        if self.selection_start.is_none() {
+            self.selection_start = Some(self.cursor_position);
+        }
+        self.move_cursor_up();
+        self.selection_end = Some(self.cursor_position);
+        println!("⬆️  Selection: {:?} to {:?}", self.selection_start, self.selection_end);
+    }
+
+    pub fn select_down(&mut self) {
+        if self.selection_start.is_none() {
+            self.selection_start = Some(self.cursor_position);
+        }
+        self.move_cursor_down();
+        self.selection_end = Some(self.cursor_position);
+        println!("⬇️  Selection: {:?} to {:?}", self.selection_start, self.selection_end);
     }
     
     pub fn get_cached_line_height(&mut self) -> f32 {

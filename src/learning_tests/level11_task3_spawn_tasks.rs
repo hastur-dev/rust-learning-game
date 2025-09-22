@@ -65,7 +65,7 @@ mod level11_task3_tests {
         let analyzer = create_analyzer().expect("Failed to load user code");
         assert!(
             analyzer.code.contains("async {") || analyzer.code.contains("async move {"),
-            "❌ Use async closures {} in smol::spawn"
+            "❌ Use async closures in smol::spawn"
         );
     }
 
