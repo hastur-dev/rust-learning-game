@@ -1751,6 +1751,398 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
     println!("✅ REAL Editor Test Mode Exited");
 }
 
+// Robot command test mode with button interface
+async fn run_command_test_mode(enable_all_logs: bool) {
+    println!("🎮 Robot Command Test Mode Started!");
+    println!("  🖱️  Click buttons to test robot commands");
+    println!("  🤖 Available commands: move_bot, scan, grab, laser");
+    println!("  🎯 Watch the robot execute commands in real-time");
+    println!("  ❌ Press Escape to exit");
+
+    // Use the same initialization as the main game but simplified
+    let loader = ProgressiveLoader::new();
+    let mut rng = StdRng::seed_from_u64(0xDEADBEEF); // Different seed for variety
+
+    // Start with embedded levels
+    let core_levels = embedded_levels::get_embedded_level_specs();
+    let mut game = Game::new(core_levels.clone(), rng);
+
+    // Enable coordinate logs if --all-logs flag is present
+    game.enable_coordinate_logs = enable_all_logs;
+
+    // Set up a simple level for testing
+    game.level_idx = 1; // Use level 2 which has more space
+    game.load_level(1);
+
+    // Enable code editor so we can test both buttons AND code editing
+    game.code_editor_active = true;
+
+    // Set up some default test code
+    game.current_code = r#"fn main() {
+    // Test the robot commands!
+    // Try: move_bot("right");
+    // Try: scan("current");
+    // Try: grab();
+
+    println!("Hello from the robot!");
+}
+"#.to_string();
+    game.cursor_position = game.current_code.len() - 20;
+
+    // Set up window
+    request_new_screen_size(1200.0, 800.0);
+
+    let mut last_result = "Ready to test commands!".to_string();
+
+    loop {
+        clear_background(Color::from_rgba(30, 30, 35, 255));
+
+        // Exit handling
+        if is_key_pressed(KeyCode::Escape) {
+            break;
+        }
+
+        // Get mouse position for button and editor handling
+        let (mouse_x, mouse_y) = mouse_position();
+
+        // Handle mouse for editor text selection - SAME as real editor test mode
+        if is_mouse_button_pressed(MouseButton::Left) {
+            // Check if click is in editor area
+            let editor_x = 180.0;
+            let editor_y = 100.0;
+            let editor_width = 400.0;
+            let editor_height = screen_height() - 200.0;
+
+            if mouse_x >= editor_x && mouse_x <= editor_x + editor_width &&
+               mouse_y >= editor_y && mouse_y <= editor_y + editor_height {
+
+                let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+                game.start_mouse_drag(mouse_x, mouse_y, editor_bounds);
+            }
+        }
+
+        // Handle mouse dragging for text selection in editor
+        if is_mouse_button_down(MouseButton::Left) && game.mouse_drag_start.is_some() {
+            let editor_x = 180.0;
+            let editor_y = 100.0;
+            let editor_width = 400.0;
+            let editor_height = screen_height() - 200.0;
+            let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
+
+            game.update_mouse_drag(mouse_x, mouse_y, editor_bounds);
+        }
+
+        // Handle mouse button release - end of drag
+        if is_mouse_button_released(MouseButton::Left) {
+            if game.mouse_drag_start.is_some() {
+                game.end_mouse_drag();
+            }
+        }
+
+        // Code editor keyboard input - SAME as real editor test mode
+        if game.code_editor_active {
+            let mut code_modified = false;
+
+            // Handle character input
+            let mut current_char_pressed = None;
+            while let Some(character) = get_char_pressed() {
+                if character.is_ascii() && !character.is_control() && character != ' ' {
+                    current_char_pressed = Some(character);
+
+                    // Delete selection first if it exists
+                    if game.delete_selection() {
+                        code_modified = true;
+                    }
+
+                    game.current_code.insert(game.cursor_position, character);
+                    game.cursor_position += 1;
+                    code_modified = true;
+                }
+            }
+
+            // Handle space and other input
+            if is_key_pressed(KeyCode::Space) {
+                if game.delete_selection() {
+                    code_modified = true;
+                }
+                game.current_code.insert(game.cursor_position, ' ');
+                game.cursor_position += 1;
+                code_modified = true;
+            }
+
+            // Tab key handling
+            if is_key_pressed(KeyCode::Tab) {
+                if !game.accept_autocomplete() {
+                    // Insert 4 spaces if no autocomplete
+                    if game.delete_selection() {
+                        code_modified = true;
+                    }
+                    game.current_code.insert_str(game.cursor_position, "    ");
+                    game.cursor_position += 4;
+                    code_modified = true;
+                }
+            }
+
+            // Backspace handling
+            if is_key_pressed(KeyCode::Backspace) {
+                if !game.delete_selection() && game.cursor_position > 0 {
+                    game.current_code.remove(game.cursor_position - 1);
+                    game.cursor_position -= 1;
+                    code_modified = true;
+                }
+            }
+
+            // Enter key handling
+            if is_key_pressed(KeyCode::Enter) {
+                // Check if Shift+Enter (execute code)
+                let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+
+                if shift_held {
+                    // Execute the code
+                    last_result = format!("Code execution requested! (Feature coming soon)");
+                } else {
+                    // Regular enter (new line)
+                    if game.delete_selection() {
+                        code_modified = true;
+                    }
+                    game.current_code.insert(game.cursor_position, '\n');
+                    game.cursor_position += 1;
+                    code_modified = true;
+                }
+            }
+
+            // Arrow key navigation with selection support
+            let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+
+            if is_key_pressed(KeyCode::Up) {
+                game.move_cursor_up_with_selection(shift_held);
+            }
+            if is_key_pressed(KeyCode::Down) {
+                game.move_cursor_down_with_selection(shift_held);
+            }
+            if is_key_pressed(KeyCode::Left) {
+                game.move_cursor_left_with_selection(shift_held);
+            }
+            if is_key_pressed(KeyCode::Right) {
+                game.move_cursor_right_with_selection(shift_held);
+            }
+
+            // Update autocomplete if code modified
+            if code_modified {
+                game.update_autocomplete();
+            }
+        }
+
+        // Define button layout
+        let button_width = 120.0;
+        let button_height = 40.0;
+        let button_spacing = 10.0;
+        let start_x = 20.0;
+        let start_y = 50.0;
+
+        // Movement buttons
+        let mut button_y = start_y;
+
+        // Movement section
+        draw_text("🚶 MOVEMENT", start_x, button_y - 5.0, 20.0, YELLOW);
+        button_y += 25.0;
+
+        let move_up_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Move Up ⬆️", move_up_rect, mouse_x, mouse_y) {
+            let call = FunctionCall {
+                function: RustFunction::Move,
+                direction: Some((0, -1)),
+                coordinates: None,
+                level_number: None,
+                boolean_param: None,
+                message: None,
+            };
+            last_result = execute_function(&mut game, call);
+        }
+
+        button_y += button_height + button_spacing;
+        let move_down_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Move Down ⬇️", move_down_rect, mouse_x, mouse_y) {
+            let call = FunctionCall {
+                function: RustFunction::Move,
+                direction: Some((0, 1)),
+                coordinates: None,
+                level_number: None,
+                boolean_param: None,
+                message: None,
+            };
+            last_result = execute_function(&mut game, call);
+        }
+
+        button_y += button_height + button_spacing;
+        let move_left_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Move Left ⬅️", move_left_rect, mouse_x, mouse_y) {
+            let call = FunctionCall {
+                function: RustFunction::Move,
+                direction: Some((-1, 0)),
+                coordinates: None,
+                level_number: None,
+                boolean_param: None,
+                message: None,
+            };
+            last_result = execute_function(&mut game, call);
+        }
+
+        button_y += button_height + button_spacing;
+        let move_right_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Move Right ➡️", move_right_rect, mouse_x, mouse_y) {
+            let call = FunctionCall {
+                function: RustFunction::Move,
+                direction: Some((1, 0)),
+                coordinates: None,
+                level_number: None,
+                boolean_param: None,
+                message: None,
+            };
+            last_result = execute_function(&mut game, call);
+        }
+
+        // Scan section
+        button_y += button_height + button_spacing * 2.0;
+        draw_text("🔍 SCANNING", start_x, button_y - 5.0, 20.0, SKYBLUE);
+        button_y += 25.0;
+
+        let scan_up_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Scan Up 🔍⬆️", scan_up_rect, mouse_x, mouse_y) {
+            let call = FunctionCall {
+                function: RustFunction::Scan,
+                direction: Some((0, -1)),
+                coordinates: None,
+                level_number: None,
+                boolean_param: None,
+                message: None,
+            };
+            last_result = execute_function(&mut game, call);
+        }
+
+        button_y += button_height + button_spacing;
+        let scan_current_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Scan Current 🔍⚪", scan_current_rect, mouse_x, mouse_y) {
+            let call = FunctionCall {
+                function: RustFunction::Scan,
+                direction: Some((0, 0)), // "current" scan
+                coordinates: None,
+                level_number: None,
+                boolean_param: None,
+                message: None,
+            };
+            last_result = execute_function(&mut game, call);
+        }
+
+        // Grab section
+        button_y += button_height + button_spacing * 2.0;
+        draw_text("🤏 ACTIONS", start_x, button_y - 5.0, 20.0, GREEN);
+        button_y += 25.0;
+
+        let grab_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Grab Items 🤏💎", grab_rect, mouse_x, mouse_y) {
+            let call = FunctionCall {
+                function: RustFunction::Grab,
+                direction: None,
+                coordinates: None,
+                level_number: None,
+                boolean_param: None,
+                message: None,
+            };
+            last_result = execute_function(&mut game, call);
+        }
+
+        // Laser section (if available)
+        if game.level_idx >= 3 {
+            button_y += button_height + button_spacing * 2.0;
+            draw_text("🔥 LASER", start_x, button_y - 5.0, 20.0, RED);
+            button_y += 25.0;
+
+            let laser_up_rect = (start_x, button_y, button_width, button_height);
+            if draw_button("Laser Up 🔥⬆️", laser_up_rect, mouse_x, mouse_y) {
+                let call = FunctionCall {
+                    function: RustFunction::LaserDirection,
+                    direction: Some((0, -1)),
+                    coordinates: None,
+                    level_number: None,
+                    boolean_param: None,
+                    message: None,
+                };
+                last_result = execute_function(&mut game, call);
+            }
+        }
+
+        // Reset level button
+        button_y += button_height + button_spacing * 2.0;
+        let reset_rect = (start_x, button_y, button_width, button_height);
+        if draw_button("Reset Level 🔄", reset_rect, mouse_x, mouse_y) {
+            let idx = game.level_idx;
+            game.load_level(idx);
+            last_result = "Level reset!".to_string();
+        }
+
+        // Draw the code editor in the middle area
+        let editor_x = 180.0;
+        let editor_width = 400.0;
+        safe_draw_operation(|| {
+            crate::drawing::editor_drawing::draw_code_editor(&mut game);
+        }, "command_test_draw_editor");
+
+        // Draw the game (grid, robot, etc.) on the right side
+        let game_area_x = editor_x + editor_width + 20.0;
+        safe_draw_operation(|| {
+            // Draw the actual game grid and robot
+            crate::drawing::game_drawing::draw_game(&game);
+            // Draw game info (stats, inventory, etc.)
+            crate::drawing::ui_drawing::draw_game_info(&game);
+        }, "command_test_draw_game");
+
+        // Draw the result message at the bottom
+        draw_text("Last Result:", game_area_x, screen_height() - 40.0, 18.0, WHITE);
+        draw_text(&last_result, game_area_x, screen_height() - 20.0, 16.0, LIME);
+
+        // Draw instructions at the top
+        draw_text("🎮 Robot Command Test Mode", 10.0, 25.0, 20.0, YELLOW);
+        draw_text("Left: Click buttons | Middle: Edit code (type/click/drag/Shift+arrows) | Right: See results", 10.0, 45.0, 14.0, LIGHTGRAY);
+
+        next_frame().await;
+    }
+
+    println!("✅ Robot Command Test Mode Exited");
+}
+
+// Helper function to draw a button and return true if clicked
+fn draw_button(text: &str, rect: (f32, f32, f32, f32), mouse_x: f32, mouse_y: f32) -> bool {
+    let (x, y, width, height) = rect;
+
+    // Check if mouse is over button
+    let is_hover = mouse_x >= x && mouse_x <= x + width && mouse_y >= y && mouse_y <= y + height;
+    let is_clicked = is_hover && is_mouse_button_pressed(MouseButton::Left);
+
+    // Choose colors based on state
+    let bg_color = if is_hover {
+        Color::from_rgba(70, 70, 80, 255)
+    } else {
+        Color::from_rgba(50, 50, 60, 255)
+    };
+    let border_color = if is_hover { WHITE } else { LIGHTGRAY };
+
+    // Draw button background
+    draw_rectangle(x, y, width, height, bg_color);
+
+    // Draw button border
+    draw_rectangle_lines(x, y, width, height, 1.0, border_color);
+
+    // Draw button text
+    let text_size = 14.0;
+    let text_dims = measure_text(text, None, text_size as u16, 1.0);
+    let text_x = x + (width - text_dims.width) / 2.0;
+    let text_y = y + (height + text_dims.height) / 2.0;
+    draw_text(text, text_x, text_y, text_size, WHITE);
+
+    is_clicked
+}
+
 // Main function for desktop
 #[cfg(not(target_arch = "wasm32"))]
 
@@ -2331,6 +2723,7 @@ async fn desktop_main() {
     }).flatten();
     let debug_all_levels = args.contains(&"--debug".to_string());
     let editor_test_mode = args.contains(&"--editor-test".to_string());
+    let command_test_mode = args.contains(&"--command-test".to_string());
     
     // Initialize logging with appropriate level based on command line args
     let log_level = if enable_all_logs {
@@ -2347,6 +2740,13 @@ async fn desktop_main() {
     if editor_test_mode {
         info!("Starting REAL Editor Test Mode");
         run_real_editor_test_mode(enable_all_logs).await;
+        return;
+    }
+
+    // Check for command test mode
+    if command_test_mode {
+        info!("Starting Robot Command Test Mode");
+        run_command_test_mode(enable_all_logs).await;
         return;
     }
 
