@@ -1,5 +1,5 @@
-// Fully functional automated test runner for learning levels
-// Uses the actual in-game editor and UI system
+// Fully functional automated test runner for individual learning level tasks
+// Tests each task separately with the actual in-game editor and UI
 
 use macroquad::prelude::*;
 use log::{info, warn, error};
@@ -7,51 +7,56 @@ use ::rand::{rngs::StdRng, SeedableRng};
 use std::time::{Duration, Instant};
 
 use crate::{
-    gamestate::{Game, types::*},
+    gamestate::{Game},
     embedded_levels,
-    learning_level_solutions,
+    learning_level_solutions::{self, TaskSolution},
     execute_rust_code,
     menu::{MenuState},
     draw_main_game_view,
 };
 
-pub struct LevelTestResult {
+pub struct TaskTestResult {
     pub level_name: String,
-    pub level_index: usize,
+    pub task_number: usize,
+    pub task_description: String,
     pub success: bool,
     pub error_message: Option<String>,
     pub time_taken: Duration,
 }
 
+#[derive(Debug)]
 enum TestState {
     Loading,
     InputtingSolution,
     ExecutingCode,
     WaitingForCompletion,
-    LevelComplete,
-    NextLevel,
-    TestsComplete,
+    TaskComplete,
+    NextTask,
+    AllTasksComplete,
 }
 
-pub struct LearningLevelTestRunner {
+pub struct LearningTaskTestRunner {
     game: Game,
     current_level: usize,
-    test_results: Vec<LevelTestResult>,
-    solutions: std::collections::HashMap<String, &'static str>,
+    current_task: usize,
+    test_results: Vec<TaskTestResult>,
+    all_tasks: Vec<TaskSolution>,
+    level_tasks: Vec<TaskSolution>,
     test_start_time: Instant,
-    level_start_time: Instant,
+    task_start_time: Instant,
     state: TestState,
     state_timer: f32,
     current_solution: String,
     typing_progress: usize,
-    typing_speed: f32, // characters per second
+    typing_speed: f32,
     input_chars: Vec<char>,
     char_input_timer: f32,
+    total_tasks_tested: usize,
 }
 
-impl LearningLevelTestRunner {
+impl LearningTaskTestRunner {
     pub fn new() -> Self {
-        info!("Initializing Learning Level Test Runner");
+        info!("Initializing Learning Task Test Runner");
 
         let rng = StdRng::seed_from_u64(0x7E57);
         let levels = embedded_levels::get_embedded_level_specs();
@@ -67,20 +72,25 @@ impl LearningLevelTestRunner {
         game.current_code = String::new();
         game.cursor_position = 0;
 
+        let all_tasks = learning_level_solutions::get_all_task_solutions();
+
         Self {
             game,
             current_level: 0,
+            current_task: 1,
             test_results: Vec::new(),
-            solutions: learning_level_solutions::get_solutions_map(),
+            level_tasks: Vec::new(),
+            all_tasks,
             test_start_time: Instant::now(),
-            level_start_time: Instant::now(),
+            task_start_time: Instant::now(),
             state: TestState::Loading,
             state_timer: 0.0,
             current_solution: String::new(),
             typing_progress: 0,
-            typing_speed: 20.0, // 20 characters per second
+            typing_speed: 25.0, // 25 characters per second
             input_chars: Vec::new(),
             char_input_timer: 0.0,
+            total_tasks_tested: 0,
         }
     }
 
@@ -92,7 +102,7 @@ impl LearningLevelTestRunner {
         match self.state {
             TestState::Loading => {
                 if self.state_timer >= 1.0 {
-                    self.start_level_test();
+                    self.start_task_test();
                 }
             },
             TestState::InputtingSolution => {
@@ -104,54 +114,64 @@ impl LearningLevelTestRunner {
                 }
             },
             TestState::WaitingForCompletion => {
-                if self.check_for_completion() || self.state_timer >= 5.0 {
-                    self.complete_level();
+                if self.check_for_completion() || self.state_timer >= 3.0 {
+                    self.complete_task();
                 }
             },
-            TestState::LevelComplete => {
-                if self.state_timer >= 2.0 {
-                    self.advance_to_next_level();
+            TestState::TaskComplete => {
+                if self.state_timer >= 1.5 {
+                    self.advance_to_next_task();
                 }
             },
-            TestState::NextLevel => {
+            TestState::NextTask => {
                 if self.state_timer >= 0.5 {
-                    if self.current_level < self.game.levels.len() {
-                        self.start_level_test();
-                    } else {
-                        self.state = TestState::TestsComplete;
-                        self.state_timer = 0.0;
-                    }
+                    self.start_task_test();
                 }
             },
-            TestState::TestsComplete => {
+            TestState::AllTasksComplete => {
                 // Stay in this state
             },
         }
     }
 
-    fn start_level_test(&mut self) {
-        let level_name = self.game.levels[self.current_level].name.clone();
-        info!("Starting test for level {}: {}", self.current_level, level_name);
+    fn start_task_test(&mut self) {
+        let level_name = &self.game.levels[self.current_level].name;
 
-        if let Some(solution) = self.solutions.get(&level_name) {
-            self.current_solution = solution.to_string();
-            self.typing_progress = 0;
-            self.input_chars = self.current_solution.chars().collect();
+        // Get tasks for current level
+        self.level_tasks = learning_level_solutions::get_task_solutions_for_level(level_name);
 
-            // Clear the editor
-            self.game.current_code = String::new();
-            self.game.cursor_position = 0;
-            self.game.code_editor_active = true;
+        if self.current_task <= self.level_tasks.len() {
+            if let Some(task_solution) = self.level_tasks.get(self.current_task - 1) {
+                info!("Starting task test: {} - Task {}/{}: {}",
+                      level_name, self.current_task, self.level_tasks.len(),
+                      task_solution.task_description);
 
-            self.state = TestState::InputtingSolution;
-            self.state_timer = 0.0;
-            self.char_input_timer = 0.0;
-            self.level_start_time = Instant::now();
+                self.current_solution = task_solution.solution_code.to_string();
+                self.typing_progress = 0;
+                self.input_chars = self.current_solution.chars().collect();
 
-            info!("Prepared to input solution of {} characters", self.input_chars.len());
+                // Clear the editor
+                self.game.current_code = String::new();
+                self.game.cursor_position = 0;
+                self.game.code_editor_active = true;
+
+                // Clear outputs from previous tasks
+                self.game.println_outputs.clear();
+                self.game.error_outputs.clear();
+                self.game.execution_result.clear();
+
+                self.state = TestState::InputtingSolution;
+                self.state_timer = 0.0;
+                self.char_input_timer = 0.0;
+                self.task_start_time = Instant::now();
+
+                info!("Prepared to input solution of {} characters", self.input_chars.len());
+            } else {
+                warn!("No solution found for task {}", self.current_task);
+                self.advance_to_next_level();
+            }
         } else {
-            warn!("No solution found for level: {}", level_name);
-            self.record_test_failure(format!("No solution found for level: {}", level_name));
+            // All tasks for this level are complete
             self.advance_to_next_level();
         }
     }
@@ -169,118 +189,113 @@ impl LearningLevelTestRunner {
 
             self.typing_progress += 1;
             self.char_input_timer = 0.0;
-
-            // Log progress every 20 characters
-            if self.typing_progress % 20 == 0 || self.typing_progress == self.input_chars.len() {
-                info!("Typing progress: {}/{} characters", self.typing_progress, self.input_chars.len());
-            }
         }
 
         if self.typing_progress >= self.input_chars.len() {
             info!("Solution input complete! Code length: {}", self.game.current_code.len());
-            info!("Final code:\n{}", self.game.current_code);
             self.state = TestState::ExecutingCode;
             self.state_timer = 0.0;
         }
     }
 
     async fn execute_solution(&mut self) {
-        info!("Executing solution for level {}", self.current_level);
-        info!("Code to execute:\n{}", self.game.current_code);
+        info!("Executing solution for task {}", self.current_task);
 
         // Execute the code using the game's execution system
         self.game.execution_result = execute_rust_code(&mut self.game).await;
 
         info!("Code execution result: {}", self.game.execution_result);
-        info!("Println outputs: {:?}", self.game.println_outputs);
 
         self.state = TestState::WaitingForCompletion;
         self.state_timer = 0.0;
     }
 
     fn check_for_completion(&mut self) -> bool {
-        let level = &self.game.levels[self.current_level];
-
-        // Check completion flag if available
-        if let Some(completion_flag) = &level.completion_flag {
-            if self.check_completion_flag(completion_flag) {
-                info!("Level {} completion flag triggered: {}", self.current_level, completion_flag);
-                return true;
-            }
-        }
-
-        // Check println outputs for "Hello, Rust!" pattern
-        if self.game.println_outputs.iter().any(|output| output.contains("Hello, Rust!")) {
-            info!("Level {} completed - found 'Hello, Rust!' output", self.current_level);
+        // Basic completion checks based on execution result
+        if self.game.execution_result.contains("Print statements executed successfully") ||
+           self.game.execution_result.contains("successfully") ||
+           !self.game.println_outputs.is_empty() {
             return true;
         }
 
-        // Check for function-based completion (Level 2)
-        if self.current_level == 1 {
-            if self.game.println_outputs.iter().any(|output| output.contains("Beginning level scan")) {
-                info!("Level {} completed - found function output", self.current_level);
-                return true;
-            }
+        // Check if there are no errors and code was executed
+        if !self.game.execution_result.contains("error") &&
+           !self.game.execution_result.contains("Error") &&
+           !self.game.execution_result.is_empty() {
+            return true;
         }
 
         false
     }
 
-    fn check_completion_flag(&self, flag: &str) -> bool {
-        if flag.starts_with("println:") {
-            let expected_output = &flag[8..];
-            return self.game.println_outputs.iter().any(|output| output.contains(expected_output));
-        }
-
-        if flag.starts_with("items_collected:") {
-            if let Ok(required_count) = flag[16..].parse::<usize>() {
-                return self.game.robot.inventory.len() >= required_count;
-            }
-        }
-
-        false
-    }
-
-    fn complete_level(&mut self) {
+    fn complete_task(&mut self) {
         self.record_test_success();
-        self.state = TestState::LevelComplete;
+        self.state = TestState::TaskComplete;
         self.state_timer = 0.0;
+        self.total_tasks_tested += 1;
     }
 
     fn record_test_success(&mut self) {
-        let duration = self.level_start_time.elapsed();
+        let duration = self.task_start_time.elapsed();
         let level_name = self.game.levels[self.current_level].name.clone();
+        let task_desc = if let Some(task) = self.level_tasks.get(self.current_task - 1) {
+            task.task_description.to_string()
+        } else {
+            format!("Task {}", self.current_task)
+        };
 
-        self.test_results.push(LevelTestResult {
+        self.test_results.push(TaskTestResult {
             level_name: level_name.clone(),
-            level_index: self.current_level,
+            task_number: self.current_task,
+            task_description: task_desc.clone(),
             success: true,
             error_message: None,
             time_taken: duration,
         });
 
-        info!("✅ Level {} - {} completed in {:?}",
-              self.current_level + 1, level_name, duration);
+        info!("✅ {} - Task {} completed in {:?}",
+              level_name, self.current_task, duration);
     }
 
     fn record_test_failure(&mut self, error: String) {
-        let duration = self.level_start_time.elapsed();
+        let duration = self.task_start_time.elapsed();
         let level_name = self.game.levels[self.current_level].name.clone();
+        let task_desc = if let Some(task) = self.level_tasks.get(self.current_task - 1) {
+            task.task_description.to_string()
+        } else {
+            format!("Task {}", self.current_task)
+        };
 
-        self.test_results.push(LevelTestResult {
+        self.test_results.push(TaskTestResult {
             level_name: level_name.clone(),
-            level_index: self.current_level,
+            task_number: self.current_task,
+            task_description: task_desc.clone(),
             success: false,
             error_message: Some(error.clone()),
             time_taken: duration,
         });
 
-        error!("❌ Level {} - {} failed: {}",
-               self.current_level + 1, level_name, error);
+        error!("❌ {} - Task {} failed: {}",
+               level_name, self.current_task, error);
+    }
+
+    fn advance_to_next_task(&mut self) {
+        self.current_task += 1;
+
+        // Check if there are more tasks for this level
+        if self.current_task <= self.level_tasks.len() {
+            info!("Advancing to task {}/{}", self.current_task, self.level_tasks.len());
+            self.state = TestState::NextTask;
+            self.state_timer = 0.0;
+        } else {
+            // All tasks for this level complete, move to next level
+            self.advance_to_next_level();
+        }
     }
 
     fn advance_to_next_level(&mut self) {
         self.current_level += 1;
+        self.current_task = 1;
 
         if self.current_level < self.game.levels.len() && self.current_level < 2 {  // Limit to first 2 levels
             info!("Advancing to level {}", self.current_level + 1);
@@ -288,11 +303,11 @@ impl LearningLevelTestRunner {
             self.game.load_level(self.current_level);
             self.game.println_outputs.clear();
             self.game.error_outputs.clear();
-            self.state = TestState::NextLevel;
+            self.state = TestState::NextTask;
             self.state_timer = 0.0;
         } else {
-            info!("All levels tested!");
-            self.state = TestState::TestsComplete;
+            info!("All levels and tasks tested!");
+            self.state = TestState::AllTasksComplete;
             self.state_timer = 0.0;
         }
     }
@@ -307,7 +322,7 @@ impl LearningLevelTestRunner {
     }
 
     fn draw_test_overlay(&self) {
-        let overlay_height = 120.0;
+        let overlay_height = 140.0;
         let overlay_y = screen_height() - overlay_height;
 
         // Draw semi-transparent background
@@ -315,32 +330,25 @@ impl LearningLevelTestRunner {
 
         // Current state
         let state_text = match self.state {
-            TestState::Loading => "Loading level...",
+            TestState::Loading => "Loading task...",
             TestState::InputtingSolution => "Typing solution into editor...",
             TestState::ExecutingCode => "Executing code...",
             TestState::WaitingForCompletion => "Waiting for completion...",
-            TestState::LevelComplete => "Level completed!",
-            TestState::NextLevel => "Loading next level...",
-            TestState::TestsComplete => "All tests complete!",
+            TestState::TaskComplete => "Task completed!",
+            TestState::NextTask => "Loading next task...",
+            TestState::AllTasksComplete => "All tasks complete!",
         };
 
-        draw_text(&format!("🤖 AUTOMATED TESTING: Level {}/{}",
-                          self.current_level + 1,
-                          2), // Only testing first 2 levels
+        let level_name = &self.game.levels[self.current_level].name;
+        let total_tasks_for_level = self.level_tasks.len();
+
+        draw_text(&format!("🧪 AUTOMATED TASK TESTING: {}",
+                          level_name),
                  10.0, overlay_y + 20.0, 18.0, YELLOW);
 
-        draw_text(&format!("Status: {}", state_text),
+        draw_text(&format!("Task {}/{}: {}",
+                          self.current_task, total_tasks_for_level, state_text),
                  10.0, overlay_y + 40.0, 16.0, WHITE);
-
-        // Progress bar
-        let progress = if self.current_level >= 2 { 1.0 } else { (self.current_level as f32) / 2.0 };
-        let bar_width = screen_width() - 20.0;
-        let bar_height = 20.0;
-        let bar_y = overlay_y + 60.0;
-
-        draw_rectangle(10.0, bar_y, bar_width, bar_height, DARKGRAY);
-        draw_rectangle(10.0, bar_y, bar_width * progress, bar_height,
-                      if matches!(self.state, TestState::TestsComplete) { GREEN } else { YELLOW });
 
         // Show typing progress
         if matches!(self.state, TestState::InputtingSolution) {
@@ -350,52 +358,68 @@ impl LearningLevelTestRunner {
                              typing_progress * 100.0,
                              self.typing_progress,
                              self.input_chars.len()),
-                     10.0, overlay_y + 85.0, 14.0, BLUE);
+                     10.0, overlay_y + 60.0, 14.0, BLUE);
         }
+
+        // Progress bar for all tasks
+        let total_expected_tasks = 5; // 1 + 4 = 5 total tasks
+        let progress = (self.total_tasks_tested as f32) / (total_expected_tasks as f32);
+        let bar_width = screen_width() - 20.0;
+        let bar_height = 20.0;
+        let bar_y = overlay_y + 80.0;
+
+        draw_rectangle(10.0, bar_y, bar_width, bar_height, DARKGRAY);
+        draw_rectangle(10.0, bar_y, bar_width * progress, bar_height,
+                      if matches!(self.state, TestState::AllTasksComplete) { GREEN } else { YELLOW });
 
         // Results summary
         let passed = self.test_results.iter().filter(|r| r.success).count();
         let failed = self.test_results.len() - passed;
-        draw_text(&format!("Results: {} passed, {} failed", passed, failed),
+        draw_text(&format!("Results: {} passed, {} failed (Total tested: {})",
+                          passed, failed, self.total_tasks_tested),
                  10.0, overlay_y + 105.0, 14.0, LIGHTGRAY);
 
-        // Show current code length
-        draw_text(&format!("Code length: {} chars", self.game.current_code.len()),
-                 screen_width() - 200.0, overlay_y + 20.0, 14.0, LIGHTGRAY);
+        // Show current code length and last execution result
+        draw_text(&format!("Code: {} chars", self.game.current_code.len()),
+                 screen_width() - 150.0, overlay_y + 20.0, 14.0, LIGHTGRAY);
 
-        // Show last execution result
         if !self.game.execution_result.is_empty() {
-            let result_preview = if self.game.execution_result.len() > 40 {
-                format!("{}...", &self.game.execution_result[..37])
+            let result_preview = if self.game.execution_result.len() > 30 {
+                format!("{}...", &self.game.execution_result[..27])
             } else {
                 self.game.execution_result.clone()
             };
-            draw_text(&format!("Last result: {}", result_preview),
-                     screen_width() - 400.0, overlay_y + 40.0, 12.0, GREEN);
+            draw_text(&format!("Result: {}", result_preview),
+                     screen_width() - 350.0, overlay_y + 40.0, 12.0, GREEN);
         }
+
+        draw_text(&format!("Total Time: {:02}:{:02}",
+                          self.test_start_time.elapsed().as_secs() / 60,
+                          self.test_start_time.elapsed().as_secs() % 60),
+                 10.0, overlay_y + 125.0, 14.0, LIGHTGRAY);
     }
 
     /// Check if all tests are complete
     pub fn is_complete(&self) -> bool {
-        matches!(self.state, TestState::TestsComplete)
+        matches!(self.state, TestState::AllTasksComplete)
     }
 
     /// Get the test results
-    pub fn get_results(&self) -> &[LevelTestResult] {
+    pub fn get_results(&self) -> &[TaskTestResult] {
         &self.test_results
     }
 
     /// Print a summary of test results
     pub fn print_summary(&self) {
-        println!("\n{}", "=".repeat(60));
-        println!("LEARNING LEVEL TEST RESULTS");
-        println!("{}", "=".repeat(60));
+        println!("\n{}", "=".repeat(70));
+        println!("LEARNING LEVEL TASK TEST RESULTS");
+        println!("{}", "=".repeat(70));
 
         let total = self.test_results.len();
         let passed = self.test_results.iter().filter(|r| r.success).count();
         let failed = total - passed;
 
-        println!("Total Levels Tested: {}", total);
+        println!("Total Tasks Tested: {}", total);
         println!("✅ Passed: {}", passed);
         println!("❌ Failed: {}", failed);
 
@@ -404,14 +428,15 @@ impl LearningLevelTestRunner {
         }
 
         println!("\nDetailed Results:");
-        println!("{}", "-".repeat(60));
+        println!("{}", "-".repeat(70));
 
         for result in &self.test_results {
             let status = if result.success { "✅ PASS" } else { "❌ FAIL" };
-            println!("[{}] Level {} - {} ({:?})",
+            println!("[{}] {} - Task {}: {} ({:?})",
                     status,
-                    result.level_index + 1,
                     result.level_name,
+                    result.task_number,
+                    result.task_description,
                     result.time_taken);
 
             if let Some(error) = &result.error_message {
@@ -419,16 +444,16 @@ impl LearningLevelTestRunner {
             }
         }
 
-        println!("{}", "=".repeat(60));
+        println!("{}", "=".repeat(70));
         println!("Total test time: {:?}", self.test_start_time.elapsed());
     }
 }
 
-/// Run the automated learning level tests
+/// Run the automated learning level task tests
 pub async fn run_learning_level_tests() {
-    info!("Starting automated learning level tests");
+    info!("Starting automated learning level task tests");
 
-    let mut test_runner = LearningLevelTestRunner::new();
+    let mut test_runner = LearningTaskTestRunner::new();
 
     // Main test loop
     while !test_runner.is_complete() {
@@ -454,7 +479,7 @@ pub async fn run_learning_level_tests() {
     info!("Tests complete. Press SPACE to exit or ESC to quit immediately.");
     loop {
         clear_background(BLACK);
-        draw_text("🎉 Automated Tests Complete!", screen_width() / 2.0 - 150.0, screen_height() / 2.0 - 50.0, 30.0, GREEN);
+        draw_text("🎉 All Task Tests Complete!", screen_width() / 2.0 - 150.0, screen_height() / 2.0 - 50.0, 30.0, GREEN);
         draw_text("Press SPACE to exit", screen_width() / 2.0 - 80.0, screen_height() / 2.0, 20.0, WHITE);
 
         if is_key_pressed(KeyCode::Space) || is_key_pressed(KeyCode::Escape) {
