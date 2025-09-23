@@ -448,7 +448,7 @@ impl RobotDataCompressor {
 
     /// Compress robot movement patterns
     pub fn compress_movement_pattern(moves: &[(i8, i8)]) -> Vec<u8> {
-        let mut compressed = Vec::new();
+        let mut compressed: Vec<u8> = Vec::new();
 
         // Convert 2D moves to single values for better pattern detection
         let mut move_values = Vec::new();

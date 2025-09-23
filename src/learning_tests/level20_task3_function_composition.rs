@@ -307,10 +307,10 @@ impl Applicative {
         F: Fn(T, U) -> V,
     {
         move |maybe_t, maybe_u| {
-            Self::apply(
-                Self::apply(Maybe::some(move |t| move |u| f(t, u)), maybe_t),
-                maybe_u,
-            )
+            match (maybe_t.0, maybe_u.0) {
+                (Some(t), Some(u)) => Maybe::some(f(t, u)),
+                _ => Maybe::none(),
+            }
         }
     }
 }
@@ -563,17 +563,24 @@ pub mod exercises {
     pub struct Currying;
 
     impl Currying {
-        pub fn curry2<A, B, C, F>(f: F) -> impl Fn(A) -> impl Fn(B) -> C
+        pub fn curry2<A, B, C, F>(f: F) -> Box<dyn Fn(A) -> Box<dyn Fn(B) -> C>>
         where
-            F: Fn(A, B) -> C,
+            F: Fn(A, B) -> C + 'static,
+            A: 'static,
+            B: 'static,
+            C: 'static,
         {
             // TODO: Implement currying for 2-parameter functions
             unimplemented!("Implement curry2")
         }
 
-        pub fn curry3<A, B, C, D, F>(f: F) -> impl Fn(A) -> impl Fn(B) -> impl Fn(C) -> D
+        pub fn curry3<A, B, C, D, F>(f: F) -> Box<dyn Fn(A) -> Box<dyn Fn(B) -> Box<dyn Fn(C) -> D>>>
         where
-            F: Fn(A, B, C) -> D,
+            F: Fn(A, B, C) -> D + 'static,
+            A: 'static,
+            B: 'static,
+            C: 'static,
+            D: 'static,
         {
             // TODO: Implement currying for 3-parameter functions
             unimplemented!("Implement curry3")
@@ -589,8 +596,7 @@ pub mod exercises {
             F: Fn(A, B) -> C,
             A: Clone,
         {
-            // TODO: Partially apply first argument
-            unimplemented!("Implement partial application")
+            move |b| f(a.clone(), b)
         }
 
         pub fn partial2<A, B, C, F>(f: F, b: B) -> impl Fn(A) -> C
@@ -598,30 +604,36 @@ pub mod exercises {
             F: Fn(A, B) -> C,
             B: Clone,
         {
-            // TODO: Partially apply second argument
-            unimplemented!("Implement partial application for second arg")
+            move |a| f(a, b.clone())
         }
     }
 
     // Exercise 3: Implement function memoization
     pub struct Memoization<T> {
-        // TODO: Add fields for caching
-        _phantom: std::marker::PhantomData<T>,
+        cache: std::collections::HashMap<String, T>,
     }
 
     impl<T> Memoization<T> {
         pub fn new() -> Self {
-            // TODO: Initialize memoization cache
-            unimplemented!("Initialize memoization")
+            Memoization {
+                cache: std::collections::HashMap::new(),
+            }
         }
 
-        pub fn memoize<F>(&mut self, f: F) -> impl FnMut(&str) -> T
+        pub fn memoize<'a, F>(&'a mut self, f: F) -> impl FnMut(&str) -> T + 'a
         where
-            F: Fn(&str) -> T,
+            F: Fn(&str) -> T + 'a,
             T: Clone,
         {
-            // TODO: Create memoized version of function
-            unimplemented!("Create memoized function")
+            move |input: &str| {
+                if let Some(result) = self.cache.get(input) {
+                    result.clone()
+                } else {
+                    let result = f(input);
+                    self.cache.insert(input.to_string(), result.clone());
+                    result
+                }
+            }
         }
     }
 
@@ -633,8 +645,12 @@ pub mod exercises {
         where
             T: Clone,
         {
-            // TODO: Compose all functions in the vector
-            unimplemented!("Compose all functions")
+            move |mut input| {
+                for func in &functions {
+                    input = func(input);
+                }
+                input
+            }
         }
 
         pub fn compose_all_results<T, E>(
@@ -643,8 +659,15 @@ pub mod exercises {
         where
             T: Clone,
         {
-            // TODO: Compose functions that return Results
-            unimplemented!("Compose all result functions")
+            move |mut input| {
+                for func in &functions {
+                    match func(input) {
+                        Ok(result) => input = result,
+                        Err(e) => return Err(e),
+                    }
+                }
+                Ok(input)
+            }
         }
     }
 

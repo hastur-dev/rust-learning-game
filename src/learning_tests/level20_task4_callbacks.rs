@@ -470,8 +470,8 @@ impl AsyncCallbacks {
         final_callback: F3,
     ) where
         F1: FnOnce(Box<dyn FnOnce(i32)>),
-        F2: FnOnce(i32, Box<dyn FnOnce(String)>),
-        F3: FnOnce(String),
+        F2: FnOnce(i32, Box<dyn FnOnce(String)>) + 'static,
+        F3: FnOnce(String) + 'static,
     {
         operation1(Box::new(move |result1| {
             operation2(result1, Box::new(final_callback));

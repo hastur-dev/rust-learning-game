@@ -480,8 +480,7 @@ pub mod exercises {
             F: Fn(T) -> U,
             G: Fn(U) -> V,
         {
-            // TODO: Compose two functions f and g to create g(f(x))
-            unimplemented!("Compose functions")
+            move |x| g(f(x))
         }
 
         pub fn chain_transforms<F1, F2, F3>(
@@ -494,8 +493,7 @@ pub mod exercises {
             F2: Fn(f64) -> i32,
             F3: Fn(i32) -> String,
         {
-            // TODO: Chain three transformations together
-            unimplemented!("Chain transforms")
+            move |robot| transform3(transform2(transform1(robot)))
         }
     }
 }

@@ -521,7 +521,7 @@ pub fn demonstrate_practical_applications() {
     let mut compressed_data = Vec::new();
     for (temp, hum, light) in original_readings {
         let temp_compressed = ((temp + 50.0) * 2.0) as u8; // Range -50 to +77.5°C
-        let compressed = (temp_compressed as u32) << 16 | (*hum as u32) << 8 | (*light as u32);
+        let compressed = (temp_compressed as u32) << 16 | (hum as u32) << 8 | (light as u32);
         compressed_data.push(compressed);
     }
 

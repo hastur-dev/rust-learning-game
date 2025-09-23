@@ -259,7 +259,7 @@ impl FunctionFactory {
         U: Clone,
         F: FnMut(&T) -> U,
     {
-        let mut cache = HashMap::new();
+        let mut cache: HashMap<T, U> = HashMap::new();
         move |input| {
             if let Some(cached) = cache.get(input) {
                 cached.clone()
@@ -476,16 +476,20 @@ pub struct Currying;
 
 impl Currying {
     // Curry a 2-argument function
-    pub fn curry2<A, B, C, F>(f: F) -> impl Fn(A) -> impl Fn(B) -> C
+    pub fn curry2<A, B, C, F>(f: F) -> Box<dyn Fn(A) -> Box<dyn Fn(B) -> C>>
     where
-        F: Fn(A, B) -> C,
-        A: Clone,
+        F: Fn(A, B) -> C + 'static,
+        A: Clone + 'static,
+        B: 'static,
+        C: 'static,
     {
-        move |a| {
+        use std::rc::Rc;
+        let f = Rc::new(f);
+        Box::new(move |a| {
             let a_clone = a.clone();
-            let f_clone = &f;
-            move |b| f_clone(a_clone.clone(), b)
-        }
+            let f_clone = f.clone();
+            Box::new(move |b| f_clone(a_clone.clone(), b)) as Box<dyn Fn(B) -> C>
+        })
     }
 
     // Partial application of first argument
@@ -730,8 +734,12 @@ pub mod exercises {
         where
             T: Clone,
         {
-            // TODO: Compose multiple functions into one
-            unimplemented!("Compose many functions")
+            move |mut input| {
+                for func in &functions {
+                    input = func(input);
+                }
+                input
+            }
         }
 
         pub fn pipe<T, U, V, F, G>(f: F, g: G) -> impl Fn(T) -> V
@@ -739,8 +747,7 @@ pub mod exercises {
             F: Fn(T) -> U,
             G: Fn(U) -> V,
         {
-            // TODO: Pipe functions (f then g)
-            unimplemented!("Pipe functions")
+            move |input| g(f(input))
         }
     }
 

@@ -917,8 +917,8 @@ pub mod exercises {
         let sensor_readings = [
             ("Temperature", 23.5f32, "Calibrated"),
             ("Humidity", 65.2f32, "Raw"),
-            ("Light", 180u8, "Compressed"),
-            ("Motion", 1u8, "Delta"),
+            ("Light", 180.0f32, "Compressed"),
+            ("Motion", 1.0f32, "Delta"),
         ];
 
         for (sensor, value, format) in sensor_readings {
@@ -941,7 +941,7 @@ pub mod exercises {
         let commands = [
             ("MOVE", vec![10u8, 20, 5]), // x, y, speed
             ("ROTATE", vec![90]), // degrees
-            ("SCAN", vec![360, 1]), // degrees, resolution
+            ("SCAN", vec![255, 1]), // degrees, resolution
             ("PICKUP", vec![3]), // item_id
             ("REPORT", vec![]), // no parameters
         ];

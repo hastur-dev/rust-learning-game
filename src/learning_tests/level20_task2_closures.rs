@@ -175,7 +175,7 @@ impl AdvancedCapture {
         mut mutable_data: Vec<String>,
         owned_data: String,
     ) -> impl FnMut() -> String {
-        let captured_ref = immutable_data; // Captured by reference
+        let captured_ref = immutable_data.to_string(); // Convert to owned to avoid lifetime issues
         move || {
             mutable_data.push(owned_data.clone()); // Both moved into closure
             format!("{}: {:?}", captured_ref, mutable_data)
@@ -264,21 +264,21 @@ impl RobotClosurePatterns {
         let mut strategies = HashMap::new();
 
         // Direct movement
-        strategies.insert("direct".to_string(), Box::new(|_robot, x, y| (x, y)) as Box<dyn Fn(&Robot, f64, f64) -> (f64, f64)>);
+        strategies.insert("direct".to_string(), Box::new(|_robot: &Robot, x: f64, y: f64| (x, y)) as Box<dyn Fn(&Robot, f64, f64) -> (f64, f64)>);
 
         // Relative movement
-        strategies.insert("relative".to_string(), Box::new(|robot, dx, dy| {
+        strategies.insert("relative".to_string(), Box::new(|robot: &Robot, dx: f64, dy: f64| {
             (robot.position.0 + dx, robot.position.1 + dy)
-        }));
+        }) as Box<dyn Fn(&Robot, f64, f64) -> (f64, f64)>);
 
         // Energy-efficient movement (closer moves)
         let efficiency_factor = 0.5;
-        strategies.insert("efficient".to_string(), Box::new(move |robot, x, y| {
+        strategies.insert("efficient".to_string(), Box::new(move |robot: &Robot, x: f64, y: f64| {
             let current = robot.position;
             let target_x = current.0 + (x - current.0) * efficiency_factor;
             let target_y = current.1 + (y - current.1) * efficiency_factor;
             (target_x, target_y)
-        }));
+        }) as Box<dyn Fn(&Robot, f64, f64) -> (f64, f64)>);
 
         strategies
     }
