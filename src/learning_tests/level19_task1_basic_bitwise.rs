@@ -484,9 +484,9 @@ fn main() {
     demonstrate_bitwise_operations();
     demonstrate_advanced_techniques();
 
-    println!("\n" + "=".repeat(50).as_str());
+    println!("\n{}", "=".repeat(50));
     println!("STUDENT EXERCISES");
-    println!("=".repeat(50));
+    println!("{}", "=".repeat(50));
 
     exercises::exercise_flag_checker();
     exercises::exercise_status_register();

@@ -55,10 +55,18 @@ pub mod level17_task1_basic_logging;
 pub mod level18_task1_raw_pointers;
 
 // Level 19 tests (Bitwise Operations)
-pub mod level19_task1_bitwise_basic;
+pub mod level19_task1_basic_bitwise;
+pub mod level19_task2_bit_flags;
+pub mod level19_task3_bit_manipulation;
+pub mod level19_task4_binary_protocols;
+pub mod level19_task5_compression;
 
 // Level 20 tests (Callable Traits)
-pub mod level20_task1_fn_trait;
+pub mod level20_task1_fn_traits;
+pub mod level20_task2_closures;
+pub mod level20_task3_function_composition;
+pub mod level20_task4_callbacks;
+pub mod level20_task5_higher_order;
 
 // Level 21 tests (Operator Traits)
 pub mod level21_task1_arithmetic_traits;

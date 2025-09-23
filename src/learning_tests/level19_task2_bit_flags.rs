@@ -705,9 +705,9 @@ fn main() {
     demonstrate_flag_operations();
     demonstrate_bit_utilities();
 
-    println!("\n" + "=".repeat(50).as_str());
+    println!("\n{}", "=".repeat(50));
     println!("STUDENT EXERCISES");
-    println!("=".repeat(50));
+    println!("{}", "=".repeat(50));
 
     exercises::exercise_capability_system();
     exercises::exercise_mission_status();
