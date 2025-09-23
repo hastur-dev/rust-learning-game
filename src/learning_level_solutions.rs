@@ -173,6 +173,152 @@ fn main() {
 }"#,
         },
 
+        // LEVEL 3: Primitives and Data Types (5 tasks)
+        TaskSolution {
+            level_name: "Level 3: Primitives and Data Types",
+            task_number: 1,
+            task_description: "Task 1: Work with Integer Types",
+            solution_code: r#"fn main() {
+    // Signed integers (can be negative)
+    let signed: i32 = -42;
+    let large_signed: i64 = -1_000_000;
+
+    // Unsigned integers (only positive)
+    let unsigned: u32 = 255;
+    let small_unsigned: u8 = 200;
+
+    println!("Signed i32: {}", signed);
+    println!("Large i64: {}", large_signed);
+    println!("Unsigned u32: {}", unsigned);
+    println!("Small u8: {}", small_unsigned);
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 3: Primitives and Data Types",
+            task_number: 2,
+            task_description: "Task 2: Floating Point Numbers",
+            solution_code: r#"fn main() {
+    // f64 is the default floating point type (double precision)
+    let pi: f64 = 3.141592653589793;
+    let e = 2.71828; // Type inferred as f64
+
+    // f32 is single precision (less precise, smaller size)
+    let pi_f32: f32 = 3.14159;
+
+    // Scientific notation
+    let large_num: f64 = 1.23e6; // 1,230,000
+
+    println!("Pi (f64): {}", pi);
+    println!("E (inferred): {}", e);
+    println!("Pi (f32): {}", pi_f32);
+    println!("Large number: {}", large_num);
+
+    // Floating point arithmetic
+    let sum = pi + e;
+    println!("Pi + E = {}", sum);
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 3: Primitives and Data Types",
+            task_number: 3,
+            task_description: "Task 3: Boolean Values and Logic",
+            solution_code: r#"fn main() {
+    // Basic boolean values
+    let is_rust_awesome: bool = true;
+    let is_difficult: bool = false;
+
+    // Boolean operations
+    let both_true = is_rust_awesome && is_difficult; // AND
+    let either_true = is_rust_awesome || is_difficult; // OR
+    let not_difficult = !is_difficult; // NOT
+
+    println!("Rust is awesome: {}", is_rust_awesome);
+    println!("Rust is difficult: {}", is_difficult);
+    println!("Both true: {}", both_true);
+    println!("Either true: {}", either_true);
+    println!("Not difficult: {}", not_difficult);
+
+    // Comparison operations result in booleans
+    let x = 10;
+    let y = 20;
+    let is_greater = x > y;
+    let is_equal = x == y;
+
+    println!("{} > {}: {}", x, y, is_greater);
+    println!("{} == {}: {}", x, y, is_equal);
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 3: Primitives and Data Types",
+            task_number: 4,
+            task_description: "Task 4: Character Type and Unicode",
+            solution_code: r#"fn main() {
+    // Basic ASCII characters
+    let letter: char = 'A';
+    let digit: char = '7';
+    let symbol: char = '$';
+
+    // Unicode characters
+    let heart: char = '♥';
+    let lambda: char = 'λ';
+
+    // Emoji (also Unicode!)
+    let crab: char = '🦀';  // Rust's mascot
+    let robot: char = '🤖';
+
+    println!("Letter: {}", letter);
+    println!("Digit: {}", digit);
+    println!("Symbol: {}", symbol);
+    println!("Heart: {}", heart);
+    println!("Lambda: {}", lambda);
+    println!("Crab (Rust): {}", crab);
+    println!("Robot: {}", robot);
+
+    // Characters are 4 bytes in Rust (full Unicode support)
+    println!("Size of char: {} bytes", std::mem::size_of::<char>());
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 3: Primitives and Data Types",
+            task_number: 5,
+            task_description: "Task 5: Type Inference and Annotations",
+            solution_code: r#"fn main() {
+    // Type inference - Rust figures out the types
+    let inferred_int = 42;        // i32 by default
+    let inferred_float = 3.14;    // f64 by default
+    let inferred_bool = true;     // bool
+    let inferred_char = 'R';      // char
+
+    println!("Inferred integer: {} (type: i32)", inferred_int);
+    println!("Inferred float: {} (type: f64)", inferred_float);
+    println!("Inferred bool: {} (type: bool)", inferred_bool);
+    println!("Inferred char: {} (type: char)", inferred_char);
+
+    // Explicit type annotations
+    let explicit_u64: u64 = 1000;
+    let explicit_f32: f32 = 2.5;
+    let explicit_i8: i8 = -128;
+
+    println!("Explicit u64: {}", explicit_u64);
+    println!("Explicit f32: {}", explicit_f32);
+    println!("Explicit i8: {}", explicit_i8);
+
+    // Type annotations needed for ambiguous cases
+    let parsed_number: i32 = "42".parse().expect("Failed to parse");
+    println!("Parsed number: {}", parsed_number);
+
+    // Suffix notation (alternative to annotations)
+    let suffix_u32 = 100u32;
+    let suffix_f32 = 3.14f32;
+    println!("Suffix u32: {}", suffix_u32);
+    println!("Suffix f32: {}", suffix_f32);
+}"#,
+        },
+
         // LEVEL 6: Flow Control and Conditionals (1 task created as example)
         TaskSolution {
             level_name: "Level 6: Flow Control and Conditionals",

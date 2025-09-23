@@ -297,7 +297,7 @@ impl LearningTaskTestRunner {
         self.current_level += 1;
         self.current_task = 1;
 
-        if self.current_level < self.game.levels.len() && self.current_level < 2 {  // Limit to first 2 levels
+        if self.current_level < self.game.levels.len() && self.current_level < 3 {  // Limit to first 3 levels
             info!("Advancing to level {}", self.current_level + 1);
             self.game.level_idx = self.current_level;
             self.game.load_level(self.current_level);
@@ -362,7 +362,7 @@ impl LearningTaskTestRunner {
         }
 
         // Progress bar for all tasks
-        let total_expected_tasks = 5; // 1 + 4 = 5 total tasks
+        let total_expected_tasks = 10; // Level 1: 1 task + Level 2: 4 tasks + Level 3: 5 tasks = 10 total tasks
         let progress = (self.total_tasks_tested as f32) / (total_expected_tasks as f32);
         let bar_width = screen_width() - 20.0;
         let bar_height = 20.0;
