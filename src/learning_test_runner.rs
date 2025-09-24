@@ -230,6 +230,18 @@ impl LearningTaskTestRunner {
 
     fn complete_task(&mut self) {
         self.record_test_success();
+
+        // Update the game's task completion state for GUI display
+        // Convert 1-based task number to 0-based index
+        let task_index = self.current_task - 1;
+        if task_index < 5 {  // Ensure we don't exceed the array bounds
+            self.game.tutorial_state.task_completed[task_index] = true;
+            // CRITICAL FIX: Also update current_task to match - this is what makes GUI transitions work
+            self.game.tutorial_state.current_task = self.current_task;
+            info!("Marked task {} as completed in GUI (index {}) and updated current_task to {}",
+                  self.current_task, task_index, self.current_task);
+        }
+
         self.state = TestState::TaskComplete;
         self.state_timer = 0.0;
         self.total_tasks_tested += 1;
@@ -303,6 +315,13 @@ impl LearningTaskTestRunner {
             self.game.load_level(self.current_level);
             self.game.println_outputs.clear();
             self.game.error_outputs.clear();
+
+            // Reset task completion state for new level
+            self.game.tutorial_state.task_completed = [false; 5];
+            // CRITICAL FIX: Reset the game's current_task to 0 (corresponds to task 1 in 0-based indexing)
+            self.game.tutorial_state.current_task = 0;
+            info!("Reset task completion state and current_task for new level");
+
             self.state = TestState::NextTask;
             self.state_timer = 0.0;
         } else {
