@@ -12,13 +12,13 @@ impl Game {
 
             1 => "🔄 **TASK 2/5: Mission Handoff and Resource Transfer**\n\nLearn how mission data transfers between robot command systems:\n\n```rust\nfn main() {\n    // Mission briefing transfer\n    let mission_briefing = String::from(\"Sector-7-Recon\");\n    let active_mission = mission_briefing; // Mission transferred to field team\n    println!(\"Active mission: {}\", active_mission);\n    // mission_briefing is no longer valid - mission can only have one handler\n\n    // Command function that takes ownership of robot\n    fn deploy_robot(robot_name: String) {\n        println!(\"Deploying {} to field operations\", robot_name);\n    } // robot_name automatically cleaned up after deployment\n\n    let beta_robot = String::from(\"BETA-EXPLORER\");\n    deploy_robot(beta_robot);\n    // beta_robot is no longer accessible - fully deployed to field\n\n    // Mission factory that creates and returns new missions\n    fn generate_mission() -> String {\n        String::from(\"Deep-Cave-Survey\")\n    }\n\n    let new_mission = generate_mission();\n    println!(\"New mission generated: {}\", new_mission);\n\n    // Robot fleet transfer\n    let robot_fleet = vec![\"GAMMA-1\", \"GAMMA-2\", \"GAMMA-3\"];\n    let field_fleet = robot_fleet; // Entire fleet transferred\n    println!(\"Fleet deployed: {:?}\", field_fleet);\n}\n```\n\n🎯 **Mission**: Master resource handoff protocols!\n• **Mission transfers** happen with assignment\n• **Functions deploy** robots by taking ownership\n• **Mission generators** return new assignments\n• **Fleet data** moves as complete units".to_string(),
 
-            2 => "📋 **TASK 3/5: References and Borrowing**\n\nUse references to borrow values without taking ownership:\n\n```rust\nfn calculate_length(s: &String) -> usize {\n    s.len()\n}\n\nfn change_string(s: &mut String) {\n    s.push_str(\", world!\");\n}\n\nfn main() {\n    // Immutable references (borrowing)\n    let s1 = String::from(\"hello\");\n    let len = calculate_length(&s1);\n    println!(\"The length of '{}' is {}\", s1, len);\n\n    // Mutable references\n    let mut s2 = String::from(\"hello\");\n    change_string(&mut s2);\n    println!(\"Changed string: {}\", s2);\n\n    // Multiple immutable references are allowed\n    let s3 = String::from(\"world\");\n    let r1 = &s3;\n    let r2 = &s3;\n    println!(\"r1: {}, r2: {}\", r1, r2);\n\n    // References to primitive types\n    let x = 5;\n    let r = &x;\n    println!(\"x: {}, reference to x: {}\", x, r);\n}\n```\n\n• **&** creates an immutable reference\n• **&mut** creates a mutable reference\n• **Borrowing** doesn't transfer ownership\n• **Multiple immutable** references allowed\n• **Only one mutable** reference at a time".to_string(),
+            2 => "📡 **TASK 3/5: Shared Resources and Robot Communication**\n\nEstablish communication networks where multiple systems can access robot data:\n\n```rust\nfn calculate_distance(robot_pos: &String) -> usize {\n    robot_pos.len()\n}\n\nfn update_robot_status(status: &mut String) {\n    status.push_str(\"-UPDATED\");\n}\n\nfn main() {\n    // Shared access to robot position data (borrowing)\n    let robot_position = String::from(\"SECTOR-7-GRID-A5\");\n    let distance_calc = calculate_distance(&robot_position);\n    println!(\"Robot position: {}\", robot_position);\n    println!(\"Distance calculation: {} units\", distance_calc);\n\n    // Mutable sharing for status updates\n    let mut robot_status = String::from(\"OPERATIONAL\");\n    update_robot_status(&mut robot_status);\n    println!(\"Updated robot status: {}\", robot_status);\n\n    // Multiple read-only access to mission data\n    let mission_data = String::from(\"Cave-Exploration-Alpha\");\n    let primary_reader = &mission_data;\n    let backup_reader = &mission_data;\n    println!(\"Primary mission access: {}\", primary_reader);\n    println!(\"Backup mission access: {}\", backup_reader);\n\n    // Shared sensor readings\n    let sensor_value = 85;\n    let sensor_ref = &sensor_value;\n    println!(\"Sensor reading: {}\", sensor_value);\n    println!(\"Transmitted value: {}\", sensor_ref);\n}\n```\n\n🎯 **Mission**: Build secure communication networks!\n• **& borrows** data without taking control\n• **&mut allows** status updates\n• **Multiple readers** can access data simultaneously\n• **Sensor data** can be shared safely".to_string(),
 
-            3 => "📋 **TASK 4/5: Ownership with Functions**\n\nMaster passing ownership and references to functions:\n\n```rust\nfn print_robot_info(name: &String, energy: &i32) {\n    println!(\"Robot {} has {} energy\", name, energy);\n}\n\nfn recharge_robot(energy: &mut i32) {\n    *energy += 25;\n    println!(\"Recharging... energy now: {}\", energy);\n}\n\nfn create_robot_data() -> (String, i32, bool) {\n    let name = String::from(\"Alpha\");\n    let energy = 75;\n    let active = true;\n    (name, energy, active)\n}\n\nfn main() {\n    let robot_name = String::from(\"Cybertron\");\n    let robot_energy = 100;\n\n    print_robot_info(&robot_name, &robot_energy);\n    // We can still use robot_name and robot_energy here\n    println!(\"Still accessible: {} with {} energy\", robot_name, robot_energy);\n\n    let (name, energy, active) = create_robot_data();\n    println!(\"Created robot: {} (energy: {}, active: {})\", name, energy, active);\n\n    let mut current_energy = 50;\n    recharge_robot(&mut current_energy);\n    println!(\"Final energy: {}\", current_energy);\n}\n```\n\n• **Borrow with &** to avoid moving\n• **Functions can modify** with &mut\n• **Return ownership** from functions\n• **Tuple returns** for multiple values".to_string(),
+            3 => "⚡ **TASK 4/5: Command Structure and Robot Deployment**\n\nMaster command hierarchy systems where functions coordinate robot operations:\n\n```rust\nfn assign_mission(robot_name: &String, energy: &i32) {\n    println!(\"Assigning mission to {} (Energy: {}%)\", robot_name, energy);\n}\n\nfn recharge_robot(energy: &mut i32) {\n    *energy += 25;\n    println!(\"Robot recharged! Energy now: {}%\", energy);\n}\n\nfn create_robot_squad() -> (String, i32, bool) {\n    let squad_name = String::from(\"Alpha-Squad\");\n    let squad_size = 4;\n    let is_active = true;\n    (squad_name, squad_size, is_active)\n}\n\nfn main() {\n    let commander_robot = String::from(\"COMMANDER-PRIME\");\n    let robot_energy = 75;\n\n    assign_mission(&commander_robot, &robot_energy);\n    // Robot still under command control after mission assignment\n    println!(\"{} remains under command control\", commander_robot);\n    println!(\"Current energy status: {}%\", robot_energy);\n\n    let (squad_name, squad_size, squad_active) = create_robot_squad();\n    println!(\"Created squad: {} with {} members (Active: {})\", squad_name, squad_size, squad_active);\n\n    let mut field_robot_energy = 40;\n    recharge_robot(&mut field_robot_energy);\n    println!(\"Field robot final energy: {}%\", field_robot_energy);\n}\n```\n\n🎯 **Mission**: Build efficient command structures!\n• **Borrow data** for mission assignments\n• **Functions modify** energy levels with &mut\n• **Squad creation** returns multiple values\n• **Command retains** control of deployed units".to_string(),
 
-            4 => "📋 **TASK 5/5: Common Ownership Patterns**\n\nApply common patterns for working with ownership:\n\n```rust\nfn main() {\n    // Clone to avoid move when you need both values\n    let original = String::from(\"original\");\n    let cloned = original.clone();\n    println!(\"Original: {}, Cloned: {}\", original, cloned);\n\n    // Working with collections and ownership\n    let mut robot_names = Vec::new();\n    robot_names.push(String::from(\"Alpha\"));\n    robot_names.push(String::from(\"Beta\"));\n    robot_names.push(String::from(\"Gamma\"));\n\n    // Iterate over references to avoid moving\n    for name in &robot_names {\n        println!(\"Robot: {}\", name);\n    }\n\n    // We can still use robot_names here\n    println!(\"Total robots: {}\", robot_names.len());\n\n    // String slices (&str) don't own their data\n    let full_message = String::from(\"Hello, Rust ownership!\");\n    let slice = &full_message[0..5];\n    println!(\"Full message: {}\", full_message);\n    println!(\"Slice: {}\", slice);\n\n    // Function parameters with different ownership patterns\n    fn analyze_data(owned: String, borrowed: &str, mutable: &mut i32) {\n        println!(\"Owned: {}\", owned);\n        println!(\"Borrowed: {}\", borrowed);\n        *mutable += 10;\n    }\n\n    let owned_string = String::from(\"owned data\");\n    let borrowed_str = \"borrowed data\";\n    let mut mutable_int = 5;\n\n    analyze_data(owned_string, borrowed_str, &mut mutable_int);\n    println!(\"Modified mutable: {}\", mutable_int);\n}\n```\n\n• **Clone** when you need both values\n• **Iterate with &** to avoid moves\n• **String slices** (&str) for borrowing\n• **Mix owned and borrowed** parameters".to_string(),
+            4 => "🌟 **TASK 5/5: Advanced Fleet Management Strategies**\n\nImplement sophisticated robot fleet management using advanced ownership patterns:\n\n```rust\nfn main() {\n    // Fleet duplication strategy when you need both original and copy\n    let master_fleet_id = String::from(\"FLEET-OMEGA-7\");\n    let backup_fleet_id = master_fleet_id.clone();\n    println!(\"Master Fleet: {}\", master_fleet_id);\n    println!(\"Backup Registry: {}\", backup_fleet_id);\n\n    // Robot inventory management with collections\n    let mut robot_inventory = Vec::new();\n    robot_inventory.push(String::from(\"MINING-BOT-A\"));\n    robot_inventory.push(String::from(\"SCOUT-BOT-B\"));\n    robot_inventory.push(String::from(\"REPAIR-BOT-C\"));\n\n    // Iterate over references to avoid moving robots\n    for robot in &robot_inventory {\n        println!(\"🤖 {}\", robot);\n    }\n\n    // Inventory still accessible after iteration\n    println!(\"Total robots in inventory: {}\", robot_inventory.len());\n\n    // Mission data slicing without ownership transfer\n    let full_mission_log = String::from(\"2024-Mission-Deep-Cave-Exploration-Alpha-Squad\");\n    let mission_year = &full_mission_log[0..4];\n    let mission_type = &full_mission_log[13..22];\n    println!(\"Full mission log: {}\", full_mission_log);\n    println!(\"Mission year: {}\", mission_year);\n\n    // Advanced deployment patterns with mixed ownership\n    fn process_deployment(owned_robot: String, borrowed_mission: &str, shared_energy: &mut i32) {\n        println!(\"Deploying {} for mission: {}\", owned_robot, borrowed_mission);\n        *shared_energy -= 10;\n    }\n\n    let deployment_robot = String::from(\"GAMMA-EXPLORER\");\n    let mission_briefing = \"Cave-Survey-Delta\";\n    let mut shared_energy = 95;\n\n    process_deployment(deployment_robot, mission_briefing, &mut shared_energy);\n    println!(\"Mission briefing still available: {}\", mission_briefing);\n    println!(\"Shared energy updated: {}\", shared_energy);\n}\n```\n\n🎯 **Mission**: Master advanced fleet management!\n• **Clone fleets** when you need duplicates\n• **Iterate with &** to preserve inventory\n• **String slices** for mission data access\n• **Mix ownership patterns** for complex operations".to_string(),
 
-            _ => "🎉 **Level 6 Complete!**\n\nExcellent! You've mastered Rust's ownership system - the foundation of memory safety:\n• **Three ownership rules** for memory management\n• **Move semantics** and when values become invalid\n• **References and borrowing** to use values without taking ownership\n• **Function ownership patterns** for flexible APIs\n• **Common ownership techniques** for real-world code\n\nYou now understand Rust's unique approach to memory safety without garbage collection! Ownership prevents data races, memory leaks, and use-after-free bugs at compile time.\n\n🚀 Ready for Level 7: Advanced Ownership and Lifetimes!".to_string(),
+            _ => "🎉 **Level 6 Complete!**\n\nExcellent! You've mastered Robot Ownership Systems - the foundation of safe fleet management:\n• **Robot Registration Protocol** - Single ownership prevents conflicts\n• **Mission Handoff Systems** - Resource transfer and deployment\n• **Communication Networks** - Shared access through borrowing\n• **Command Structures** - Coordinated robot operations\n• **Advanced Fleet Management** - Complex ownership strategies\n\nYou now understand Rust's unique approach to memory safety through ownership! Your robot fleet is secure from data races, memory leaks, and use-after-free bugs at compile time.\n\n🚀 Ready for Level 7: Advanced Robot Systems and Lifetimes!".to_string(),
         }
     }
 
@@ -29,75 +29,84 @@ impl Game {
 
         match self.tutorial_state.current_task {
             0 => {
-                // Task 1: Basic ownership rules
+                // Task 1: Robot Registration and Transfer Protocol
                 if self.println_outputs.iter().any(|output|
-                    output.contains("Robot owner: Ferris") ||
-                    output.contains("New owner: RustBot") ||
-                    output.contains("Temporary robot: TempBot") ||
-                    output.contains("x: 5, y: 5") ||
-                    output.contains("ownership rules")
+                    output.contains("Robot FERRIS-2024 registered to Command Center") ||
+                    output.contains("Robot ALPHA-UNIT-7 assigned to Field Operations") ||
+                    output.contains("Temporary scout SCOUT-TEMP-1 deployed") ||
+                    output.contains("Robot ID 42 logged, backup ID 42 stored") ||
+                    output.contains("registration protocol") ||
+                    output.contains("Robot Registration and Transfer Protocol")
                 ) {
                     self.tutorial_state.task_completed[0] = true;
                     self.tutorial_state.current_task = 1;
-                    println!("✅ Task 1 completed: Basic ownership rules!");
+                    println!("✅ Task 1 completed: Robot Registration and Transfer Protocol!");
                 }
             },
             1 => {
-                // Task 2: Move semantics
+                // Task 2: Mission Handoff and Resource Transfer
                 if self.println_outputs.iter().any(|output|
-                    output.contains("s2: hello") ||
-                    output.contains("Function received: world") ||
-                    output.contains("Received ownership: transferred") ||
-                    output.contains("vec2: [1, 2, 3]") ||
-                    output.contains("move semantics")
+                    output.contains("Active mission: Sector-7-Recon") ||
+                    output.contains("Deploying BETA-EXPLORER to field operations") ||
+                    output.contains("New mission generated: Deep-Cave-Survey") ||
+                    output.contains("Fleet deployed: [\"GAMMA-1\", \"GAMMA-2\", \"GAMMA-3\"]") ||
+                    output.contains("Mission Handoff Protocol") ||
+                    output.contains("handoff protocol")
                 ) {
                     self.tutorial_state.task_completed[1] = true;
                     self.tutorial_state.current_task = 2;
-                    println!("✅ Task 2 completed: Move semantics!");
+                    println!("✅ Task 2 completed: Mission Handoff and Resource Transfer!");
                 }
             },
             2 => {
-                // Task 3: References and borrowing
+                // Task 3: Shared Resources and Robot Communication
                 if self.println_outputs.iter().any(|output|
-                    output.contains("The length of 'hello' is 5") ||
-                    output.contains("Changed string: hello, world!") ||
-                    output.contains("r1: world, r2: world") ||
-                    output.contains("reference to x: 5") ||
-                    output.contains("borrowing")
+                    output.contains("Robot position: SECTOR-7-GRID-A5") ||
+                    output.contains("Distance calculation: 17 units") ||
+                    output.contains("Updated robot status: OPERATIONAL-UPDATED") ||
+                    output.contains("Primary mission access: Cave-Exploration-Alpha") ||
+                    output.contains("Backup mission access: Cave-Exploration-Alpha") ||
+                    output.contains("communication network") ||
+                    output.contains("Robot Communication Network")
                 ) {
                     self.tutorial_state.task_completed[2] = true;
                     self.tutorial_state.current_task = 3;
-                    println!("✅ Task 3 completed: References and borrowing!");
+                    println!("✅ Task 3 completed: Shared Resources and Robot Communication!");
                 }
             },
             3 => {
-                // Task 4: Ownership with functions
+                // Task 4: Command Structure and Robot Deployment
                 if self.println_outputs.iter().any(|output|
-                    output.contains("Robot Cybertron has 100 energy") ||
-                    output.contains("Still accessible: Cybertron with 100 energy") ||
-                    output.contains("Created robot: Alpha") ||
-                    output.contains("Recharging... energy now:") ||
-                    output.contains("Final energy:")
+                    output.contains("Assigning mission to COMMANDER-PRIME (Energy: 75%)") ||
+                    output.contains("COMMANDER-PRIME remains under command control") ||
+                    output.contains("Created squad: Alpha-Squad with 4 members") ||
+                    output.contains("Robot recharged! Energy now:") ||
+                    output.contains("Field robot final energy:") ||
+                    output.contains("Command Structure") ||
+                    output.contains("command structure")
                 ) {
                     self.tutorial_state.task_completed[3] = true;
                     self.tutorial_state.current_task = 4;
-                    println!("✅ Task 4 completed: Ownership with functions!");
+                    println!("✅ Task 4 completed: Command Structure and Robot Deployment!");
                 }
             },
             4 => {
-                // Task 5: Common ownership patterns
+                // Task 5: Advanced Fleet Management Strategies
                 if self.println_outputs.iter().any(|output|
-                    output.contains("Original: original, Cloned: original") ||
-                    output.contains("Robot: Alpha") ||
-                    output.contains("Total robots: 3") ||
-                    output.contains("Full message: Hello, Rust ownership!") ||
-                    output.contains("Slice: Hello") ||
-                    output.contains("Modified mutable:")
+                    output.contains("Master Fleet: FLEET-OMEGA-7") ||
+                    output.contains("Backup Registry: FLEET-OMEGA-7") ||
+                    output.contains("🤖 MINING-BOT-A") ||
+                    output.contains("🤖 SCOUT-BOT-B") ||
+                    output.contains("Total robots in inventory: 3") ||
+                    output.contains("Mission year: 2024") ||
+                    output.contains("Deploying GAMMA-EXPLORER for mission") ||
+                    output.contains("Advanced Fleet Management") ||
+                    output.contains("fleet management")
                 ) {
                     self.tutorial_state.task_completed[4] = true;
                     self.tutorial_state.current_task = 5;
-                    println!("✅ Task 5 completed: Common ownership patterns!");
-                    println!("🎉 Level 6 Complete! You've mastered Rust's ownership system!");
+                    println!("✅ Task 5 completed: Advanced Fleet Management Strategies!");
+                    println!("🎉 Level 6 Complete! You've mastered Robot Ownership Systems!");
                 }
             },
             _ => {}

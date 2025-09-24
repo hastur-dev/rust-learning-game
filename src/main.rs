@@ -3317,7 +3317,28 @@ async fn desktop_main() {
                             game.update_autocomplete();
                         }
                     }
-                    
+
+                    // Tutorial scrolling for when code editor is NOT active
+                    if !game.code_editor_active {
+                        // Handle Up/Down arrow keys for tutorial scrolling
+                        if is_key_pressed(KeyCode::Up) {
+                            if game.tutorial_scroll_offset > 0 {
+                                game.tutorial_scroll_offset -= 1;
+                            }
+                        }
+                        if is_key_pressed(KeyCode::Down) {
+                            game.tutorial_scroll_offset += 1;
+                        }
+
+                        // Page Up/Down for faster tutorial scrolling
+                        if is_key_pressed(KeyCode::PageUp) {
+                            game.tutorial_scroll_offset = game.tutorial_scroll_offset.saturating_sub(5);
+                        }
+                        if is_key_pressed(KeyCode::PageDown) {
+                            game.tutorial_scroll_offset += 5;
+                        }
+                    }
+
                     if is_key_pressed(KeyCode::E) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) && !game.code_editor_active {
                         // Open external editor hint
                         game.execution_result = format!("Edit {} with your preferred IDE/editor", game.robot_code_path);

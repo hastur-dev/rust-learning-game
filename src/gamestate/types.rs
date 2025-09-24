@@ -82,6 +82,7 @@ pub struct Game {
     pub is_dragging: bool,              // Whether we're currently dragging to select text
     pub code_scroll_offset: usize, // Top line displayed in editor
     pub code_lines_visible: usize, // Number of lines visible in editor
+    pub tutorial_scroll_offset: usize, // Top line displayed in tutorial overlay
     pub enemy_step_paused: bool,
     pub time_slow_active: bool,
     pub time_slow_duration_ms: u32,

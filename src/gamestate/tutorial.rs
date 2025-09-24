@@ -14,6 +14,7 @@ impl Game {
             2 => self.get_level_3_task_message(),
             3 => self.get_level_4_task_message(),
             4 => self.get_level_5_task_message(),
+            5 => self.get_level_6_task_message(),
             _ => {
                 // Generic message for unimplemented learning levels
                 format!("🚧 Learning Level {} is under construction!\n\nThis level's tutorial system hasn't been implemented yet.\nCheck back soon for new learning content!", self.level_idx + 1)
@@ -33,6 +34,7 @@ impl Game {
             2 => self.check_level_3_progress(),
             3 => self.check_level_4_progress(),
             4 => self.check_level_5_progress(),
+            5 => self.check_level_6_progress(),
             _ => {
                 // For unimplemented learning levels, just complete them automatically
                 if self.tutorial_state.current_task == 0 {

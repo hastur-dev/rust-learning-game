@@ -461,55 +461,54 @@ fn main() {
             start_position: Some((1, 1)),
             max_turns: Some(0),
             fog_of_war: Some(true),
-            message: Some("🔒 **LEVEL 6: Ownership Basics** - Welcome to Rust's most unique feature: Ownership! Understanding ownership is crucial for memory safety without garbage collection. Learn the three rules and how values move between scopes.".to_string()),
-            hint_message: Some("Ownership Rules: 1) Each value has one owner, 2) Only one owner at a time, 3) Value is dropped when owner goes out of scope. Assignment moves ownership by default.".to_string()),
+            message: Some("🤖 **LEVEL 6: Robot Ownership Systems** - Welcome to the Command Center! Learn how robot ownership prevents conflicts in fleet management systems. Master the three ownership rules that keep your robot operations secure and efficient.".to_string()),
+            hint_message: Some("Robot Fleet Rules: 1) Each robot has exactly one commander, 2) Only one active assignment at a time, 3) Auto-cleanup when mission ends. Robot transfers happen through assignment and function deployment.".to_string()),
             rust_docs_url: Some("https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html".to_string()),
-            starting_code: Some(r#"// Level 6: Ownership Basics
-// Learn Rust's unique ownership system for memory safety
+            starting_code: Some(r#"// Level 6: Robot Ownership Systems
+// Learn fleet management through Rust's ownership system
 
 fn main() {
-    println!("Level 6: Ownership Basics");
+    println!("🤖 Level 6: Robot Ownership Systems - Command Center Online");
 
-    // TODO: Task 1 - Basic ownership rules
-    // let robot_name = String::from("Ferris");
-    // let new_owner = robot_name; // moves ownership
-    // println!("New owner: {}", new_owner);
+    // TODO: Task 1 - Robot Registration and Transfer Protocol
+    // let robot_ferris = String::from("FERRIS-2024");
+    // println!("✓ Robot {} registered to Command Center", robot_ferris);
+    // let field_assignment = robot_ferris; // Ownership transferred!
+    // println!("✓ Robot {} assigned to Field Operations", field_assignment);
 
-    // TODO: Task 2 - Move semantics
-    // let s1 = String::from("hello");
-    // let s2 = s1; // s1 is moved to s2
-    // println!("s2: {}", s2);
+    // TODO: Task 2 - Mission Handoff and Resource Transfer
+    // let mission_briefing = String::from("Sector-7-Recon");
+    // let active_mission = mission_briefing; // Mission transferred to field team
+    // println!("✓ Active mission: {}", active_mission);
 
-    // TODO: Task 3 - References and borrowing
-    // let s = String::from("hello");
-    // let len = calculate_length(&s); // borrowing with &
-    // println!("Length of '{}' is {}", s, len);
+    // TODO: Task 3 - Shared Resources and Robot Communication
+    // let robot_position = String::from("SECTOR-7-GRID-A5");
+    // let distance_calc = calculate_distance(&robot_position);
+    // println!("✓ Robot position: {}", robot_position);
+    // println!("✓ Distance calculation: {} units", distance_calc);
 
-    // TODO: Task 4 - Ownership with functions
-    // let name = String::from("Robot");
-    // print_info(&name); // borrow instead of move
-    // println!("Still can use: {}", name);
+    // TODO: Task 4 - Command Structure and Robot Deployment
+    // let commander_robot = String::from("COMMANDER-PRIME");
+    // assign_mission(&commander_robot, &75);
+    // println!("✓ {} remains under command control", commander_robot);
 
-    // TODO: Task 5 - Common ownership patterns
-    // let original = String::from("data");
-    // let cloned = original.clone(); // explicit copy
-    // println!("Both: {} and {}", original, cloned);
+    // TODO: Task 5 - Advanced Fleet Management Strategies
+    // let master_fleet_id = String::from("FLEET-OMEGA-7");
+    // let backup_fleet_id = master_fleet_id.clone();
+    // println!("✓ Master Fleet: {}", master_fleet_id);
+    // println!("✓ Backup Registry: {}", backup_fleet_id);
 
-    println!("Complete all tasks to master ownership!");
+    println!("🎯 Complete all tasks to master robot ownership systems!");
 }
 
-// TODO: Task 3 - Add calculate_length function
-// fn calculate_length(s: &String) -> usize {
-//     s.len()
-// }
-
-// TODO: Task 4 - Add print_info function
-// fn print_info(name: &String) {
-//     println!("Robot name: {}", name);
+// TODO: Add helper functions for robot operations
+// fn calculate_distance(robot_pos: &String) -> usize { robot_pos.len() }
+// fn assign_mission(robot_name: &String, energy: &i32) {
+//     println!("📋 Assigning mission to {} (Energy: {}%)", robot_name, energy);
 // }
 "#.to_string()),
-            next_level_hint: Some("Next: More advanced ownership concepts like lifetimes and borrowing checker!".to_string()),
-            achievement_message: Some("🎉 Outstanding! You've mastered Rust's ownership system - the foundation of memory safety!".to_string()),
+            next_level_hint: Some("Next: Advanced robot systems with lifetimes and borrowing checker for complex fleet operations!".to_string()),
+            achievement_message: Some("🎉 Outstanding! You've mastered Robot Ownership Systems - your fleet is secure from data races and memory conflicts!".to_string()),
             completion_condition: None,
             completion_flag: Some("goal".to_string()),
             completion_message: None,

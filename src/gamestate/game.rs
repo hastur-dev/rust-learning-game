@@ -42,6 +42,7 @@ impl Game {
             is_dragging: false,
             code_scroll_offset: 0,
             code_lines_visible: 30, // Default number of lines visible
+            tutorial_scroll_offset: 0,
             enemy_step_paused: false,
             time_slow_active: false,
             time_slow_duration_ms: 500, // Default 500ms

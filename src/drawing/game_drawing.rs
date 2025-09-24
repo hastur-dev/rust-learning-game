@@ -276,28 +276,37 @@ pub fn draw_tutorial_overlay(game: &Game) {
             
             // Draw scrolling indicator if needed
             if needs_scrolling {
-                draw_scaled_text("↕ Scrollable", tutorial_x + box_width - scale_size(80.0), tutorial_y - scale_size(5.0), 10.0, GRAY);
+                draw_scaled_text("↑↓ Arrow Keys | PgUp/PgDn", tutorial_x + box_width - scale_size(150.0), tutorial_y - scale_size(5.0), 9.0, GRAY);
             }
             
             // Draw wrapped text with scrolling support
             let line_height = final_font_size * 1.2; // Use calculated line height
             let visible_lines = ((actual_box_height - scale_size(20.0)) / line_height) as usize;
             
-            // Simple scrolling: show first N lines that fit (could be enhanced with scroll offset later)
-            let lines_to_show = if needs_scrolling { visible_lines.min(wrapped_lines.len()) } else { wrapped_lines.len() };
-            
+            // Advanced scrolling: use tutorial_scroll_offset to show appropriate lines
+            let start_line = game.tutorial_scroll_offset.min(wrapped_lines.len());
+            let end_line = (start_line + visible_lines).min(wrapped_lines.len());
+            let lines_to_show = end_line - start_line;
+
             for i in 0..lines_to_show {
-                if i < wrapped_lines.len() {
-                    let line = &wrapped_lines[i];
+                let line_index = start_line + i;
+                if line_index < wrapped_lines.len() {
+                    let line = &wrapped_lines[line_index];
                     let color = if line.starts_with("Task") || line.starts_with("📋") { YELLOW } else { WHITE };
                     draw_scaled_text(line, tutorial_x, tutorial_y + (i as f32 * line_height), final_font_size, color);
                 }
             }
             
-            // Show truncation indicator if content is cut off
-            if needs_scrolling && lines_to_show < wrapped_lines.len() {
+            // Show scroll indicators
+            if needs_scrolling {
                 let indicator_y = tutorial_y + actual_box_height - scale_size(30.0);
-                draw_scaled_text("... (more content)", tutorial_x, indicator_y, final_font_size * 0.8, GRAY);
+                if start_line > 0 && end_line < wrapped_lines.len() {
+                    draw_scaled_text("↑ More above ↓ More below", tutorial_x, indicator_y, final_font_size * 0.8, GRAY);
+                } else if start_line > 0 {
+                    draw_scaled_text("↑ More above", tutorial_x, indicator_y, final_font_size * 0.8, GRAY);
+                } else if end_line < wrapped_lines.len() {
+                    draw_scaled_text("↓ More below", tutorial_x, indicator_y, final_font_size * 0.8, GRAY);
+                }
             }
         }
     }
