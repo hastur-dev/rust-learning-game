@@ -311,6 +311,7 @@ mod editor_test_mode;
 mod hotkey_test_mode;
 mod learning_level_solutions;
 mod learning_test_runner;
+mod automated_level_testing;
 
 use level::*;
 use item::*;

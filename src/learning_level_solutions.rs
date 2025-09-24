@@ -478,6 +478,298 @@ fn main() {
 }"#,
         },
 
+        // LEVEL 5: Types and Casting (5 tasks)
+        TaskSolution {
+            level_name: "Level 5: Types and Casting",
+            task_number: 1,
+            task_description: "Task 1: Explicit Type Casting with 'as'",
+            solution_code: r#"fn main() {
+    // Basic integer casting
+    let large_number: i64 = 1000;
+    let small_number: i32 = large_number as i32;
+
+    println!("Large (i64): {}", large_number);
+    println!("Small (i32): {}", small_number);
+
+    // Casting that loses precision
+    let precise_float: f64 = 3.14159265359;
+    let less_precise: f32 = precise_float as f32;
+
+    println!("Precise (f64): {}", precise_float);
+    println!("Less precise (f32): {}", less_precise);
+
+    // Float to integer (loses decimal part)
+    let pi: f64 = 3.14159;
+    let pi_int: i32 = pi as i32;
+
+    println!("Pi as float: {}", pi);
+    println!("Pi as integer: {} (decimal part lost)", pi_int);
+
+    // Potentially dangerous casting
+    let big_value: i32 = 1000;
+    let small_type: i8 = big_value as i8;
+
+    println!("Big value (i32): {}", big_value);
+    println!("As i8: {} (wrapped around)", small_type);
+
+    // Unsigned to signed
+    let unsigned: u32 = 4294967295;
+    let signed: i32 = unsigned as i32;
+
+    println!("Unsigned: {}", unsigned);
+    println!("As signed: {} (overflow)", signed);
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 5: Types and Casting",
+            task_number: 2,
+            task_description: "Task 2: Safe Conversions with From and Into",
+            solution_code: r#"fn main() {
+    // From smaller to larger integer types (always safe)
+    let small: i32 = 100;
+    let large: i64 = small.into();
+
+    println!("Small (i32): {}", small);
+    println!("Large (i64): {}", large);
+
+    // Alternative using From
+    let another_small: i32 = 200;
+    let another_large: i64 = i64::from(another_small);
+
+    println!("Another small: {}", another_small);
+    println!("Another large: {}", another_large);
+
+    // String conversions
+    let number: i32 = 42;
+    let number_string: String = number.to_string();
+    let formatted: String = format!("Number: {}", number);
+
+    println!("Original number: {}", number);
+    println!("As string: {}", number_string);
+    println!("Formatted: {}", formatted);
+
+    // Character to string
+    let ch: char = 'R';
+    let ch_string: String = ch.to_string();
+
+    println!("Character: {}", ch);
+    println!("As string: {}", ch_string);
+
+    // Array to Vec
+    let array = [1, 2, 3];
+    let vector: Vec<i32> = array.to_vec();
+
+    println!("Array: {:?}", array);
+    println!("Vector: {:?}", vector);
+
+    // Using From and Into explicitly
+    let from_example: String = String::from("Hello, Rust!");
+    let into_example: String = "Hello, Into!".into();
+
+    println!("From example: {}", from_example);
+    println!("Into example: {}", into_example);
+
+    // Chain conversions
+    let original: u16 = 500;
+    let converted: u64 = original.into();
+    let back_to_string = converted.to_string();
+
+    println!("Chain: {} -> {} -> {}", original, converted, back_to_string);
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 5: Types and Casting",
+            task_number: 3,
+            task_description: "Task 3: String Parsing and Error Handling",
+            solution_code: r#"fn main() {
+    // Basic parsing with expect
+    let valid_number = "42";
+    let parsed: i32 = valid_number.parse().expect("Failed to parse number");
+
+    println!("Valid string: '{}'", valid_number);
+    println!("Parsed number: {}", parsed);
+
+    // Parsing with match for error handling
+    let strings = ["123", "45.67", "not_a_number", "0"];
+
+    for string_val in strings.iter() {
+        match string_val.parse::<i32>() {
+            Ok(number) => println!("'{}' -> {} (success)", string_val, number),
+            Err(error) => println!("'{}' -> Error: {}", string_val, error),
+        }
+    }
+
+    // Parsing floats
+    let float_strings = ["3.14", "2.718", "invalid", "42.0"];
+
+    for float_str in float_strings.iter() {
+        match float_str.parse::<f64>() {
+            Ok(float_val) => println!("'{}' -> {} (float)", float_str, float_val),
+            Err(_) => println!("'{}' -> Invalid float", float_str),
+        }
+    }
+
+    // Using unwrap_or for default values
+    let inputs = ["100", "invalid", "200"];
+
+    for input in inputs.iter() {
+        let number: i32 = input.parse().unwrap_or(0);
+        println!("'{}' -> {} (with default)", input, number);
+    }
+
+    // Parsing with type inference
+    let inferred_parse = "999".parse::<i32>().unwrap_or(-1);
+    let explicit_type: Result<i32, _> = "888".parse();
+
+    println!("Inferred parse: {}", inferred_parse);
+    match explicit_type {
+        Ok(val) => println!("Explicit parse: {}", val),
+        Err(_) => println!("Explicit parse failed"),
+    }
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 5: Types and Casting",
+            task_number: 4,
+            task_description: "Task 4: Custom Type Conversions",
+            solution_code: r#"// Custom types for robot system
+struct Position {
+    x: i32,
+    y: i32,
+}
+
+struct RobotState {
+    position: Position,
+    energy: u32,
+}
+
+// Implement conversion from tuple to Position
+impl From<(i32, i32)> for Position {
+    fn from(coord: (i32, i32)) -> Self {
+        Position {
+            x: coord.0,
+            y: coord.1,
+        }
+    }
+}
+
+// Implement conversion from Position to tuple
+impl From<Position> for (i32, i32) {
+    fn from(pos: Position) -> Self {
+        (pos.x, pos.y)
+    }
+}
+
+fn main() {
+    // Create Position from tuple
+    let start_coords = (5, 10);
+    let start_position: Position = start_coords.into();
+
+    println!("Start coordinates: {:?}", start_coords);
+    println!("Position: x={}, y={}", start_position.x, start_position.y);
+
+    // Convert Position back to tuple
+    let end_position = Position { x: 15, y: 25 };
+    let end_coords: (i32, i32) = end_position.into();
+
+    println!("End position: x=15, y=25");
+    println!("End coordinates: {:?}", end_coords);
+
+    // Create RobotState using conversions
+    let robot = RobotState {
+        position: (0, 0).into(),
+        energy: 100,
+    };
+
+    println!("Robot created at: x={}, y={}", robot.position.x, robot.position.y);
+    println!("Robot energy: {}", robot.energy);
+
+    // Chain conversions
+    let movement: (i32, i32) = (3, 4);
+    let new_position: Position = movement.into();
+    let back_to_tuple: (i32, i32) = new_position.into();
+
+    println!("Movement chain: {:?} -> Position -> {:?}", movement, back_to_tuple);
+
+    // Multiple conversion options
+    let coords = [(1, 2), (3, 4), (5, 6)];
+    let positions: Vec<Position> = coords.iter().map(|&c| c.into()).collect();
+
+    println!("Converted {} coordinates to positions", positions.len());
+    for (i, pos) in positions.iter().enumerate() {
+        println!("Position {}: ({}, {})", i, pos.x, pos.y);
+    }
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 5: Types and Casting",
+            task_number: 5,
+            task_description: "Task 5: Type Inference with Conversions",
+            solution_code: r#"fn main() {
+    // Type inference with numeric conversions
+    let small = 100_i32;
+    let large: i64 = small.into();
+
+    // Need explicit type when inference is ambiguous
+    let explicit: i64 = small.into();
+    let inferred: i64 = small.into();
+
+    println!("Small: {}", small);
+    println!("Large (inferred): {}", large);
+    println!("Explicit: {}", explicit);
+    println!("Inferred: {}", inferred);
+
+    // Collection inference
+    let numbers = vec![1, 2, 3];
+    let converted: Vec<i64> = numbers.into_iter().map(|x| x.into()).collect();
+
+    println!("Original: [1, 2, 3]");
+    println!("Converted: {:?}", converted);
+
+    // String conversion inference
+    let value = 42;
+    let string_val = value.to_string();
+
+    println!("Value: {}", value);
+    println!("String: {}", string_val);
+
+    // Parsing with inference
+    let parse_target = "123";
+
+    // These require type annotation
+    let as_i32: i32 = parse_target.parse().expect("Parse failed");
+    let as_f64: f64 = parse_target.parse().expect("Parse failed");
+
+    println!("Parsed as i32: {}", as_i32);
+    println!("Parsed as f64: {}", as_f64);
+
+    // Function parameter inference
+    fn process_number(num: i64) {
+        println!("Processing: {}", num);
+    }
+
+    let input = 500_i32;
+    process_number(input.into());
+
+    // Turbofish syntax for explicit types
+    let parsed_with_turbofish = "456".parse::<i32>().expect("Parse failed");
+
+    println!("Turbofish parsed: {}", parsed_with_turbofish);
+
+    // When inference fails, be explicit
+    let ambiguous_collection: Vec<i32> = vec![1, 2, 3]
+        .into_iter()
+        .map(|x| x * 2)
+        .collect();
+
+    println!("Explicit collection: {:?}", ambiguous_collection);
+}"#,
+        },
+
         // LEVEL 6: Flow Control and Conditionals (1 task created as example)
         TaskSolution {
             level_name: "Level 6: Flow Control and Conditionals",

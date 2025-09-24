@@ -155,12 +155,26 @@ impl Game {
                 max_tasks: 4,
                 name: "Level 2: Functions, Loops, and Structs".to_string(),
             },
-            // Add more learning levels here as they're implemented:
-            // LearningLevelConfig {
-            //     level_idx: 2,
-            //     max_tasks: 6,
-            //     name: "Level 3: Error Handling".to_string(),
-            // },
+            LearningLevelConfig {
+                level_idx: 2,
+                max_tasks: 5,
+                name: "Level 3: Primitives and Data Types".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 3,
+                max_tasks: 5,
+                name: "Level 4: Variable Bindings and Mutability".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 4,
+                max_tasks: 5,
+                name: "Level 5: Types and Casting".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 5,
+                max_tasks: 5,
+                name: "Level 6: Ownership Basics".to_string(),
+            },
         ]
     }
     

@@ -498,11 +498,28 @@ fn get_syntax_color(ch: char, col: usize, line: &str) -> Color {
     if line.trim_start().starts_with("//") {
         Color::new(0.5, 0.7, 0.5, 1.0) // Green for comments
     } else if line.contains("fn ") || line.contains("let ") || line.contains("if ") || line.contains("for ") {
-        if col < line.len() {
-            let word_start = line[..col].rfind(|c: char| c.is_whitespace()).map(|i| i + 1).unwrap_or(0);
-            let word_end = line[col..].find(|c: char| c.is_whitespace()).map(|i| col + i).unwrap_or(line.len());
-            let word = &line[word_start..word_end];
-            if matches!(word, "fn" | "let" | "if" | "for" | "while" | "match" | "struct" | "impl") {
+        // Use character-based indexing to avoid UTF-8 boundary issues
+        let chars: Vec<char> = line.chars().collect();
+        if col < chars.len() {
+            // Find word boundaries using character indices
+            let mut word_start = 0;
+            for i in (0..col).rev() {
+                if chars[i].is_whitespace() {
+                    word_start = i + 1;
+                    break;
+                }
+            }
+
+            let mut word_end = chars.len();
+            for i in col..chars.len() {
+                if chars[i].is_whitespace() {
+                    word_end = i;
+                    break;
+                }
+            }
+
+            let word: String = chars[word_start..word_end].iter().collect();
+            if matches!(word.as_str(), "fn" | "let" | "if" | "for" | "while" | "match" | "struct" | "impl") {
                 Color::new(0.8, 0.6, 1.0, 1.0) // Purple for keywords
             } else {
                 WHITE

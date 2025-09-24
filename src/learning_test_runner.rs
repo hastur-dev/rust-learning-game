@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use crate::{
     gamestate::{Game},
     embedded_levels,
-    learning_level_solutions::{self, TaskSolution},
+    automated_level_testing::{self, LevelTestConfig, TaskTest},
     execute_rust_code,
     menu::{MenuState},
     draw_main_game_view,
@@ -40,8 +40,8 @@ pub struct LearningTaskTestRunner {
     current_level: usize,
     current_task: usize,
     test_results: Vec<TaskTestResult>,
-    all_tasks: Vec<TaskSolution>,
-    level_tasks: Vec<TaskSolution>,
+    all_level_configs: Vec<LevelTestConfig>,
+    current_level_config: Option<LevelTestConfig>,
     test_start_time: Instant,
     task_start_time: Instant,
     state: TestState,
@@ -74,15 +74,15 @@ impl LearningTaskTestRunner {
         game.current_code = String::new();
         game.cursor_position = 0;
 
-        let all_tasks = learning_level_solutions::get_all_task_solutions();
+        let all_level_configs = automated_level_testing::get_all_level_tests();
 
         Self {
             game,
             current_level: 0,
             current_task: 1,
             test_results: Vec::new(),
-            level_tasks: Vec::new(),
-            all_tasks,
+            current_level_config: None,
+            all_level_configs,
             test_start_time: Instant::now(),
             task_start_time: Instant::now(),
             state: TestState::Loading,
@@ -94,7 +94,7 @@ impl LearningTaskTestRunner {
             char_input_timer: 0.0,
             total_tasks_tested: 0,
             start_level: 0,        // Default: start from level 0
-            max_levels: 4,         // Default: test up to 4 levels
+            max_levels: 6,         // Default: test up to 6 levels
         }
     }
 
@@ -125,7 +125,7 @@ impl LearningTaskTestRunner {
         game.current_code = String::new();
         game.cursor_position = 0;
 
-        let all_tasks = learning_level_solutions::get_all_task_solutions();
+        let all_level_configs = automated_level_testing::get_all_level_tests();
 
         let current_level = start_level.min(game.levels.len().saturating_sub(1));
 
@@ -134,8 +134,8 @@ impl LearningTaskTestRunner {
             current_level,
             current_task: 1,
             test_results: Vec::new(),
-            level_tasks: Vec::new(),
-            all_tasks,
+            current_level_config: None,
+            all_level_configs,
             test_start_time: Instant::now(),
             task_start_time: Instant::now(),
             state: TestState::Loading,
@@ -192,20 +192,30 @@ impl LearningTaskTestRunner {
     }
 
     fn start_task_test(&mut self) {
-        let level_name = &self.game.levels[self.current_level].name;
+        // Safe access to level name with bounds checking
+        let level_name = if self.current_level < self.game.levels.len() {
+            self.game.levels[self.current_level].name.clone()
+        } else {
+            error!("Invalid level index {} (max: {})", self.current_level, self.game.levels.len());
+            format!("Unknown Level {}", self.current_level)
+        };
 
-        // Get tasks for current level
-        self.level_tasks = learning_level_solutions::get_task_solutions_for_level(level_name);
+        // Get level configuration for current level
+        info!("Getting level config for level index: {}", self.current_level);
+        self.current_level_config = automated_level_testing::get_level_tests(self.current_level);
 
-        if self.current_task <= self.level_tasks.len() {
-            if let Some(task_solution) = self.level_tasks.get(self.current_task - 1) {
-                info!("Starting task test: {} - Task {}/{}: {}",
-                      level_name, self.current_task, self.level_tasks.len(),
-                      task_solution.task_description);
+        if let Some(ref level_config) = self.current_level_config {
+            info!("Found level config: {} with {} tasks", level_config.level_name, level_config.tasks.len());
 
-                self.current_solution = task_solution.solution_code.to_string();
-                self.typing_progress = 0;
-                self.input_chars = self.current_solution.chars().collect();
+            if self.current_task <= level_config.tasks.len() {
+                if let Some(task_test) = level_config.tasks.get(self.current_task - 1) {
+                    info!("Starting task test: {} - Task {}/{}: {}",
+                          level_config.level_name, self.current_task, level_config.tasks.len(),
+                          task_test.task_name);
+
+                    self.current_solution = task_test.solution_code.to_string();
+                    self.typing_progress = 0;
+                    self.input_chars = self.current_solution.chars().collect();
 
                 // Clear the editor
                 self.game.current_code = String::new();
@@ -223,12 +233,16 @@ impl LearningTaskTestRunner {
                 self.task_start_time = Instant::now();
 
                 info!("Prepared to input solution of {} characters", self.input_chars.len());
+                } else {
+                    warn!("No task found for task number {}", self.current_task);
+                    self.advance_to_next_level();
+                }
             } else {
-                warn!("No solution found for task {}", self.current_task);
+                // All tasks for this level are complete
                 self.advance_to_next_level();
             }
         } else {
-            // All tasks for this level are complete
+            warn!("No level config found for level index {}", self.current_level);
             self.advance_to_next_level();
         }
     }
@@ -240,9 +254,10 @@ impl LearningTaskTestRunner {
         if self.char_input_timer >= interval && self.typing_progress < self.input_chars.len() {
             let ch = self.input_chars[self.typing_progress];
 
-            // Add character to the game's code
-            self.game.current_code.insert(self.game.cursor_position, ch);
-            self.game.cursor_position += 1;
+            // Safely add character to the game's code by appending to the end
+            // This avoids UTF-8 boundary issues that can occur with cursor_position
+            self.game.current_code.push(ch);
+            self.game.cursor_position = self.game.current_code.len();
 
             self.typing_progress += 1;
             self.char_input_timer = 0.0;
@@ -268,21 +283,33 @@ impl LearningTaskTestRunner {
     }
 
     fn check_for_completion(&mut self) -> bool {
-        // Basic completion checks based on execution result
-        if self.game.execution_result.contains("Print statements executed successfully") ||
-           self.game.execution_result.contains("successfully") ||
-           !self.game.println_outputs.is_empty() {
-            return true;
+        // Use completion indicators from the test configuration
+        if let Some(ref level_config) = self.current_level_config {
+            if let Some(task_test) = level_config.tasks.get(self.current_task - 1) {
+                // Check if all completion indicators are present in the output
+                let all_outputs = self.game.println_outputs.join("\n");
+
+                let mut indicators_found = 0;
+                let total_indicators = task_test.completion_indicators.len();
+
+                for indicator in &task_test.completion_indicators {
+                    if all_outputs.contains(indicator) {
+                        indicators_found += 1;
+                    }
+                }
+
+                info!("Completion check: {}/{} indicators found for task {}",
+                      indicators_found, total_indicators, self.current_task);
+
+                // Task is complete if all indicators are found
+                return indicators_found == total_indicators && total_indicators > 0;
+            }
         }
 
-        // Check if there are no errors and code was executed
-        if !self.game.execution_result.contains("error") &&
-           !self.game.execution_result.contains("Error") &&
-           !self.game.execution_result.is_empty() {
-            return true;
-        }
-
-        false
+        // Fallback to basic completion check
+        !self.game.println_outputs.is_empty() &&
+        !self.game.execution_result.contains("error") &&
+        !self.game.execution_result.contains("Error")
     }
 
     fn complete_task(&mut self) {
@@ -311,8 +338,12 @@ impl LearningTaskTestRunner {
         } else {
             format!("Unknown Level {}", self.current_level)
         };
-        let task_desc = if let Some(task) = self.level_tasks.get(self.current_task - 1) {
-            task.task_description.to_string()
+        let task_desc = if let Some(ref level_config) = self.current_level_config {
+            if let Some(task_test) = level_config.tasks.get(self.current_task - 1) {
+                task_test.task_name.to_string()
+            } else {
+                format!("Task {}", self.current_task)
+            }
         } else {
             format!("Task {}", self.current_task)
         };
@@ -337,8 +368,12 @@ impl LearningTaskTestRunner {
         } else {
             format!("Unknown Level {}", self.current_level)
         };
-        let task_desc = if let Some(task) = self.level_tasks.get(self.current_task - 1) {
-            task.task_description.to_string()
+        let task_desc = if let Some(ref level_config) = self.current_level_config {
+            if let Some(task_test) = level_config.tasks.get(self.current_task - 1) {
+                task_test.task_name.to_string()
+            } else {
+                format!("Task {}", self.current_task)
+            }
         } else {
             format!("Task {}", self.current_task)
         };
@@ -360,12 +395,17 @@ impl LearningTaskTestRunner {
         self.current_task += 1;
 
         // Check if there are more tasks for this level
-        if self.current_task <= self.level_tasks.len() {
-            info!("Advancing to task {}/{}", self.current_task, self.level_tasks.len());
-            self.state = TestState::NextTask;
-            self.state_timer = 0.0;
+        if let Some(ref level_config) = self.current_level_config {
+            if self.current_task <= level_config.tasks.len() {
+                info!("Advancing to task {}/{}", self.current_task, level_config.tasks.len());
+                self.state = TestState::NextTask;
+                self.state_timer = 0.0;
+            } else {
+                // All tasks for this level complete, move to next level
+                self.advance_to_next_level();
+            }
         } else {
-            // All tasks for this level complete, move to next level
+            // No level config, move to next level
             self.advance_to_next_level();
         }
     }
@@ -443,7 +483,11 @@ impl LearningTaskTestRunner {
         } else {
             "Unknown Level"
         };
-        let total_tasks_for_level = self.level_tasks.len();
+        let total_tasks_for_level = if let Some(ref level_config) = self.current_level_config {
+            level_config.tasks.len()
+        } else {
+            0
+        };
 
         draw_text(&format!("🧪 AUTOMATED TASK TESTING: {}",
                           level_name),
@@ -465,7 +509,7 @@ impl LearningTaskTestRunner {
         }
 
         // Progress bar for all tasks
-        let total_expected_tasks = 19; // Level 1: 5 tasks + Level 2: 4 tasks + Level 3: 5 tasks + Level 4: 5 tasks = 19 total tasks
+        let total_expected_tasks = 24; // Level 1: 5 tasks + Level 2: 4 tasks + Level 3: 5 tasks + Level 4: 5 tasks + Level 5: 5 tasks = 24 total tasks
         let progress = (self.total_tasks_tested as f32) / (total_expected_tasks as f32);
         let bar_width = screen_width() - 20.0;
         let bar_height = 20.0;
