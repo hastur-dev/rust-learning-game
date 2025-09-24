@@ -319,6 +319,165 @@ fn main() {
 }"#,
         },
 
+        // LEVEL 4: Variable Bindings and Mutability (5 tasks)
+        TaskSolution {
+            level_name: "Level 4: Variable Bindings and Mutability",
+            task_number: 1,
+            task_description: "Task 1: Immutable Variable Bindings",
+            solution_code: r#"fn main() {
+    let robot_name = "Ferris";
+    let robot_id = 12345;
+    let energy_level = 100;
+
+    println!("Robot name: {}", robot_name);
+    println!("Robot ID: {}", robot_id);
+    println!("Energy level: {}", energy_level);
+
+    let calculated_value = robot_id * 2;
+    println!("Calculated value: {}", calculated_value);
+
+    if energy_level == 100 {
+        println!("Robot is fully charged!");
+    }
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 4: Variable Bindings and Mutability",
+            task_number: 2,
+            task_description: "Task 2: Mutable Variable Bindings",
+            solution_code: r#"fn main() {
+    let mut robot_position = 0;
+    let mut energy_level = 100;
+    let mut is_active = true;
+
+    println!("Initial position: {}", robot_position);
+    println!("Initial energy: {}", energy_level);
+    println!("Initially active: {}", is_active);
+
+    robot_position += 5;
+    energy_level -= 10;
+    is_active = false;
+
+    println!("New position: {}", robot_position);
+    println!("New energy: {}", energy_level);
+    println!("Currently active: {}", is_active);
+
+    for i in 1..=3 {
+        robot_position += i;
+        energy_level -= 5;
+        println!("Step {}: position = {}, energy = {}", i, robot_position, energy_level);
+    }
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 4: Variable Bindings and Mutability",
+            task_number: 3,
+            task_description: "Task 3: Variable Shadowing",
+            solution_code: r#"fn main() {
+    let robot_data = "12345";
+    println!("Robot data as string: {}", robot_data);
+
+    let robot_data: i32 = robot_data.parse().expect("Failed to parse");
+    println!("Robot data as number: {}", robot_data);
+
+    let robot_data = robot_data * 2 + 100;
+    println!("Robot data calculated: {}", robot_data);
+
+    let value = 10;
+    println!("Original value: {}", value);
+
+    let value = value + 5;
+    println!("Shadowed value: {}", value);
+
+    let value = format!("The answer is {}", value);
+    println!("Final shadowed value: {}", value);
+
+    {
+        let value = "Inside block";
+        println!("Block value: {}", value);
+    }
+    println!("Outside block value: {}", value);
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 4: Variable Bindings and Mutability",
+            task_number: 4,
+            task_description: "Task 4: Variable Scope and Blocks",
+            solution_code: r#"fn main() {
+    let outer_variable = "I'm in the outer scope";
+    println!("Outer scope: {}", outer_variable);
+
+    {
+        let inner_variable = "I'm in the inner scope";
+        println!("Inner scope: {}", inner_variable);
+
+        println!("Accessing outer from inner: {}", outer_variable);
+
+        let outer_variable = "I'm shadowing the outer variable";
+        println!("Shadowed in inner: {}", outer_variable);
+
+        let mut counter = 0;
+        for i in 1..=3 {
+            counter += i;
+            println!("Counter in loop: {}", counter);
+        }
+    }
+
+    println!("Back to outer scope: {}", outer_variable);
+
+    let result = calculate_something();
+    println!("Function result: {}", result);
+}
+
+fn calculate_something() -> i32 {
+    let local_value = 42;
+    let calculation = local_value * 2;
+    calculation
+}"#,
+        },
+
+        TaskSolution {
+            level_name: "Level 4: Variable Bindings and Mutability",
+            task_number: 5,
+            task_description: "Task 5: Constants and Naming Conventions",
+            solution_code: r#"const MAX_ENERGY: i32 = 1000;
+const ROBOT_NAME: &str = "Ferris";
+const PI: f64 = 3.141592653589793;
+
+fn main() {
+    println!("Maximum energy: {}", MAX_ENERGY);
+    println!("Robot name: {}", ROBOT_NAME);
+    println!("Pi value: {}", PI);
+
+    let half_max_energy = MAX_ENERGY / 2;
+    let circle_area = PI * 5.0 * 5.0;
+
+    println!("Half max energy: {}", half_max_energy);
+    println!("Circle area: {}", circle_area);
+
+    let snake_case_variable = "variables use snake_case";
+    let another_example = 42;
+
+    println!("Variable: {}", snake_case_variable);
+    println!("Another: {}", another_example);
+
+    let immutable_var = 100;
+    const COMPILE_TIME: i32 = 50 + 50;
+    println!("Compile-time constant: {}", COMPILE_TIME);
+
+    {
+        const BLOCK_CONSTANT: i32 = 999;
+        println!("Block constant: {}", BLOCK_CONSTANT);
+
+        let calculation = MAX_ENERGY + COMPILE_TIME + BLOCK_CONSTANT;
+        println!("Combined calculation: {}", calculation);
+    }
+}"#,
+        },
+
         // LEVEL 6: Flow Control and Conditionals (1 task created as example)
         TaskSolution {
             level_name: "Level 6: Flow Control and Conditionals",

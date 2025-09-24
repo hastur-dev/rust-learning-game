@@ -52,6 +52,8 @@ pub struct LearningTaskTestRunner {
     input_chars: Vec<char>,
     char_input_timer: f32,
     total_tasks_tested: usize,
+    start_level: usize,    // NEW: Level to start testing from
+    max_levels: usize,     // NEW: Maximum number of levels to test
 }
 
 impl LearningTaskTestRunner {
@@ -91,6 +93,61 @@ impl LearningTaskTestRunner {
             input_chars: Vec::new(),
             char_input_timer: 0.0,
             total_tasks_tested: 0,
+            start_level: 0,        // Default: start from level 0
+            max_levels: 4,         // Default: test up to 4 levels
+        }
+    }
+
+    pub fn new_with_options(start_level: usize, max_levels: usize) -> Self {
+        info!("Initializing Learning Task Test Runner (start: {}, max: {})", start_level, max_levels);
+
+        let rng = StdRng::seed_from_u64(0x7E57);
+        let levels = embedded_levels::get_embedded_level_specs();
+        let mut game = Game::new(levels, rng);
+
+        // Skip menu and go directly to the specified starting level
+        game.menu.state = MenuState::InGame;
+        game.level_idx = start_level;
+
+        // Safely load the level if it exists
+        if start_level < game.levels.len() {
+            game.load_level(start_level);
+            info!("Loaded level {} for testing", start_level);
+        } else {
+            warn!("Start level {} is beyond available levels ({}), using level 0", start_level, game.levels.len());
+            game.level_idx = 0;
+            game.load_level(0);
+        }
+
+        game.code_editor_active = true;
+
+        // Clear initial code
+        game.current_code = String::new();
+        game.cursor_position = 0;
+
+        let all_tasks = learning_level_solutions::get_all_task_solutions();
+
+        let current_level = start_level.min(game.levels.len().saturating_sub(1));
+
+        Self {
+            game,
+            current_level,
+            current_task: 1,
+            test_results: Vec::new(),
+            level_tasks: Vec::new(),
+            all_tasks,
+            test_start_time: Instant::now(),
+            task_start_time: Instant::now(),
+            state: TestState::Loading,
+            state_timer: 0.0,
+            current_solution: String::new(),
+            typing_progress: 0,
+            typing_speed: 25.0, // 25 characters per second
+            input_chars: Vec::new(),
+            char_input_timer: 0.0,
+            total_tasks_tested: 0,
+            start_level,
+            max_levels,
         }
     }
 
@@ -249,7 +306,11 @@ impl LearningTaskTestRunner {
 
     fn record_test_success(&mut self) {
         let duration = self.task_start_time.elapsed();
-        let level_name = self.game.levels[self.current_level].name.clone();
+        let level_name = if self.current_level < self.game.levels.len() {
+            self.game.levels[self.current_level].name.clone()
+        } else {
+            format!("Unknown Level {}", self.current_level)
+        };
         let task_desc = if let Some(task) = self.level_tasks.get(self.current_task - 1) {
             task.task_description.to_string()
         } else {
@@ -271,7 +332,11 @@ impl LearningTaskTestRunner {
 
     fn record_test_failure(&mut self, error: String) {
         let duration = self.task_start_time.elapsed();
-        let level_name = self.game.levels[self.current_level].name.clone();
+        let level_name = if self.current_level < self.game.levels.len() {
+            self.game.levels[self.current_level].name.clone()
+        } else {
+            format!("Unknown Level {}", self.current_level)
+        };
         let task_desc = if let Some(task) = self.level_tasks.get(self.current_task - 1) {
             task.task_description.to_string()
         } else {
@@ -309,10 +374,23 @@ impl LearningTaskTestRunner {
         self.current_level += 1;
         self.current_task = 1;
 
-        if self.current_level < self.game.levels.len() && self.current_level < 3 {  // Limit to first 3 levels
-            info!("Advancing to level {}", self.current_level + 1);
+        // Check if we should continue testing based on our limits
+        let max_level_to_test = (self.start_level + self.max_levels).min(self.game.levels.len());
+
+        if self.current_level < self.game.levels.len() && self.current_level < max_level_to_test {
+            info!("Advancing to level {} ({})", self.current_level + 1, self.current_level);
             self.game.level_idx = self.current_level;
-            self.game.load_level(self.current_level);
+
+            // Safety check before loading level
+            if self.current_level < self.game.levels.len() {
+                self.game.load_level(self.current_level);
+                info!("Successfully loaded level {}", self.current_level);
+            } else {
+                error!("Cannot load level {} - beyond available levels ({})", self.current_level, self.game.levels.len());
+                self.state = TestState::AllTasksComplete;
+                return;
+            }
+
             self.game.println_outputs.clear();
             self.game.error_outputs.clear();
 
@@ -325,7 +403,8 @@ impl LearningTaskTestRunner {
             self.state = TestState::NextTask;
             self.state_timer = 0.0;
         } else {
-            info!("All levels and tasks tested!");
+            info!("All levels and tasks tested! (tested {} levels starting from {})",
+                  self.current_level - self.start_level, self.start_level);
             self.state = TestState::AllTasksComplete;
             self.state_timer = 0.0;
         }
@@ -358,7 +437,12 @@ impl LearningTaskTestRunner {
             TestState::AllTasksComplete => "All tasks complete!",
         };
 
-        let level_name = &self.game.levels[self.current_level].name;
+        // Safe access to level name with bounds checking
+        let level_name = if self.current_level < self.game.levels.len() {
+            &self.game.levels[self.current_level].name
+        } else {
+            "Unknown Level"
+        };
         let total_tasks_for_level = self.level_tasks.len();
 
         draw_text(&format!("🧪 AUTOMATED TASK TESTING: {}",
@@ -381,7 +465,7 @@ impl LearningTaskTestRunner {
         }
 
         // Progress bar for all tasks
-        let total_expected_tasks = 10; // Level 1: 1 task + Level 2: 4 tasks + Level 3: 5 tasks = 10 total tasks
+        let total_expected_tasks = 19; // Level 1: 5 tasks + Level 2: 4 tasks + Level 3: 5 tasks + Level 4: 5 tasks = 19 total tasks
         let progress = (self.total_tasks_tested as f32) / (total_expected_tasks as f32);
         let bar_width = screen_width() - 20.0;
         let bar_height = 20.0;
@@ -473,6 +557,22 @@ pub async fn run_learning_level_tests() {
     info!("Starting automated learning level task tests");
 
     let mut test_runner = LearningTaskTestRunner::new();
+
+    // Main test loop
+    run_test_loop(test_runner).await;
+}
+
+/// Run the automated learning level task tests with options
+pub async fn run_learning_level_tests_with_options(start_level: usize, max_levels: usize) {
+    info!("Starting automated learning level task tests (start: {}, max: {})", start_level, max_levels);
+
+    let mut test_runner = LearningTaskTestRunner::new_with_options(start_level, max_levels);
+
+    // Main test loop
+    run_test_loop(test_runner).await;
+}
+
+async fn run_test_loop(mut test_runner: LearningTaskTestRunner) {
 
     // Main test loop
     while !test_runner.is_complete() {

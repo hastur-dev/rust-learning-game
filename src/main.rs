@@ -2769,6 +2769,17 @@ async fn desktop_main() {
     let editor_test_mode = args.contains(&"--editor-test".to_string());
     let command_test_mode = args.contains(&"--command-test".to_string());
     let learning_test_mode = args.contains(&"--test-learning-levels".to_string());
+
+    // Parse level skipping arguments for learning tests
+    let start_level = args.iter().position(|arg| arg == "--start-level")
+        .and_then(|pos| args.get(pos + 1))
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(0);
+
+    let max_levels = args.iter().position(|arg| arg == "--max-levels")
+        .and_then(|pos| args.get(pos + 1))
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(4);
     
     // Initialize logging with appropriate level based on command line args
     let log_level = if enable_all_logs {
@@ -2797,8 +2808,13 @@ async fn desktop_main() {
 
     // Check for learning levels test mode
     if learning_test_mode {
-        info!("Starting Learning Levels Test Mode");
-        learning_test_runner::run_learning_level_tests().await;
+        if start_level > 0 || max_levels != 4 {
+            info!("Starting Learning Levels Test Mode (start: {}, max: {})", start_level, max_levels);
+            learning_test_runner::run_learning_level_tests_with_options(start_level, max_levels).await;
+        } else {
+            info!("Starting Learning Levels Test Mode");
+            learning_test_runner::run_learning_level_tests().await;
+        }
         return;
     }
 
