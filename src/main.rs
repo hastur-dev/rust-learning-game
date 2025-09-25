@@ -1444,13 +1444,7 @@ fn load_yaml_levels() -> Vec<LevelSpec> {
         }
     }
     
-    // Then try to load community levels from community_levels directory
-    let community_configs = load_yaml_levels_from_directory("community_levels");
-    for config in community_configs {
-        if let Ok(level_spec) = config.to_level_spec(&mut rng) {
-            levels.push(level_spec);
-        }
-    }
+    // Only use learning levels now - community levels removed for clarity
     
     levels
 }
@@ -2762,6 +2756,33 @@ async fn desktop_main() {
     
     // Parse command line arguments
     let args: Vec<String> = env::args().collect();
+
+    // Check for help request
+    if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
+        println!("Rust Steam Game - Command Line Options:");
+        println!("");
+        println!("Game Control:");
+        println!("  --start-at-level N       Start directly at level N (0-indexed)");
+        println!("                          Example: --start-at-level 5 starts at Level 6");
+        println!("");
+        println!("Testing Options:");
+        println!("  --test-learning-levels   Run automated tests for learning levels");
+        println!("  --start-level N          Start learning tests from level N");
+        println!("  --max-levels N           Test only N levels");
+        println!("  --test-code \"code\"       Test specific Rust code");
+        println!("  --editor-test            Run editor functionality tests");
+        println!("  --command-test           Run robot command tests");
+        println!("");
+        println!("Debug Options:");
+        println!("  --all-logs               Enable detailed debug logging");
+        println!("  --debug                  Enable debug mode");
+        println!("");
+        println!("Help:");
+        println!("  --help, -h               Show this help message");
+        println!("");
+        return;
+    }
+
     let enable_all_logs = args.contains(&"--all-logs".to_string());
     let test_mode = args.iter().position(|arg| arg == "--test-code").map(|pos| {
         args.get(pos + 1).cloned()
@@ -2770,6 +2791,11 @@ async fn desktop_main() {
     let editor_test_mode = args.contains(&"--editor-test".to_string());
     let command_test_mode = args.contains(&"--command-test".to_string());
     let learning_test_mode = args.contains(&"--test-learning-levels".to_string());
+
+    // Parse direct level selection argument (--start-at-level N)
+    let start_at_level = args.iter().position(|arg| arg == "--start-at-level")
+        .and_then(|pos| args.get(pos + 1))
+        .and_then(|s| s.parse::<usize>().ok());
 
     // Parse level skipping arguments for learning tests
     let start_level = args.iter().position(|arg| arg == "--start-level")
@@ -2884,7 +2910,28 @@ async fn desktop_main() {
     }
     
     info!("Game initialized successfully");
-    
+
+    // Handle direct level selection (--start-at-level N)
+    if let Some(target_level) = start_at_level {
+        info!("Direct level selection requested: Level {}", target_level);
+        if target_level < core_levels.len() {
+            game.level_idx = target_level;
+            game.load_level(target_level);
+            game.menu.state = crate::menu::MenuState::InGame; // Skip menu and go directly to game
+            info!("🎮 Starting directly at Level {} - {}", target_level,
+                  core_levels.get(target_level).map(|l| l.name.as_str()).unwrap_or("Unknown"));
+            // Add debug logging for Level 6 robot fleet
+            if target_level == 5 { // Level 6 (0-indexed)
+                info!("🤖 Level 6 Robot Fleet should be visible - checking robot loading...");
+            }
+        } else {
+            error!("Invalid level selection: Level {} (max available: {})", target_level, core_levels.len() - 1);
+            info!("Falling back to Level 0");
+            game.level_idx = 0;
+            game.load_level(0);
+        }
+    }
+
     // Set initial levels count in menu (use cached count if available)
     if let Some(startup_data) = cached_startup_data {
         game.menu.set_total_levels(startup_data.total_levels_count);

@@ -169,6 +169,23 @@ impl Game {
         // Reveal starting tile + neighbors
         grid.reveal_adjacent(start);
 
+        // For Level 6, also reveal robot fleet positions for ownership demonstration
+        if idx == 5 { // Level 6 (0-indexed)
+            println!("🎮 Initializing Level 6 - revealing robot fleet positions (found {} enemies)", grid.enemies.len());
+            for enemy in &grid.enemies {
+                if let Some(ref pattern) = enemy.movement_pattern {
+                    if pattern.contains("ownership_demo") ||
+                       pattern.contains("borrowing_demo") ||
+                       pattern.contains("clone_demo") {
+                        println!("👁️ Revealing robot {} at position ({}, {})", pattern, enemy.pos.x, enemy.pos.y);
+                        grid.known.insert(crate::item::Pos { x: enemy.pos.x, y: enemy.pos.y });
+                    }
+                } else {
+                    println!("⚠️ Enemy at ({}, {}) has no movement pattern", enemy.pos.x, enemy.pos.y);
+                }
+            }
+        }
+
         self.grid = grid;
         self.turns = 0;
         self.max_turns = spec.max_turns;
@@ -899,5 +916,123 @@ impl Game {
         self.selection_end = Some(self.current_code.len());
         self.cursor_position = self.current_code.len();
         println!("🔲 Selected all text ({} characters)", self.current_code.len());
+    }
+
+    // Helper function to determine if special robots should be shown at a position
+    pub fn should_show_special_robots_at(&self, pos: crate::item::Pos) -> bool {
+        if !self.is_learning_level(self.level_idx) {
+            return false;
+        }
+
+        self.grid.enemies.iter().any(|e| {
+            e.pos == pos && self.is_special_robot_for_current_level(e)
+        })
+    }
+
+    // Check if an enemy is a special robot for the current learning level
+    fn is_special_robot_for_current_level(&self, enemy: &crate::grid::Enemy) -> bool {
+        match self.level_idx {
+            17 => self.is_ownership_robot(enemy),        // Level 18: Memory Management (ownership)
+            1 | 7 | 8 | 9 | 10 => self.is_cloning_robot(enemy),  // Levels with cloning concepts
+            13 | 14 | 15 => self.is_serde_robot(enemy),  // Serde levels
+            _ => false
+        }
+    }
+
+    // Check if enemy is an ownership robot (Robot Alpha)
+    fn is_ownership_robot(&self, enemy: &crate::grid::Enemy) -> bool {
+        enemy.movement_pattern.as_ref()
+            .map_or(false, |pattern| pattern.contains("ownership"))
+    }
+
+    // Check if enemy is a cloning robot (Robot Gamma)
+    fn is_cloning_robot(&self, enemy: &crate::grid::Enemy) -> bool {
+        enemy.movement_pattern.as_ref()
+            .map_or(false, |pattern| pattern.contains("clone"))
+    }
+
+    // Check if enemy is a serde robot (Scout Bot)
+    fn is_serde_robot(&self, enemy: &crate::grid::Enemy) -> bool {
+        enemy.movement_pattern.as_ref()
+            .map_or(false, |pattern| pattern.contains("serde") || pattern.contains("scout"))
+    }
+
+    // Get robot symbol and font size for current level
+    pub fn get_robot_symbol_for_level(&self, enemy: &crate::grid::Enemy) -> (&'static str, f32) {
+        if !self.is_learning_level(self.level_idx) {
+            return ("E", 28.0); // Standard enemy symbol for non-learning levels
+        }
+
+        match self.level_idx {
+            17 if self.is_ownership_robot(enemy) => ("⚡", 24.0), // Robot Alpha - ownership
+            1 | 7 | 8 | 9 | 10 if self.is_cloning_robot(enemy) => ("◆", 24.0), // Robot Gamma - cloning
+            13 | 14 | 15 if self.is_serde_robot(enemy) => ("📡", 20.0), // Scout Bot - serde
+            _ => {
+                // Regular enemies in learning levels
+                ("E", 28.0) // Standard enemy symbol
+            }
+        }
+    }
+
+    // Get robot color for current level
+    pub fn get_robot_color_for_level(&self, enemy: &crate::grid::Enemy) -> macroquad::color::Color {
+        use macroquad::color::*;
+        use crate::level::EnemyDirection;
+
+        if !self.is_learning_level(self.level_idx) {
+            // Standard enemy colors for non-learning levels
+            return if let Some(ref pattern) = enemy.movement_pattern {
+                match pattern.as_str() {
+                    "chase" => {
+                        if let Some(is_chasing) = enemy.movement_data.get("is_chasing")
+                            .and_then(|v| v.as_bool()) {
+                            if is_chasing { ORANGE } else { BLUE }
+                        } else { ORANGE }
+                    }
+                    "random" => MAGENTA,
+                    "diagonal" => YELLOW,
+                    "circular" => LIME,
+                    "spiral" => PINK,
+                    pattern if pattern.starts_with("file:") => PURPLE,
+                    _ => RED
+                }
+            } else {
+                match enemy.direction {
+                    EnemyDirection::Horizontal => GREEN,
+                    EnemyDirection::Vertical => DARKBLUE,
+                }
+            };
+        }
+
+        // Colors for learning level robots
+        match self.level_idx {
+            17 if self.is_ownership_robot(enemy) => SKYBLUE,    // Robot Alpha - ownership
+            1 | 7 | 8 | 9 | 10 if self.is_cloning_robot(enemy) => YELLOW, // Robot Gamma - cloning
+            13 | 14 | 15 if self.is_serde_robot(enemy) => LIME, // Scout Bot - serde (bright green)
+            _ => {
+                // Regular enemies in learning levels
+                if let Some(ref pattern) = enemy.movement_pattern {
+                    match pattern.as_str() {
+                        "chase" => {
+                            if let Some(is_chasing) = enemy.movement_data.get("is_chasing")
+                                .and_then(|v| v.as_bool()) {
+                                if is_chasing { ORANGE } else { BLUE }
+                            } else { ORANGE }
+                        }
+                        "random" => MAGENTA,
+                        "diagonal" => YELLOW,
+                        "circular" => LIME,
+                        "spiral" => PINK,
+                        pattern if pattern.starts_with("file:") => PURPLE,
+                        _ => RED
+                    }
+                } else {
+                    match enemy.direction {
+                        EnemyDirection::Horizontal => GREEN,
+                        EnemyDirection::Vertical => DARKBLUE,
+                    }
+                }
+            }
+        }
     }
 }

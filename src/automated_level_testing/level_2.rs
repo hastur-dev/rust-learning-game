@@ -30,14 +30,23 @@ fn main() {
 
             TaskTest {
                 task_number: 2,
-                task_name: "Add Nested Loops for Grid Scanning",
+                task_name: "Add Nested Loops for Grid Scanning with Robot Gamma",
                 solution_code: r#"fn scan_level() {
     println!("Beginning level scan...");
+    println!("Robot Gamma (◆) cloning demonstration active");
 
     for y in 0..6 {
         for x in 0..6 {
             let scan_result = format!("tile_{}_{}", x, y);
             println!("Scanned ({}, {}): {}", x, y, scan_result);
+
+            // Robot Gamma demonstrates cloning at position (2,2)
+            if x == 2 && y == 2 {
+                println!("Robot Gamma detected at position (2,2) - cloning demo active");
+                let original_data = String::from("robot_data");
+                let cloned_data = original_data.clone();
+                println!("Robot Gamma cloned data: {} -> {}", original_data, cloned_data);
+            }
         }
     }
 

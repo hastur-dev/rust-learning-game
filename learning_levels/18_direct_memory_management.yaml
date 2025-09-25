@@ -166,6 +166,15 @@ items:
       - "Use slice operations for efficient memory access"
       - "Ensure memory safety with Rust's borrow checker"
 
+# Robot Alpha - Ownership Transfer Demonstration Robot
+robots:
+  - position: [3, 3]
+    robot_type: "ownership_demonstration"
+    name: "Robot Alpha - Ownership Transfer"
+    movement_pattern: "ownership_demo"
+    description: "⚡ Robot Alpha demonstrates ownership transfer mechanics for memory management"
+    color: "cyan"
+
 # Enemies represent memory management challenges
 enemies:
   - position: [5, 4]

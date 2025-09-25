@@ -167,46 +167,21 @@ pub fn draw_game(game: &Game) {
                 }
             }
 
-            // Draw enemies
-            if known {
+            // Draw enemies (including special robots for learning levels)
+            let should_show_enemies = known || game.should_show_special_robots_at(p);
+
+            if should_show_enemies {
                 for enemy in &game.grid.enemies {
                     if enemy.pos == p {
-                        let txt = "E";
-                        let font_size = 28.0;
+                        // Special rendering based on learning level and robot type
+                        let (txt, font_size) = game.get_robot_symbol_for_level(enemy);
+
                         let scaled_font_size = scale_font_size(font_size);
                         let dim = measure_text(txt, None, scaled_font_size as u16, 1.0);
-                        
-                        // Determine enemy color based on movement type and state
-                        let enemy_color = if let Some(ref pattern) = enemy.movement_pattern {
-                            match pattern.as_str() {
-                                "chase" => {
-                                    // Check if actively chasing (orange) or not moving (blue)
-                                    if let Some(is_chasing) = enemy.movement_data.get("is_chasing")
-                                        .and_then(|v| v.as_bool()) {
-                                        if is_chasing {
-                                            ORANGE  // Actively chasing player
-                                        } else {
-                                            BLUE    // Not moving/searching
-                                        }
-                                    } else {
-                                        ORANGE  // Default to orange for chase enemies
-                                    }
-                                }
-                                "random" => MAGENTA,    // Random movement = magenta
-                                "diagonal" => YELLOW,   // Diagonal movement = yellow
-                                "circular" => LIME,     // Circular movement = lime green
-                                "spiral" => PINK,       // Spiral movement = pink
-                                pattern if pattern.starts_with("file:") => PURPLE, // Custom file patterns = purple
-                                _ => RED                 // Unknown patterns = red
-                            }
-                        } else {
-                            // Built-in horizontal/vertical enemies (no movement_pattern field)
-                            match enemy.direction {
-                                EnemyDirection::Horizontal => GREEN,  // Horizontal = green
-                                EnemyDirection::Vertical => DARKBLUE, // Vertical = dark blue
-                            }
-                        };
-                        
+
+                        // Determine enemy color based on level and robot type
+                        let enemy_color = game.get_robot_color_for_level(enemy);
+
                         draw_scaled_text(
                             txt,
                             r.x + (r.w - dim.width) * 0.5,

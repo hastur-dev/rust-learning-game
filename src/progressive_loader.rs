@@ -239,48 +239,9 @@ impl ProgressiveLoader {
         cache.cache_startup_data(startup_data);
     }
     
-    fn load_community_levels_cached(cache: &mut GameCache) -> Vec<LevelSpec> {
-        let mut community_levels = Vec::new();
-        
-        // Try to load from community_levels directory
-        if let Ok(entries) = std::fs::read_dir("community_levels") {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().and_then(|s| s.to_str()) == Some("yaml") ||
-                   path.extension().and_then(|s| s.to_str()) == Some("yml") {
-                    
-                    let file_path = path.to_string_lossy();
-                    
-                    // Try to load from cache first
-                    if let Ok(content) = std::fs::read_to_string(&path) {
-                        let checksum = GameCache::calculate_checksum(&content);
-                        let cache_key = file_path.to_string();
-                        
-                        // Check if we have a valid cached version
-                        if let Some(cached) = cache.get_cached_level(&cache_key) {
-                            if cached.checksum == checksum && cache.is_cache_fresh(cached, 3600) { // 1 hour cache
-                                community_levels.push(cached.spec.clone());
-                                log::debug!("Using cached level: {}", file_path);
-                                continue;
-                            }
-                        }
-                        
-                        // Load and parse the level
-                        if let Ok(yaml_config) = serde_yaml::from_str::<crate::level::YamlLevelConfig>(&content) {
-                            let mut rng = ::rand::rngs::StdRng::seed_from_u64(0xDEADBEEF);
-                            if let Ok(level_spec) = yaml_config.to_level_spec(&mut rng) {
-                                // Cache the parsed level
-                                cache.cache_level(cache_key, level_spec.clone(), checksum);
-                                community_levels.push(level_spec);
-                                log::debug!("Loaded and cached level: {}", file_path);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        community_levels
+    fn load_community_levels_cached(_cache: &mut GameCache) -> Vec<LevelSpec> {
+        // Community levels removed - only use learning levels now
+        Vec::new()
     }
     
     fn precache_font_metrics(cache: &mut GameCache) {

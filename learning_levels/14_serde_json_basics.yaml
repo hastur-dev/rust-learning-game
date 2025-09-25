@@ -28,6 +28,15 @@ items:
   - name: "status_report_json"
     pos: [8, 7]
 
+# Scout Bot - Serde Data Communication Robot
+robots:
+  - position: [4, 4]
+    robot_type: "serde_demonstration"
+    name: "Scout Bot - JSON Communication"
+    movement_pattern: "serde_scout"
+    description: "📡 Scout Bot demonstrates serde JSON serialization for robot data communication"
+    color: "lime"
+
 enemies:
   - start_position: [3, 1]
     movement_pattern: "file:movement_patterns/guard_area.rs"

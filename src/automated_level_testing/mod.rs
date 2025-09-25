@@ -7,6 +7,7 @@ pub mod level_3;
 pub mod level_4;
 pub mod level_5;
 pub mod level_6;
+pub mod level_7;
 
 // Re-export the main configuration types for easier access
 pub use level_1::{LevelTestConfig, TaskTest};
@@ -20,6 +21,7 @@ pub fn get_all_level_tests() -> Vec<LevelTestConfig> {
         level_4::get_level_4_tests(),
         level_5::get_level_5_tests(),
         level_6::get_level_6_tests(),
+        level_7::get_level_7_tests(),
     ]
 }
 
@@ -32,6 +34,7 @@ pub fn get_level_tests(level_index: usize) -> Option<LevelTestConfig> {
         3 => Some(level_4::get_level_4_tests()),
         4 => Some(level_5::get_level_5_tests()),
         5 => Some(level_6::get_level_6_tests()),
+        6 => Some(level_7::get_level_7_tests()),
         _ => None,
     }
 }

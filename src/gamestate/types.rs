@@ -176,6 +176,51 @@ impl Game {
                 max_tasks: 5,
                 name: "Level 6: Ownership Basics".to_string(),
             },
+            LearningLevelConfig {
+                level_idx: 6,
+                max_tasks: 5,
+                name: "Level 7: Advanced Ownership and Lifetimes".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 7,
+                max_tasks: 5,
+                name: "Level 8: Structs and Robot Systems".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 8,
+                max_tasks: 5,
+                name: "Level 9: Enums and State Machines".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 9,
+                max_tasks: 5,
+                name: "Level 10: Collections and Vectors".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 10,
+                max_tasks: 5,
+                name: "Level 11: Advanced Error Handling".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 13,
+                max_tasks: 5,
+                name: "Level 14: Serde JSON Basics".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 14,
+                max_tasks: 5,
+                name: "Level 15: Serde YAML Advanced".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 15,
+                max_tasks: 5,
+                name: "Level 16: Serde Custom Error Handling".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 17,
+                max_tasks: 5,
+                name: "Level 18: Direct Memory Management".to_string(),
+            },
         ]
     }
     

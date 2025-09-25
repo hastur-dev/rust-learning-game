@@ -21,6 +21,15 @@ hint_message: |
 rust_docs_url: "https://doc.rust-lang.org/book/ch03-03-how-functions-work.html"
 obstacles: 0
 
+# Robot Gamma - Cloning Demonstration Robot
+robots:
+  - position: [2, 2]
+    robot_type: "cloning_demonstration"
+    name: "Robot Gamma - Data Cloning"
+    movement_pattern: "clone_demo"
+    description: "◆ Robot Gamma demonstrates cloning mechanics for data processing"
+    color: "yellow"
+
 items:
   - name: "key"
     item_file: "items/key.rs"

@@ -172,13 +172,24 @@ impl YamlLevelConfig {
                         // Custom movement pattern from file
                         (EnemyDirection::Horizontal, Some(enemy.movement_pattern.clone()))
                     } else {
-                        // Built-in movement pattern
+                        // Built-in movement pattern or special custom patterns
                         let dir = match enemy.movement_pattern.as_str() {
                             "horizontal" => EnemyDirection::Horizontal,
                             "vertical" => EnemyDirection::Vertical,
                             _ => EnemyDirection::Horizontal, // Default
                         };
-                        (dir, None)
+
+                        // Check for special custom patterns (Level 6 robot fleet patterns)
+                        let pattern = match enemy.movement_pattern.as_str() {
+                            "ownership_demo" | "borrowing_demo" | "clone_demo" => {
+                                println!("🤖 Loading Level 6 robot: {} at position ({}, {})",
+                                    enemy.movement_pattern, enemy.start_location.0, enemy.start_location.1);
+                                Some(enemy.movement_pattern.clone())
+                            },
+                            _ => None
+                        };
+
+                        (dir, pattern)
                     };
                     
                     EnemySpec {
