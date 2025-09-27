@@ -233,8 +233,8 @@ impl GameSettings {
     
     pub fn update_from_actual_screen(&mut self) {
         // Update settings to match actual screen size
-        self.window_width = screen_width() as i32;
-        self.window_height = screen_height() as i32;
+        self.window_width = crate::crash_protection::safe_screen_width() as i32;
+        self.window_height = crate::crash_protection::safe_screen_height() as i32;
     }
 }
 
@@ -260,8 +260,8 @@ impl Menu {
             progress: PlayerProgress::load_or_default(),
             scroll_offset: 0.0,
             opened_from_game: false,
-            last_screen_width: screen_width(),
-            last_screen_height: screen_height(),
+            last_screen_width: crate::crash_protection::safe_screen_width(),
+            last_screen_height: crate::crash_protection::safe_screen_height(),
             total_levels: 0, // Will be set when game starts
         };
         menu.setup_main_menu();
@@ -289,11 +289,11 @@ impl Menu {
     pub fn setup_main_menu(&mut self) {
         self.buttons.clear();
         
-        let screen_center_x = screen_width() / 2.0;
+        let screen_center_x = crate::crash_protection::safe_screen_width() / 2.0;
         let button_width = scale_size(300.0);
         let button_height = scale_size(60.0);
         let button_spacing = scale_size(80.0);
-        let start_y = screen_height() / 2.0;
+        let start_y = crate::crash_protection::safe_screen_height() / 2.0;
 
         self.buttons.push(MenuButton::new(
             "Start Learning".to_string(),
@@ -350,11 +350,11 @@ impl Menu {
     pub fn setup_settings_menu(&mut self) {
         self.buttons.clear();
         
-        let screen_center_x = screen_width() / 2.0;
+        let screen_center_x = crate::crash_protection::safe_screen_width() / 2.0;
         let button_width = scale_size(400.0);
         let button_height = scale_size(50.0);
         let button_spacing = scale_size(70.0);
-        let start_y = screen_height() / 2.0 - scale_size(100.0);
+        let start_y = crate::crash_protection::safe_screen_height() / 2.0 - scale_size(100.0);
 
         // Resolution buttons
         self.buttons.push(MenuButton::new(
@@ -430,11 +430,11 @@ impl Menu {
     pub fn setup_hotkey_settings_menu(&mut self) {
         self.buttons.clear();
 
-        let screen_center_x = screen_width() / 2.0;
+        let screen_center_x = crate::crash_protection::safe_screen_width() / 2.0;
         let button_width = scale_size(500.0);
         let button_height = scale_size(50.0);
         let button_spacing = scale_size(70.0);
-        let start_y = screen_height() / 2.0 - scale_size(200.0);
+        let start_y = crate::crash_protection::safe_screen_height() / 2.0 - scale_size(200.0);
 
         // Title info
         self.buttons.push(MenuButton::new(
@@ -518,8 +518,8 @@ impl Menu {
     }
 
     pub fn check_screen_resize(&mut self) {
-        let current_width = screen_width();
-        let current_height = screen_height();
+        let current_width = crate::crash_protection::safe_screen_width();
+        let current_height = crate::crash_protection::safe_screen_height();
         
         // Check if screen size has changed
         if (current_width - self.last_screen_width).abs() > 1.0 || 
@@ -543,14 +543,14 @@ impl Menu {
     pub fn setup_level_select_menu(&mut self) {
         self.buttons.clear();
         
-        let screen_center_x = screen_width() / 2.0;
+        let screen_center_x = crate::crash_protection::safe_screen_width() / 2.0;
         let button_width = scale_size(300.0);
         let button_height = scale_size(40.0);
         let button_spacing = scale_size(45.0);
         let buttons_per_row = 3;
         let row_spacing = scale_size(70.0);
         
-        let start_y = screen_height() * 0.2;
+        let start_y = crate::crash_protection::safe_screen_height() * 0.2;
         
         // Create level buttons for unlocked levels
         let mut row = 0;
@@ -609,7 +609,8 @@ impl Menu {
             return MenuAction::None;
         }
 
-        let (mouse_x, mouse_y) = mouse_position();
+        // Use safe mouse position to prevent crashes when window loses focus
+        let (mouse_x, mouse_y) = crate::crash_protection::safe_mouse_position();
 
         // Handle left mouse button
         if is_mouse_button_pressed(MouseButton::Left) {
@@ -799,8 +800,8 @@ impl Menu {
         let banner_size = 48.0;
         let scaled_banner_size = scale_font_size(banner_size);
         let banner_dimensions = measure_text(banner_text, None, scaled_banner_size as u16, 1.0);
-        let banner_x = (screen_width() - banner_dimensions.width) / 2.0;
-        let banner_y = screen_height() / 3.0;
+        let banner_x = (crate::crash_protection::safe_screen_width() - banner_dimensions.width) / 2.0;
+        let banner_y = crate::crash_protection::safe_screen_height() / 3.0;
 
         // Banner shadow
         draw_scaled_text(banner_text, banner_x + scale_size(2.0), banner_y + scale_size(2.0), banner_size, Color::new(0.0, 0.0, 0.0, 0.5));
@@ -812,7 +813,7 @@ impl Menu {
         let subtitle_size = 20.0;
         let scaled_subtitle_size = scale_font_size(subtitle_size);
         let subtitle_dimensions = measure_text(subtitle, None, scaled_subtitle_size as u16, 1.0);
-        let subtitle_x = (screen_width() - subtitle_dimensions.width) / 2.0;
+        let subtitle_x = (crate::crash_protection::safe_screen_width() - subtitle_dimensions.width) / 2.0;
         draw_scaled_text(subtitle, subtitle_x, banner_y + scale_size(60.0), subtitle_size, LIGHTGRAY);
 
         // Draw buttons
@@ -821,7 +822,7 @@ impl Menu {
         }
 
         // Draw version info
-        draw_scaled_text("Version 2.0 - YAML Edition", scale_size(10.0), screen_height() - scale_size(10.0), 16.0, DARKGRAY);
+        draw_scaled_text("Version 2.0 - YAML Edition", scale_size(10.0), crate::crash_protection::safe_screen_height() - scale_size(10.0), 16.0, DARKGRAY);
     }
 
     fn draw_settings_menu(&self) {
@@ -833,7 +834,7 @@ impl Menu {
         let title_size = 36.0;
         let scaled_title_size = scale_font_size(title_size);
         let title_dimensions = measure_text(title, None, scaled_title_size as u16, 1.0);
-        let title_x = (screen_width() - title_dimensions.width) / 2.0;
+        let title_x = (crate::crash_protection::safe_screen_width() - title_dimensions.width) / 2.0;
         draw_scaled_text(title, title_x, scale_size(100.0), title_size, WHITE);
 
         // Draw instructions
@@ -841,7 +842,7 @@ impl Menu {
         let inst_size = 18.0;
         let scaled_inst_size = scale_font_size(inst_size);
         let inst_dimensions = measure_text(instructions, None, scaled_inst_size as u16, 1.0);
-        let inst_x = (screen_width() - inst_dimensions.width) / 2.0;
+        let inst_x = (crate::crash_protection::safe_screen_width() - inst_dimensions.width) / 2.0;
         draw_scaled_text(instructions, inst_x, scale_size(140.0), inst_size, YELLOW);
 
         // Draw buttons
@@ -850,8 +851,8 @@ impl Menu {
         }
 
         // Draw footer notes
-        draw_scaled_text("Note: Window resolution changes require restart to take effect", scale_size(50.0), screen_height() - scale_size(70.0), 14.0, GRAY);
-        draw_scaled_text("Volume and fullscreen changes apply immediately", scale_size(50.0), screen_height() - scale_size(50.0), 14.0, GRAY);
+        draw_scaled_text("Note: Window resolution changes require restart to take effect", scale_size(50.0), crate::crash_protection::safe_screen_height() - scale_size(70.0), 14.0, GRAY);
+        draw_scaled_text("Volume and fullscreen changes apply immediately", scale_size(50.0), crate::crash_protection::safe_screen_height() - scale_size(50.0), 14.0, GRAY);
     }
 
     fn draw_level_select_menu(&self) {
@@ -863,7 +864,7 @@ impl Menu {
         let title_size = 36.0;
         let scaled_title_size = scale_font_size(title_size);
         let title_dimensions = measure_text(title, None, scaled_title_size as u16, 1.0);
-        let title_x = (screen_width() - title_dimensions.width) / 2.0;
+        let title_x = (crate::crash_protection::safe_screen_width() - title_dimensions.width) / 2.0;
         draw_scaled_text(title, title_x, scale_size(100.0), title_size, WHITE);
 
         // Draw progress info
@@ -871,7 +872,7 @@ impl Menu {
         let progress_size = 18.0;
         let scaled_progress_size = scale_font_size(progress_size);
         let progress_dimensions = measure_text(&progress_text, None, scaled_progress_size as u16, 1.0);
-        let progress_x = (screen_width() - progress_dimensions.width) / 2.0;
+        let progress_x = (crate::crash_protection::safe_screen_width() - progress_dimensions.width) / 2.0;
         draw_scaled_text(&progress_text, progress_x, scale_size(140.0), progress_size, YELLOW);
 
         // Draw buttons
@@ -880,7 +881,7 @@ impl Menu {
         }
 
         // Draw instructions
-        draw_scaled_text("Select a level to jump directly to it", scale_size(50.0), screen_height() - scale_size(50.0), 14.0, GRAY);
+        draw_scaled_text("Select a level to jump directly to it", scale_size(50.0), crate::crash_protection::safe_screen_height() - scale_size(50.0), 14.0, GRAY);
     }
 
     fn draw_background(&self) {
@@ -890,15 +891,15 @@ impl Menu {
         
         // Vertical lines
         let mut x = 0.0;
-        while x < screen_width() {
-            draw_line(x, 0.0, x, screen_height(), 1.0, grid_color);
+        while x < crate::crash_protection::safe_screen_width() {
+            draw_line(x, 0.0, x, crate::crash_protection::safe_screen_height(), 1.0, grid_color);
             x += grid_size;
         }
         
         // Horizontal lines
         let mut y = 0.0;
-        while y < screen_height() {
-            draw_line(0.0, y, screen_width(), y, 1.0, grid_color);
+        while y < crate::crash_protection::safe_screen_height() {
+            draw_line(0.0, y, crate::crash_protection::safe_screen_width(), y, 1.0, grid_color);
             y += grid_size;
         }
 
@@ -916,8 +917,8 @@ impl Menu {
         draw_circle(95.0, 70.0, 5.0, crab_color); // Right eye
         
         // Bottom-right crab
-        let br_x = screen_width() - 80.0;
-        let br_y = screen_height() - 80.0;
+        let br_x = crate::crash_protection::safe_screen_width() - 80.0;
+        let br_y = crate::crash_protection::safe_screen_height() - 80.0;
         draw_circle(br_x, br_y, 15.0, crab_color);
         draw_circle(br_x - 15.0, br_y - 10.0, 5.0, crab_color); // Left eye
         draw_circle(br_x + 15.0, br_y - 10.0, 5.0, crab_color); // Right eye
@@ -926,8 +927,8 @@ impl Menu {
     fn draw_loading_progress(&self, progress: &LoadingProgress) {
         let bar_width = scale_size(400.0);
         let bar_height = scale_size(20.0);
-        let bar_x = (screen_width() - bar_width) / 2.0;
-        let bar_y = screen_height() - scale_size(150.0);
+        let bar_x = (crate::crash_protection::safe_screen_width() - bar_width) / 2.0;
+        let bar_y = crate::crash_protection::safe_screen_height() - scale_size(150.0);
         
         // Draw loading text
         let stage_text = match progress.stage {
@@ -942,7 +943,7 @@ impl Menu {
         let text_size = 16.0;
         let scaled_text_size = scale_font_size(text_size);
         let text_dimensions = measure_text(stage_text, None, scaled_text_size as u16, 1.0);
-        let text_x = (screen_width() - text_dimensions.width) / 2.0;
+        let text_x = (crate::crash_protection::safe_screen_width() - text_dimensions.width) / 2.0;
         
         draw_scaled_text(stage_text, text_x, bar_y - scale_size(30.0), text_size, YELLOW);
         
@@ -951,7 +952,7 @@ impl Menu {
             let item_size = 12.0;
             let scaled_item_size = scale_font_size(item_size);
             let item_dimensions = measure_text(&progress.current_item, None, scaled_item_size as u16, 1.0);
-            let item_x = (screen_width() - item_dimensions.width) / 2.0;
+            let item_x = (crate::crash_protection::safe_screen_width() - item_dimensions.width) / 2.0;
             
             draw_scaled_text(&progress.current_item, item_x, bar_y - scale_size(10.0), item_size, LIGHTGRAY);
         }
@@ -987,7 +988,7 @@ impl Menu {
             let count_size = 12.0;
             let scaled_count_size = scale_font_size(count_size);
             let count_dimensions = measure_text(&count_text, None, scaled_count_size as u16, 1.0);
-            let count_x = (screen_width() - count_dimensions.width) / 2.0;
+            let count_x = (crate::crash_protection::safe_screen_width() - count_dimensions.width) / 2.0;
             
             draw_scaled_text(&count_text, count_x, bar_y + bar_height + scale_size(15.0), count_size, GRAY);
         }
@@ -1002,7 +1003,7 @@ impl Menu {
         let title_size = 36.0;
         let scaled_title_size = scale_font_size(title_size);
         let title_dimensions = measure_text(title, None, scaled_title_size as u16, 1.0);
-        let title_x = (screen_width() - title_dimensions.width) / 2.0;
+        let title_x = (crate::crash_protection::safe_screen_width() - title_dimensions.width) / 2.0;
         draw_scaled_text(title, title_x, scale_size(100.0), title_size, WHITE);
 
         // Draw buttons
@@ -1011,6 +1012,6 @@ impl Menu {
         }
 
         // Draw instructions
-        draw_scaled_text("Configure keyboard shortcuts and import from other editors", scale_size(50.0), screen_height() - scale_size(50.0), 14.0, GRAY);
+        draw_scaled_text("Configure keyboard shortcuts and import from other editors", scale_size(50.0), crate::crash_protection::safe_screen_height() - scale_size(50.0), 14.0, GRAY);
     }
 }

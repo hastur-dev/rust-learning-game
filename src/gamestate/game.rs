@@ -790,17 +790,12 @@ impl Game {
         if let Some((start, end)) = self.get_selection_bounds() {
             let selected_text = self.current_code[start..end].to_string();
 
-            // Use OS clipboard
-            if let Ok(mut clipboard) = arboard::Clipboard::new() {
-                if clipboard.set_text(&selected_text).is_ok() {
-                    println!("📋 Copied to OS clipboard: '{}'", selected_text);
-                    true
-                } else {
-                    println!("❌ Failed to copy to OS clipboard");
-                    false
-                }
+            // Use safe clipboard operation to prevent crashes on focus loss
+            if crate::crash_protection::safe_clipboard_copy(&selected_text) {
+                println!("📋 Copied to OS clipboard: '{}'", selected_text);
+                true
             } else {
-                println!("❌ Failed to access OS clipboard");
+                println!("❌ Failed to copy to OS clipboard (window may not be focused)");
                 false
             }
         } else {
@@ -828,35 +823,25 @@ impl Game {
     }
 
     pub fn paste_from_clipboard(&mut self) -> bool {
-        // Get text from OS clipboard
-        if let Ok(mut clipboard) = arboard::Clipboard::new() {
-            if let Ok(clipboard_text) = clipboard.get_text() {
-                if !clipboard_text.is_empty() {
-                    self.save_undo_state();
+        // Use safe clipboard operation to prevent crashes on focus loss
+        if let Some(clipboard_text) = crate::crash_protection::safe_clipboard_paste() {
+            self.save_undo_state();
 
-                    // Delete selection if exists
-                    if self.delete_selection() {
-                        // Selection already deleted by delete_selection
-                    }
-
-                    // Insert clipboard content at cursor position
-                    self.current_code.insert_str(self.cursor_position, &clipboard_text);
-                    self.cursor_position += clipboard_text.len();
-                    self.clear_selection();
-                    self.ensure_cursor_visible();
-
-                    println!("📋 Pasted from OS clipboard: '{}'", clipboard_text);
-                    true
-                } else {
-                    println!("📋 OS clipboard is empty");
-                    false
-                }
-            } else {
-                println!("❌ Failed to read from OS clipboard");
-                false
+            // Delete selection if exists
+            if self.delete_selection() {
+                // Selection already deleted by delete_selection
             }
+
+            // Insert clipboard content at cursor position
+            self.current_code.insert_str(self.cursor_position, &clipboard_text);
+            self.cursor_position += clipboard_text.len();
+            self.clear_selection();
+            self.ensure_cursor_visible();
+
+            println!("📋 Pasted from OS clipboard: '{}'", clipboard_text);
+            true
         } else {
-            println!("❌ Failed to access OS clipboard");
+            println!("❌ Failed to paste from OS clipboard (window may not be focused or clipboard empty)");
             false
         }
     }

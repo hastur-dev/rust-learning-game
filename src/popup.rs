@@ -270,8 +270,8 @@ impl PopupSystem {
                 
                 // Check for mouse click to dismiss
                 if is_mouse_button_pressed(MouseButton::Left) {
-                    let screen_width = screen_width();
-                    let screen_height = screen_height();
+                    let screen_width = crate::crash_protection::safe_screen_width();
+                    let screen_height = crate::crash_protection::safe_screen_height();
                     let (popup_width, popup_height) = calculate_popup_dimensions(
                         &popup.title, 
                         &popup.content, 
@@ -281,7 +281,8 @@ impl PopupSystem {
                     let popup_x = (screen_width - popup_width) / 2.0;
                     let popup_y = (screen_height - popup_height) / 2.0;
                     
-                    let (mouse_x, mouse_y) = mouse_position();
+                    // Use safe mouse position to prevent crashes when window loses focus
+                    let (mouse_x, mouse_y) = crate::crash_protection::safe_mouse_position();
                     
                     // Check if click is outside popup area
                     if mouse_x < popup_x || mouse_x > popup_x + popup_width ||
@@ -322,8 +323,8 @@ impl PopupSystem {
             return;
         };
         
-        let screen_width = screen_width();
-        let screen_height = screen_height();
+        let screen_width = crate::crash_protection::safe_screen_width();
+        let screen_height = crate::crash_protection::safe_screen_height();
         
         // Semi-transparent overlay
         draw_rectangle(0.0, 0.0, screen_width, screen_height, Color::new(0.0, 0.0, 0.0, 0.5));

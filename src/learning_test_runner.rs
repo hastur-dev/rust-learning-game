@@ -461,10 +461,10 @@ impl LearningTaskTestRunner {
 
     fn draw_test_overlay(&self) {
         let overlay_height = 140.0;
-        let overlay_y = screen_height() - overlay_height;
+        let overlay_y = crate::crash_protection::safe_screen_height() - overlay_height;
 
         // Draw semi-transparent background
-        draw_rectangle(0.0, overlay_y, screen_width(), overlay_height, Color::new(0.0, 0.0, 0.2, 0.9));
+        draw_rectangle(0.0, overlay_y, crate::crash_protection::safe_screen_width(), overlay_height, Color::new(0.0, 0.0, 0.2, 0.9));
 
         // Current state
         let state_text = match self.state {
@@ -511,7 +511,7 @@ impl LearningTaskTestRunner {
         // Progress bar for all tasks
         let total_expected_tasks = 24; // Level 1: 5 tasks + Level 2: 4 tasks + Level 3: 5 tasks + Level 4: 5 tasks + Level 5: 5 tasks = 24 total tasks
         let progress = (self.total_tasks_tested as f32) / (total_expected_tasks as f32);
-        let bar_width = screen_width() - 20.0;
+        let bar_width = crate::crash_protection::safe_screen_width() - 20.0;
         let bar_height = 20.0;
         let bar_y = overlay_y + 80.0;
 
@@ -528,7 +528,7 @@ impl LearningTaskTestRunner {
 
         // Show current code length and last execution result
         draw_text(&format!("Code: {} chars", self.game.current_code.len()),
-                 screen_width() - 150.0, overlay_y + 20.0, 14.0, LIGHTGRAY);
+                 crate::crash_protection::safe_screen_width() - 150.0, overlay_y + 20.0, 14.0, LIGHTGRAY);
 
         if !self.game.execution_result.is_empty() {
             let result_preview = if self.game.execution_result.len() > 30 {
@@ -537,7 +537,7 @@ impl LearningTaskTestRunner {
                 self.game.execution_result.clone()
             };
             draw_text(&format!("Result: {}", result_preview),
-                     screen_width() - 350.0, overlay_y + 40.0, 12.0, GREEN);
+                     crate::crash_protection::safe_screen_width() - 350.0, overlay_y + 40.0, 12.0, GREEN);
         }
 
         draw_text(&format!("Total Time: {:02}:{:02}",
@@ -621,7 +621,7 @@ async fn run_test_loop(mut test_runner: LearningTaskTestRunner) {
     // Main test loop
     while !test_runner.is_complete() {
         // Update test runner
-        test_runner.update(get_frame_time()).await;
+        test_runner.update(crate::crash_protection::safe_get_frame_time()).await;
 
         // Draw current state using real game UI
         test_runner.draw();
@@ -642,8 +642,8 @@ async fn run_test_loop(mut test_runner: LearningTaskTestRunner) {
     info!("Tests complete. Press SPACE to exit or ESC to quit immediately.");
     loop {
         clear_background(BLACK);
-        draw_text("🎉 All Task Tests Complete!", screen_width() / 2.0 - 150.0, screen_height() / 2.0 - 50.0, 30.0, GREEN);
-        draw_text("Press SPACE to exit", screen_width() / 2.0 - 80.0, screen_height() / 2.0, 20.0, WHITE);
+        draw_text("🎉 All Task Tests Complete!", crate::crash_protection::safe_screen_width() / 2.0 - 150.0, crate::crash_protection::safe_screen_height() / 2.0 - 50.0, 30.0, GREEN);
+        draw_text("Press SPACE to exit", crate::crash_protection::safe_screen_width() / 2.0 - 80.0, crate::crash_protection::safe_screen_height() / 2.0, 20.0, WHITE);
 
         if is_key_pressed(KeyCode::Space) || is_key_pressed(KeyCode::Escape) {
             break;

@@ -103,7 +103,7 @@ async fn run_game() {
         let popup_handled_input = popup_action != popup::PopupAction::None;
         
         // Update popup system with delta time
-        game.update_popup_system(get_frame_time());
+        game.update_popup_system(crate::crash_protection::safe_get_frame_time());
 
         // Only process game input if popup didn't handle it
         if !popup_handled_input {
@@ -123,8 +123,8 @@ async fn run_game() {
 
         if game.finished {
             // Game finished screen
-            let screen_width = screen_width();
-            let screen_height = screen_height();
+            let screen_width = crate::crash_protection::safe_screen_width();
+            let screen_height = crate::crash_protection::safe_screen_height();
             
             let text = if game.max_turns > 0 && game.turns >= game.max_turns {
                 "Time's up! Press R to restart or ESC to quit"

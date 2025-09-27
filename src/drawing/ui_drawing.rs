@@ -36,7 +36,7 @@ pub fn draw_game_info(game: &Game) {
 pub fn draw_controls_text() {
     let scale = ScaledMeasurements::new();
     let controls_text = "Controls: Click code editor to edit robot_code.rs | ENTER execute | Ctrl+Shift+C completion help | Ctrl+Shift+E IDE hint | Ctrl+Shift+B docs | Ctrl+Shift+S settings | Ctrl+Shift+N finish | Ctrl+Shift+L reload | Ctrl+Shift+M menu";
-    draw_scaled_text(controls_text, scale.padding, screen_height() - scale_size(18.0), 18.0, GRAY);
+    draw_scaled_text(controls_text, scale.padding, crate::crash_protection::safe_screen_height() - scale_size(18.0), 18.0, GRAY);
 }
 
 fn get_function_definition(func: RustFunction) -> &'static str {
@@ -83,9 +83,9 @@ fn get_function_definition(func: RustFunction) -> &'static str {
 
 pub fn draw_function_definitions(game: &mut Game) {
     let scale = ScaledMeasurements::new();
-    let def_width = screen_width() * 0.25; // 1/4 of screen width
-    let def_height = screen_height() * 0.6; // Take up more vertical space
-    let def_x = screen_width() * 0.5 + scale.padding; // Position on left side of right half
+    let def_width = crate::crash_protection::safe_screen_width() * 0.25; // 1/4 of screen width
+    let def_height = crate::crash_protection::safe_screen_height() * 0.6; // Take up more vertical space
+    let def_x = crate::crash_protection::safe_screen_width() * 0.5 + scale.padding; // Position on left side of right half
     let def_y = scale.padding + scale_size(100.0);
     
     draw_rectangle(def_x - scale.padding, def_y - scale.padding, def_width + scale.padding * 2.0, def_height + scale.padding * 2.0, Color::new(0.0, 0.0, 0.0, 0.8));
@@ -316,7 +316,7 @@ fn draw_editor_content(game: &mut Game, editor_x: f32, editor_y: f32, editor_wid
             let cursor_y = grid_start_y + (visible_row as f32 * char_height);
             
             // Draw blinking cursor
-            let time = get_time() as f32;
+            let time = crate::crash_protection::safe_get_time() as f32;
             if (time * 2.0) % 2.0 < 1.0 {
                 draw_line(cursor_x, cursor_y - scale_size(8.0), cursor_x, cursor_y + scale_size(4.0), scale_size(2.0), YELLOW);
             }
@@ -447,10 +447,10 @@ pub fn draw_tabbed_sidebar(game: &mut Game) {
     let scale = ScaledMeasurements::new();
 
     // Define sidebar position and dimensions (same as old function definitions area)
-    let sidebar_x = screen_width() * 0.5 + scale.padding;
+    let sidebar_x = crate::crash_protection::safe_screen_width() * 0.5 + scale.padding;
     let sidebar_y = scale.padding + scale_size(100.0);
-    let sidebar_width = screen_width() * 0.25;
-    let sidebar_height = screen_height() * 0.6;
+    let sidebar_width = crate::crash_protection::safe_screen_width() * 0.25;
+    let sidebar_height = crate::crash_protection::safe_screen_height() * 0.6;
 
     // Draw the main sidebar background
     draw_rectangle(sidebar_x - scale.padding, sidebar_y - scale.padding,

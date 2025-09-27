@@ -299,6 +299,7 @@ mod popup;
 mod embedded_levels;
 mod drawing;
 mod rust_checker;
+mod test_enhanced_errors;
 mod font_scaling;
 mod cache;
 mod progressive_loader;
@@ -345,6 +346,7 @@ fn main() {
     game.save_robot_code();
 }
 use rust_checker::format_errors_for_display;
+use test_enhanced_errors::check_code_manually;
 
 // Helper function to parse println/eprintln messages with variable substitution
 fn parse_println_message(param: &str, code: &str) -> String {
@@ -1328,15 +1330,15 @@ async fn execute_rust_code(game: &mut Game) -> String {
     #[cfg(not(target_arch = "wasm32"))]
     {
         if let Some(ref mut checker) = game.rust_checker {
-            match checker.check_syntax(&code_to_execute) {
+            match checker.check_syntax_enhanced(&code_to_execute) {
                 Ok(errors) => {
                     // Format and display syntax check results
                     let syntax_result = format_errors_for_display(&errors);
-                    
+
                     // If there are errors, show them and don't execute
                     let has_errors = errors.iter().any(|e| e.severity == rust_checker::ErrorSeverity::Error);
                     if has_errors {
-                        return format!("🔍 SYNTAX CHECK:\n{}\n\nFix these errors before running your code!", syntax_result);
+                        return format!("🔍 ENHANCED SYNTAX CHECK:\n{}\n\n⚠️ Your code has errors that prevent execution!", syntax_result);
                     } else if !errors.is_empty() {
                         // Show warnings but continue execution
                         game.execution_result = format!("🔍 SYNTAX CHECK:\n{}\n\nCode executing with warnings...", syntax_result);
@@ -1346,10 +1348,13 @@ async fn execute_rust_code(game: &mut Game) -> String {
                     }
                 },
                 Err(e) => {
-                    // If syntax checking fails, fall back to basic parsing but show the error
-                    game.execution_result = format!("⚠️ Syntax checker unavailable: {}\nFalling back to basic code parsing...", e);
+                    // If enhanced syntax checking fails, show the error with helpful context
+                    return format!("⚠️ COMPILATION SYSTEM ERROR:\n{}\n\n🔧 Troubleshooting:\n• Make sure Rust and Cargo are properly installed\n• Check if your code has basic syntax errors\n• Try running a simple test like: println!(\"Hello!\");", e);
                 }
             }
+        } else {
+            // No rust checker available - show warning
+            game.execution_result = "⚠️ Advanced error checking unavailable. Code will be parsed with basic validation.".to_string();
         }
     }
     
@@ -1394,7 +1399,7 @@ async fn execute_rust_code(game: &mut Game) -> String {
         if game.time_slow_active {
             let frames_to_wait = (game.time_slow_duration_ms as f32 / 16.67).round() as i32; // Assuming ~60 FPS
             for _ in 0..frames_to_wait {
-                next_frame().await;
+                crash_protection::safe_next_frame().await;
             }
         }
         
@@ -1518,7 +1523,7 @@ fn draw_main_game_view(game: &mut Game) {
                 "CRASH DETECTED - GAME CONTINUES WITH RECOVERY MODE".to_string()
             };
             let text_width = measure_text(&msg, None, 18, 1.0).width;
-            let x = (screen_width() - text_width) / 2.0;
+            let x = (crash_protection::safe_screen_width() - text_width) / 2.0;
             let color = if crash_protection::is_permanent_protection_active() {
                 Color::new(0.0, 0.8, 0.2, 0.9)  // Green for permanent protection (stable)
             } else if crash_protection::is_system_crash_active() { 
@@ -1601,7 +1606,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
     request_new_screen_size(1200.0, 800.0);
 
     loop {
-        clear_background(Color::from_rgba(30, 30, 35, 255));
+        crash_protection::safe_clear_background(Color::from_rgba(30, 30, 35, 255));
 
         // Exit handling
         if is_key_pressed(KeyCode::Escape) {
@@ -1609,15 +1614,16 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
         }
 
         // Mouse handling - EXACT same as main game
-        let (mouse_x, mouse_y) = mouse_position();
+        // Use safe mouse position to prevent crashes when window loses focus
+        let (mouse_x, mouse_y) = crash_protection::safe_mouse_position_with_focus();
 
         // Handle mouse button press - start of potential drag
         if is_mouse_button_pressed(MouseButton::Left) {
             // Editor area (full screen for test mode)
             let editor_x = 50.0;
             let editor_y = 100.0;
-            let editor_width = screen_width() - 100.0;
-            let editor_height = screen_height() - 150.0;
+            let editor_width = crash_protection::safe_screen_width() - 100.0;
+            let editor_height = crash_protection::safe_screen_height() - 150.0;
 
             if mouse_x >= editor_x && mouse_x <= editor_x + editor_width &&
                mouse_y >= editor_y && mouse_y <= editor_y + editor_height {
@@ -1631,8 +1637,8 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
         if is_mouse_button_down(MouseButton::Left) && game.mouse_drag_start.is_some() {
             let editor_x = 50.0;
             let editor_y = 100.0;
-            let editor_width = screen_width() - 100.0;
-            let editor_height = screen_height() - 150.0;
+            let editor_width = crash_protection::safe_screen_width() - 100.0;
+            let editor_height = crash_protection::safe_screen_height() - 150.0;
             let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
 
             game.update_mouse_drag(mouse_x, mouse_y, editor_bounds);
@@ -1770,8 +1776,8 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
         // Draw using the REAL game editor drawing system
         let editor_x = 50.0;
         let editor_y = 100.0;
-        let editor_width = screen_width() - 100.0;
-        let editor_height = screen_height() - 150.0;
+        let editor_width = crash_protection::safe_screen_width() - 100.0;
+        let editor_height = crash_protection::safe_screen_height() - 150.0;
 
         // Draw title
         draw_text("🎮 REAL Editor Test Mode", 20.0, 30.0, 24.0, GREEN);
@@ -1780,7 +1786,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
         // Draw the actual game editor
         crate::drawing::editor_drawing::draw_code_editor(&mut game);
 
-        next_frame().await;
+        crash_protection::safe_next_frame().await;
     }
 
     println!("✅ REAL Editor Test Mode Exited");
@@ -1830,7 +1836,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
     let mut last_result = "Ready to test commands!".to_string();
 
     loop {
-        clear_background(Color::from_rgba(30, 30, 35, 255));
+        crash_protection::safe_clear_background(Color::from_rgba(30, 30, 35, 255));
 
         // Exit handling
         if is_key_pressed(KeyCode::Escape) {
@@ -1838,7 +1844,8 @@ async fn run_command_test_mode(enable_all_logs: bool) {
         }
 
         // Get mouse position for button and editor handling
-        let (mouse_x, mouse_y) = mouse_position();
+        // Use safe mouse position to prevent crashes when window loses focus
+        let (mouse_x, mouse_y) = crash_protection::safe_mouse_position_with_focus();
 
         // Handle mouse for editor text selection - SAME as real editor test mode
         if is_mouse_button_pressed(MouseButton::Left) {
@@ -1846,7 +1853,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
             let editor_x = 180.0;
             let editor_y = 100.0;
             let editor_width = 400.0;
-            let editor_height = screen_height() - 200.0;
+            let editor_height = crash_protection::safe_screen_height() - 200.0;
 
             if mouse_x >= editor_x && mouse_x <= editor_x + editor_width &&
                mouse_y >= editor_y && mouse_y <= editor_y + editor_height {
@@ -1861,7 +1868,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
             let editor_x = 180.0;
             let editor_y = 100.0;
             let editor_width = 400.0;
-            let editor_height = screen_height() - 200.0;
+            let editor_height = crash_protection::safe_screen_height() - 200.0;
             let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
 
             game.update_mouse_drag(mouse_x, mouse_y, editor_bounds);
@@ -2137,14 +2144,14 @@ async fn run_command_test_mode(enable_all_logs: bool) {
         }, "command_test_draw_game");
 
         // Draw the result message at the bottom
-        draw_text("Last Result:", game_area_x, screen_height() - 40.0, 18.0, WHITE);
-        draw_text(&last_result, game_area_x, screen_height() - 20.0, 16.0, LIME);
+        draw_text("Last Result:", game_area_x, crash_protection::safe_screen_height() - 40.0, 18.0, WHITE);
+        draw_text(&last_result, game_area_x, crash_protection::safe_screen_height() - 20.0, 16.0, LIME);
 
         // Draw instructions at the top
         draw_text("🎮 Robot Command Test Mode", 10.0, 25.0, 20.0, YELLOW);
         draw_text("Left: Click buttons | Middle: Edit code (type/click/drag/Shift+arrows) | Right: See results", 10.0, 45.0, 14.0, LIGHTGRAY);
 
-        next_frame().await;
+        crash_protection::safe_next_frame().await;
     }
 
     println!("✅ Robot Command Test Mode Exited");
@@ -2770,6 +2777,8 @@ async fn desktop_main() {
         println!("  --start-level N          Start learning tests from level N");
         println!("  --max-levels N           Test only N levels");
         println!("  --test-code \"code\"       Test specific Rust code");
+        println!("  --test-error-system      Test the enhanced error detection system");
+        println!("  --check-code \"code\"      Check Rust code for syntax errors");
         println!("  --editor-test            Run editor functionality tests");
         println!("  --command-test           Run robot command tests");
         println!("");
@@ -2831,6 +2840,27 @@ async fn desktop_main() {
         info!("Starting Robot Command Test Mode");
         run_command_test_mode(enable_all_logs).await;
         return;
+    }
+
+    // Check for error system testing
+    if args.contains(&"--test-error-system".to_string()) {
+        info!("Testing enhanced error system");
+        test_enhanced_errors::test_error_system();
+        return;
+    }
+
+    // Check for manual code checking
+    if args.contains(&"--check-code".to_string()) {
+        if let Some(code_arg) = args.iter().position(|x| x == "--check-code")
+            .and_then(|i| args.get(i + 1)) {
+            let result = check_code_manually(code_arg);
+            println!("{}", result);
+            return;
+        } else {
+            println!("❌ --check-code requires a code string argument");
+            println!("Example: cargo run --release -- --check-code \"fn main() {{ println!(\"test\"); }}\"");
+            return;
+        }
     }
 
     // Check for learning levels test mode
@@ -2955,11 +2985,11 @@ async fn desktop_main() {
     
     let mut shop_open = false;
     let mut loading_progress: Option<LoadingProgress> = None;
-    let mut last_time = get_time();
+    let mut last_time = crash_protection::safe_get_time();
 
     loop {
         // Update crash recovery timer
-        let current_time = get_time();
+        let current_time = crash_protection::safe_get_time();
         let delta_time = (current_time - last_time) as f32;
         last_time = current_time;
         update_crash_recovery_timer(delta_time);
@@ -2996,8 +3026,8 @@ async fn desktop_main() {
         game.menu.check_screen_resize();
         
         // Check if user manually resized window and save the new size
-        let current_width = screen_width() as i32;
-        let current_height = screen_height() as i32;
+        let current_width = crash_protection::safe_screen_width() as i32;
+        let current_height = crash_protection::safe_screen_height() as i32;
         let current_maximized = crate::coordinate_system::CoordinateTransformer::is_game_window_maximized();
         
         // Track maximize state changes
@@ -3053,27 +3083,30 @@ async fn desktop_main() {
             _ => {}
         }
 
+        // Update window focus state FIRST - before any rendering or input processing
+        crash_protection::update_window_focus_state_with_cursor_release();
+
         // Draw based on current menu state
         match game.menu.state {
             MenuState::InGame => {
                 // Handle popup input FIRST - before any other input processing
                 let popup_action = game.handle_popup_input();
                 let popup_handled_input = popup_action != PopupAction::None;
-                
-                // Update popup system with delta time
-                game.update_popup_system(get_frame_time());
 
-                // Wrap main game view drawing in crash protection
-                safe_draw_operation(|| draw_main_game_view(&mut game), "main_game_view");
+                // Update popup system with delta time
+                game.update_popup_system(crash_protection::safe_get_frame_time());
+
+                // Wrap main game view drawing in crash protection with focus awareness
+                crash_protection::safe_draw_operation_with_focus(|| draw_main_game_view(&mut game), "main_game_view");
 
                 // Shop functionality removed - replaced with Rust docs
-                
-                // Draw popups last so they appear on top
-                game.draw_popups();
+
+                // Draw popups last so they appear on top - also focus protected
+                crash_protection::safe_draw_operation_with_focus(|| game.draw_popups(), "popups");
 
                 // Game input handling
                 debug!("Input gating: shop_open={}, popup_handled_input={}", shop_open, popup_handled_input);
-                if !shop_open && !popup_handled_input {
+                if !shop_open && !popup_handled_input && crash_protection::is_window_focused() {
                     // Check for file changes
                     if let Some(ref receiver) = game.file_watcher_receiver {
                         if let Ok(_event) = receiver.try_recv() {
@@ -3083,7 +3116,7 @@ async fn desktop_main() {
                     }
                     
                     // Mouse handling
-                    let (mouse_x, mouse_y) = mouse_position();
+                    let (mouse_x, mouse_y) = crash_protection::safe_mouse_position_with_focus();
                     trace!("Mouse position: ({:.2}, {:.2})", mouse_x, mouse_y);
 
                     // Debug mouse button states
@@ -3101,7 +3134,7 @@ async fn desktop_main() {
                     let system_key_combination = false; // Temporarily disable complex key checking
                     
                     // Update system key timing for extended safety period
-                    let current_time = macroquad::prelude::get_time();
+                    let current_time = crash_protection::safe_get_time();
                     if system_key_combination {
                         game.last_system_key_time = current_time;
                         debug!("System key combination detected (screenshot/etc) - pausing coordinate updates");
@@ -3127,15 +3160,15 @@ async fn desktop_main() {
                         debug!("Left mouse button pressed at ({:.2}, {:.2}) - input allowed!", mouse_x, mouse_y);
 
                         // Tab click handling (above sidebar area)
-                        let sidebar_x = screen_width() * 0.5 + 16.0; // Match sidebar position
-                        let sidebar_width = screen_width() * 0.25;
+                        let sidebar_x = crash_protection::safe_screen_width() * 0.5 + 16.0; // Match sidebar position
+                        let sidebar_width = crash_protection::safe_screen_width() * 0.25;
 
                         // Editor click handling (simplified - no tabs)
                         {
                             let editor_x = sidebar_x; // Use sidebar position when Editor tab is active
                             let editor_y = 16.0 + 100.0; // Match PADDING constant
                             let editor_width = sidebar_width;
-                            let editor_height = screen_height() * 0.6;
+                            let editor_height = crash_protection::safe_screen_height() * 0.6;
 
                             debug!("Editor bounds: x={:.2}, y={:.2}, w={:.2}, h={:.2}", editor_x, editor_y, editor_width, editor_height);
 
@@ -3170,12 +3203,12 @@ async fn desktop_main() {
 
                     // Handle mouse dragging for text selection
                     if is_mouse_button_down(MouseButton::Left) && game.mouse_drag_start.is_some() {
-                        let sidebar_x = screen_width() * 0.5 + 16.0;
-                        let sidebar_width = screen_width() * 0.25;
+                        let sidebar_x = crash_protection::safe_screen_width() * 0.5 + 16.0;
+                        let sidebar_width = crash_protection::safe_screen_width() * 0.25;
                         let editor_x = sidebar_x;
                         let editor_y = 16.0 + 100.0;
                         let editor_width = sidebar_width;
-                        let editor_height = screen_height() * 0.6;
+                        let editor_height = crash_protection::safe_screen_height() * 0.6;
                         let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
 
                         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -3202,7 +3235,7 @@ async fn desktop_main() {
                         let mut code_modified = false;
                         
                         // Update key press timers
-                        game.update_key_press_timers(get_frame_time());
+                        game.update_key_press_timers(crash_protection::safe_get_frame_time());
                         
                         // Handle character input - both initial press and continuous hold
                         let mut current_char_pressed = None;
@@ -3222,7 +3255,7 @@ async fn desktop_main() {
                         }
                         
                         // Update character key timing
-                        game.update_char_key_timing(current_char_pressed, get_frame_time());
+                        game.update_char_key_timing(current_char_pressed, crash_protection::safe_get_frame_time());
                         
                         // Handle continuous character repeat
                         if game.should_repeat_char() {
@@ -3426,11 +3459,11 @@ async fn desktop_main() {
                 safe_game_operation(|| game.check_end_condition(), "check_end_condition", ());
             },
             _ => {
-                // Draw menu with loading progress
-                safe_draw_operation(|| game.menu.draw_with_loading_progress(loading_progress.as_ref()), "menu_draw_with_loading");
+                // Draw menu with loading progress - focus protected
+                crash_protection::safe_draw_operation_with_focus(|| game.menu.draw_with_loading_progress(loading_progress.as_ref()), "menu_draw_with_loading");
             }
         }
 
-        next_frame().await;
+        crash_protection::safe_next_frame().await;
     }
 }

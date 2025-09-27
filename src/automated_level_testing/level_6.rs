@@ -1,136 +1,101 @@
-// Level 6: Flow Control and Conditionals - Automated Test Solutions
+// Level 6: Level 6: Control Flow - Automated Test Solutions
+// Updated to match actual learning tests
 
 use super::level_1::{LevelTestConfig, TaskTest};
 
 pub fn get_level_6_tests() -> LevelTestConfig {
     LevelTestConfig {
-        level_name: "Level 6: Flow Control and Conditionals",
+        level_name: "Level 6: Control Flow",
         level_index: 5,
         tasks: vec![
             TaskTest {
                 task_number: 1,
-                task_name: "If/Else Conditionals and Expressions",
+                task_name: "Conditionals",
                 solution_code: r#"fn main() {
-    println!("Level 6: Flow Control and Conditionals");
-
     let energy = 75;
     let position = (5, 3);
 
-    // Basic if/else statements
+    // Basic if/else
     if energy > 50 {
-        println!("Robot has sufficient energy: {}", energy);
+        println!("Energy level: High");
     } else {
-        println!("Robot needs recharging: {}", energy);
+        println!("Energy level: Low");
     }
 
-    // If/else expressions (return values)
-    let status = if energy > 80 {
-        "Excellent"
-    } else if energy > 50 {
-        "Good"
-    } else if energy > 20 {
-        "Low"
+    // Multiple conditions
+    if energy >= 80 {
+        println!("Status: Excellent");
+    } else if energy >= 50 {
+        println!("Status: Good");
+    } else if energy >= 20 {
+        println!("Status: Low");
     } else {
-        "Critical"
-    };
-
-    println!("Energy status: {}", status);
-
-    // Complex conditions with logical operators
-    let x = position.0;
-    let y = position.1;
-
-    if x > 0 && y > 0 {
-        println!("Robot is in positive quadrant: ({}, {})", x, y);
-    } else if x == 0 || y == 0 {
-        println!("Robot is on an axis: ({}, {})", x, y);
-    } else {
-        println!("Robot position: ({}, {})", x, y);
+        println!("Status: Critical");
     }
 
-    // If let for pattern matching
-    let maybe_value: Option<i32> = Some(42);
-    if let Some(value) = maybe_value {
-        println!("Found value: {}", value);
-    } else {
-        println!("No value found");
+    // Complex conditions
+    if position.0 > 0 && position.1 > 0 && energy > 25 {
+        println!("Can move diagonally");
     }
+
+    // If as expression
+    let status = if energy > 50 { "operational" } else { "needs charging" };
+    println!("Robot is {}", status);
 }"#,
                 completion_indicators: vec![
-                    "Level 6: Flow Control and Conditionals",
-                    "Robot has sufficient energy: 75",
-                    "Energy status: Good",
-                    "Robot is in positive quadrant: (5, 3)",
-                    "Found value: 42",
+                    "Energy level: High", "Status: Good", "Can move diagonally", "Robot is operational"
                 ],
             },
-
             TaskTest {
                 task_number: 2,
-                task_name: "Loops - loop, while, and for",
+                task_name: "Loops",
                 solution_code: r#"fn main() {
     println!("=== Infinite loop with break ===");
-    let mut counter = 0;
+    let mut count = 0;
     loop {
-        counter += 1;
-        println!("Loop iteration: {}", counter);
-
-        if counter >= 3 {
-            println!("Breaking out of infinite loop");
+        println!("Loop iteration: {}", count);
+        count += 1;
+        if count >= 3 {
             break;
         }
     }
 
     println!("=== While loop ===");
     let mut energy = 100;
-    while energy > 0 {
-        println!("Energy remaining: {}", energy);
-        energy -= 25;
-
-        if energy == 25 {
-            println!("Low energy warning!");
-            continue;
-        }
+    while energy > 50 {
+        println!("Energy: {}", energy);
+        energy -= 20;
     }
 
     println!("=== For loop with range ===");
-    for i in 1..=5 {
-        println!("For loop step: {}", i);
+    for i in 0..5 {
+        println!("Position: {}", i);
     }
 
-    println!("=== For loop with collection ===");
-    let positions = vec![(0, 0), (1, 2), (3, 4), (5, 6)];
-    for (index, (x, y)) in positions.iter().enumerate() {
-        println!("Position {}: ({}, {})", index, x, y);
+    println!("=== Labeled break ===");
+    'outer: for x in 0..3 {
+        for y in 0..3 {
+            if x == 1 && y == 1 {
+                println!("Breaking at ({}, {})", x, y);
+                break 'outer;
+            }
+        }
     }
 }"#,
                 completion_indicators: vec![
-                    "=== Infinite loop with break ===",
-                    "Loop iteration: 1",
-                    "Loop iteration: 2",
-                    "Loop iteration: 3",
-                    "Breaking out of infinite loop",
-                    "=== While loop ===",
-                    "Energy remaining: 100",
-                    "Low energy warning!",
-                    "=== For loop with range ===",
-                    "For loop step: 1",
-                    "For loop step: 5",
-                    "=== For loop with collection ===",
-                    "Position 0: (0, 0)",
+                    "Loop iteration:", "Energy:", "Position:", "Breaking at (1, 1)"
                 ],
             },
-
             TaskTest {
                 task_number: 3,
-                task_name: "Loop Control - break, continue, and labels",
+                task_name: "Loop Control",
                 solution_code: r#"fn main() {
     println!("=== Finding prime numbers with continue ===");
     for num in 2..20 {
         let mut is_prime = true;
 
-        for i in 2..num {
-            if num % i == 0 {
+        for divisor in 2..num {
+            if num % divisor == 0 {
                 is_prime = false;
                 break;
             }
@@ -140,166 +105,113 @@ pub fn get_level_6_tests() -> LevelTestConfig {
             continue;
         }
 
-        println!("{} is prime", num);
+        println!("Found prime: {}", num);
     }
 
-    println!("=== Grid search with labeled breaks ===");
-    let target = (2, 3);
-    let mut found = false;
-
-    'search: for row in 0..5 {
-        for col in 0..5 {
-            println!("Checking ({}, {})", row, col);
-
-            if (row, col) == target {
-                println!("Found target at ({}, {})!", row, col);
-                found = true;
-                break 'search;
-            }
-
-            if row == col {
-                println!("Skipping diagonal position ({}, {})", row, col);
-                continue;
-            }
+    println!("=== Loop with value return ===");
+    let result = loop {
+        let value = 42;
+        if value > 40 {
+            break value * 2;
         }
-    }
-
-    if !found {
-        println!("Target not found");
-    }
+    };
+    println!("Loop returned: {}", result);
 }"#,
                 completion_indicators: vec![
-                    "=== Finding prime numbers with continue ===",
-                    "2 is prime",
-                    "3 is prime",
-                    "5 is prime",
-                    "7 is prime",
-                    "11 is prime",
-                    "13 is prime",
-                    "17 is prime",
-                    "19 is prime",
-                    "=== Grid search with labeled breaks ===",
-                    "Found target at (2, 3)!",
+                    "Found prime:", "Loop returned: 84"
                 ],
             },
-
             TaskTest {
                 task_number: 4,
-                task_name: "Match Expressions and Pattern Matching",
+                task_name: "Match Expressions",
                 solution_code: r#"fn main() {
     println!("=== Basic match with integers ===");
-    let robot_mode = 2;
-
-    let mode_name = match robot_mode {
-        1 => "Exploration",
-        2 => "Collection",
-        3 => "Return Home",
-        _ => "Unknown Mode",
-    };
-
-    println!("Robot mode {}: {}", robot_mode, mode_name);
-
-    println!("=== Match with ranges ===");
-    let energy_level = 45;
-
-    match energy_level {
-        81..=100 => println!("Energy: Excellent ({}%)", energy_level),
-        61..=80 => println!("Energy: Good ({}%)", energy_level),
-        41..=60 => println!("Energy: Moderate ({}%)", energy_level),
-        21..=40 => println!("Energy: Low ({}%)", energy_level),
-        1..=20 => println!("Energy: Critical ({}%)", energy_level),
-        0 => println!("Energy: Depleted"),
-        _ => println!("Energy: Invalid reading ({})", energy_level),
+    let number = 42;
+    match number {
+        0 => println!("Zero"),
+        1..=10 => println!("Small"),
+        11..=50 => println!("Medium"),
+        _ => println!("Large"),
     }
 
     println!("=== Match with tuples ===");
-    let position = (3, 4);
-
+    let position = (2, 3);
     match position {
-        (0, 0) => println!("At origin"),
-        (0, y) => println!("On Y-axis at y={}", y),
-        (x, 0) => println!("On X-axis at x={}", x),
-        (x, y) if x == y => println!("On diagonal at ({}, {})", x, y),
-        (x, y) if x > y => println!("Above diagonal at ({}, {})", x, y),
-        (x, y) => println!("Below diagonal at ({}, {})", x, y),
+        (0, 0) => println!("Origin"),
+        (0, _) => println!("On Y axis"),
+        (_, 0) => println!("On X axis"),
+        (x, y) if x == y => println!("On diagonal"),
+        (x, y) => println!("At ({}, {})", x, y),
+    }
+
+    println!("=== Match with Option ===");
+    let item: Option<&str> = Some("key");
+    match item {
+        Some("key") => println!("Found the key!"),
+        Some(other) => println!("Found: {}", other),
+        None => println!("Nothing found"),
     }
 }"#,
                 completion_indicators: vec![
-                    "=== Basic match with integers ===",
-                    "Robot mode 2: Collection",
-                    "=== Match with ranges ===",
-                    "Energy: Moderate (45%)",
-                    "=== Match with tuples ===",
-                    "Below diagonal at (3, 4)",
+                    "Medium", "At (2, 3)", "Found the key!"
                 ],
             },
-
             TaskTest {
                 task_number: 5,
-                task_name: "Advanced Flow Control Patterns",
+                task_name: "Advanced Flow",
                 solution_code: r#"fn main() {
     println!("=== Robot pathfinding simulation ===");
 
-    let grid_size = 5;
-    let obstacles = vec![(1, 1), (2, 3), (3, 1)];
     let mut robot_pos = (0, 0);
-    let target = (4, 4);
-    let mut steps = 0;
-    let max_steps = 20;
+    let target = (3, 3);
+    let mut energy = 100;
+    let mut path = Vec::new();
 
     'pathfinding: loop {
-        steps += 1;
-
-        if steps > max_steps {
-            println!("Pathfinding failed: too many steps");
+        // Check energy
+        if energy <= 0 {
+            println!("Out of energy!");
             break 'pathfinding;
         }
 
-        println!("Step {}: Robot at ({}, {})", steps, robot_pos.0, robot_pos.1);
+        // Determine next move
+        let next_move = match (robot_pos, target) {
+            (pos, tgt) if pos == tgt => {
+                println!("Target reached!");
+                break 'pathfinding;
+            },
+            ((x, y), (tx, ty)) if x < tx => (x + 1, y),
+            ((x, y), (tx, ty)) if y < ty => (x, y + 1),
+            _ => robot_pos,
+        };
 
-        if robot_pos == target {
-            println!("Target reached in {} steps!", steps);
-            break 'pathfinding;
-        }
+        // Move robot
+        robot_pos = next_move;
+        energy -= 10;
+        path.push(robot_pos);
 
-        // Simple pathfinding - move towards target
-        let mut next_moves = Vec::new();
-
-        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-            let new_pos = (robot_pos.0 + dx, robot_pos.1 + dy);
-
-            if new_pos.0 >= 0 && new_pos.0 < grid_size &&
-               new_pos.1 >= 0 && new_pos.1 < grid_size {
-
-                let is_obstacle = obstacles.iter().any(|&obs| obs == new_pos);
-
-                if !is_obstacle {
-                    next_moves.push(new_pos);
-                }
+        // Status update
+        for (i, pos) in path.iter().enumerate() {
+            if i == path.len() - 1 {
+                println!("Current position: {:?}, Energy: {}", pos, energy);
             }
         }
 
-        if next_moves.is_empty() {
-            println!("No valid moves available!");
-            break 'pathfinding;
-        }
-
-        // Move towards target (simple strategy)
-        robot_pos = next_moves[0];
-
-        match robot_pos {
-            pos if pos == target => println!("Will reach target next!"),
-            _ => println!("Moving towards target..."),
+        // Check obstacles
+        while energy > 50 && robot_pos.0 < target.0 {
+            robot_pos.0 += 1;
+            energy -= 5;
+            path.push(robot_pos);
         }
     }
+
+    println!("Path taken: {:?}", path);
+    println!("Final energy: {}", energy);
 }"#,
                 completion_indicators: vec![
-                    "=== Robot pathfinding simulation ===",
-                    "Step 1: Robot at (0, 0)",
-                    "Moving towards target...",
-                    "Target reached in",
+                    "Robot pathfinding simulation", "Current position:", "Target reached!", "Path taken:", "Final energy:"
                 ],
-            },
+            }
         ],
     }
 }

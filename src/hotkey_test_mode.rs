@@ -249,17 +249,18 @@ pub async fn run_hotkey_test_mode(enable_all_logs: bool) {
         }
 
         // Track current time for action feedback
-        let current_time = get_time();
+        let current_time = crate::crash_protection::safe_get_time();
 
         // Get mouse position for editor interaction
-        let (mouse_x, mouse_y) = mouse_position();
+        // Use safe mouse position to prevent crashes when window loses focus
+        let (mouse_x, mouse_y) = crate::crash_protection::safe_mouse_position();
 
         // Handle mouse for editor text selection
         if is_mouse_button_pressed(MouseButton::Left) {
             let editor_x = 50.0;
             let editor_y = 50.0;
             let editor_width = 650.0;
-            let editor_height = screen_height() - 100.0;
+            let editor_height = crate::crash_protection::safe_screen_height() - 100.0;
 
             if mouse_x >= editor_x && mouse_x <= editor_x + editor_width &&
                mouse_y >= editor_y && mouse_y <= editor_y + editor_height {
@@ -274,7 +275,7 @@ pub async fn run_hotkey_test_mode(enable_all_logs: bool) {
             let editor_x = 50.0;
             let editor_y = 50.0;
             let editor_width = 650.0;
-            let editor_height = screen_height() - 100.0;
+            let editor_height = crate::crash_protection::safe_screen_height() - 100.0;
             let editor_bounds = (editor_x, editor_y, editor_width, editor_height);
 
             game.update_mouse_drag(mouse_x, mouse_y, editor_bounds);
@@ -471,11 +472,11 @@ pub async fn run_hotkey_test_mode(enable_all_logs: bool) {
 
         // Draw test results panel (right side)
         let panel_x = 720.0;
-        let panel_width = screen_width() - panel_x - 20.0;
+        let panel_width = crate::crash_protection::safe_screen_width() - panel_x - 20.0;
 
         // Draw panel background
-        draw_rectangle(panel_x, 50.0, panel_width, screen_height() - 100.0, Color::from_rgba(40, 40, 45, 255));
-        draw_rectangle_lines(panel_x, 50.0, panel_width, screen_height() - 100.0, 2.0, WHITE);
+        draw_rectangle(panel_x, 50.0, panel_width, crate::crash_protection::safe_screen_height() - 100.0, Color::from_rgba(40, 40, 45, 255));
+        draw_rectangle_lines(panel_x, 50.0, panel_width, crate::crash_protection::safe_screen_height() - 100.0, 2.0, WHITE);
 
         // Draw title
         draw_text("⌨️  HOTKEY TEST RESULTS", panel_x + 10.0, 80.0, 24.0, YELLOW);

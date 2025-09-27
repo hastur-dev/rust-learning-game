@@ -80,18 +80,18 @@ pub fn grid_origin(g: &Game) -> (f32, f32) {
     
     // Calculate available width dynamically based on single sidebar layout
     // We now have only the tabbed sidebar (Commands/Logs/Tasks/Editor)
-    let sidebar_width = screen_width() * 0.25; // Tabbed sidebar on the right
+    let sidebar_width = crate::crash_protection::safe_screen_width() * 0.25; // Tabbed sidebar on the right
     let padding = scale_size(10.0);
     
     // Available width is screen minus sidebar with padding
-    let available_width = screen_width() - sidebar_width - (padding * 2.0);
+    let available_width = crate::crash_protection::safe_screen_width() - sidebar_width - (padding * 2.0);
     
     // Center the grid in the available space (left side of screen)
     let ox = (available_width - gw) * 0.5 + padding;
     
     // Center the grid vertically with some space for header
     let header_height = scale_size(100.0); // Space for game info at top
-    let available_height = screen_height() - header_height - padding;
+    let available_height = crate::crash_protection::safe_screen_height() - header_height - padding;
     let oy = header_height + (available_height - gh) * 0.5; // Center vertically
     
     (ox, oy)
@@ -227,7 +227,7 @@ pub fn draw_tutorial_overlay(game: &Game) {
             
             // Calculate max height (stop at bottom of screen with some padding)
             let tutorial_start_y = scale.padding + scale_size(70.0);
-            let max_task_box_height = (screen_height() - tutorial_start_y - scale_size(50.0)).max(scale_size(200.0)); // At least 200px tall
+            let max_task_box_height = (crate::crash_protection::safe_screen_height() - tutorial_start_y - scale_size(50.0)).max(scale_size(200.0)); // At least 200px tall
             
             // Calculate wrapped text dimensions with dynamic font sizing and height constraints
             let initial_font_size = 14.0;
@@ -293,9 +293,9 @@ pub fn draw_time_slow_indicator(game: &Game) {
         let scale = ScaledMeasurements::new();
         let rect_width = scale_size(180.0);
         let rect_height = scale_size(30.0);
-        draw_rectangle(screen_width() - scale_size(200.0), scale.padding, rect_width, rect_height, Color::new(0.0, 0.0, 0.5, 0.8));
-        draw_rectangle_lines(screen_width() - scale_size(200.0), scale.padding, rect_width, rect_height, scale_size(2.0), YELLOW);
-        draw_scaled_text("TIME SLOW ACTIVE", screen_width() - scale_size(190.0), scale.padding + scale_size(20.0), 16.0, YELLOW);
+        draw_rectangle(crate::crash_protection::safe_screen_width() - scale_size(200.0), scale.padding, rect_width, rect_height, Color::new(0.0, 0.0, 0.5, 0.8));
+        draw_rectangle_lines(crate::crash_protection::safe_screen_width() - scale_size(200.0), scale.padding, rect_width, rect_height, scale_size(2.0), YELLOW);
+        draw_scaled_text("TIME SLOW ACTIVE", crate::crash_protection::safe_screen_width() - scale_size(190.0), scale.padding + scale_size(20.0), 16.0, YELLOW);
     }
 }
 
@@ -308,9 +308,9 @@ pub fn draw_level_complete_overlay(game: &Game) {
         let rect_padding = scale_size(40.0);
         let rect_height = scale_size(60.0);
         draw_rectangle(
-            (screen_width()-dim.width-rect_padding)*0.5, (screen_height()-rect_height)*0.5, dim.width+rect_padding, rect_height,
+            (crate::crash_protection::safe_screen_width()-dim.width-rect_padding)*0.5, (crate::crash_protection::safe_screen_height()-rect_height)*0.5, dim.width+rect_padding, rect_height,
             Color::new(0.0,0.0,0.0,0.6)
         );
-        draw_scaled_text(msg, (screen_width()-dim.width)*0.5, (screen_height()+scale_size(10.0))*0.5, font_size, YELLOW);
+        draw_scaled_text(msg, (crate::crash_protection::safe_screen_width()-dim.width)*0.5, (crate::crash_protection::safe_screen_height()+scale_size(10.0))*0.5, font_size, YELLOW);
     }
 }

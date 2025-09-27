@@ -71,9 +71,9 @@ pub fn grid_to_cursor_position(row: usize, col: usize, lines: &[&str]) -> usize 
 
 pub fn draw_code_editor(game: &mut Game) {
     let scale = ScaledMeasurements::new();
-    let editor_width = screen_width() * 0.25; // Keep same width
-    let editor_height = screen_height() * 0.6; // Keep same height  
-    let editor_x = screen_width() - editor_width - scale.padding;
+    let editor_width = crate::crash_protection::safe_screen_width() * 0.25; // Keep same width
+    let editor_height = crate::crash_protection::safe_screen_height() * 0.6; // Keep same height  
+    let editor_x = crate::crash_protection::safe_screen_width() - editor_width - scale.padding;
     let editor_y = scale.padding + scale_size(100.0);
     
     let bg_color = if game.code_editor_active { 
@@ -233,7 +233,7 @@ pub fn draw_code_editor(game: &mut Game) {
             let cursor_y = grid_start_y + (visible_row as f32 * char_height);
 
             // Draw blinking cursor as a vertical line in the grid cell
-            let time = get_time() as f32;
+            let time = crate::crash_protection::safe_get_time() as f32;
             if (time * 2.0) % 2.0 < 1.0 { // Blink every 0.5 seconds
                 draw_line(
                     cursor_x,

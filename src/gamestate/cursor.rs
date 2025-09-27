@@ -15,7 +15,7 @@ impl Game {
             // Continue with update but maybe with reduced frequency
         }
         
-        let current_time = macroquad::prelude::get_time();
+        let current_time = crate::crash_protection::safe_get_time();
         
         // Adaptive throttling: if there's been recent clicking, be more conservative
         let time_since_last_click = current_time - self.last_mouse_click_time;
@@ -53,7 +53,7 @@ impl Game {
     
     // some cursor and scrolling helpers, but the scroll doesn't work
     pub fn position_cursor_at_click(&mut self, click_x: f32, click_y: f32, editor_bounds: (f32, f32, f32, f32)) {
-        let current_time = macroquad::prelude::get_time();
+        let current_time = crate::crash_protection::safe_get_time();
         
         // Rate limit clicks to prevent rapid-fire clicking from causing issues
         let click_delay = 0.05; // Minimum 50ms between clicks

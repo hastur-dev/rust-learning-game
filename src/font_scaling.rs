@@ -101,8 +101,8 @@ pub fn get_display_scale_factor() -> f32 {
 
 /// Calculate display scaling factor with user font size multiplier
 pub fn get_display_scale_factor_with_multiplier(font_size_multiplier: f32) -> f32 {
-    let current_width = screen_width();
-    let current_height = screen_height();
+    let current_width = crate::crash_protection::safe_screen_width();
+    let current_height = crate::crash_protection::safe_screen_height();
     
     // Calculate scale based on both width and height, take the smaller for better fit
     let width_scale = current_width / BASE_DISPLAY_WIDTH;
@@ -205,8 +205,8 @@ pub fn debug_display_scaling() -> String {
     
     format!(
         "Display: {}x{}, Scale: {:.2}, Fonts: S{:.1} M{:.1} L{:.1} T{:.1}",
-        screen_width(),
-        screen_height(),
+        crate::crash_protection::safe_screen_width(),
+        crate::crash_protection::safe_screen_height(),
         scale,
         measurements.small_font,
         measurements.medium_font,

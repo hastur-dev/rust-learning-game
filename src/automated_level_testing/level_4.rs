@@ -1,4 +1,5 @@
-// Level 4: Variable Bindings and Mutability - Automated Test Solutions
+// Level 4: Level 4: Variable Bindings and Mutability - Automated Test Solutions
+// Updated to match actual learning tests
 
 use super::level_1::{LevelTestConfig, TaskTest};
 
@@ -9,263 +10,136 @@ pub fn get_level_4_tests() -> LevelTestConfig {
         tasks: vec![
             TaskTest {
                 task_number: 1,
-                task_name: "Basic Variable Binding",
+                task_name: "Immutable Variables",
                 solution_code: r#"fn main() {
-    println!("Level 4: Variable Bindings and Mutability");
-
-    // Basic variable binding
     let robot_name = "Ferris";
-    let robot_level = 4;
-    let is_active = true;
+    let robot_id = 1234;
+    let max_energy = 100;
 
-    println!("Robot Name: {}", robot_name);
-    println!("Robot Level: {}", robot_level);
-    println!("Is Active: {}", is_active);
+    println!("Robot: {}", robot_name);
+    println!("ID: {}", robot_id);
+    println!("Max Energy: {}", max_energy);
 
-    // Binding with type annotations
-    let energy: f64 = 100.0;
-    let health: u32 = 95;
+    // Use in calculations
+    let half_energy = max_energy / 2;
+    println!("Half energy: {}", half_energy);
 
-    println!("Energy: {}", energy);
-    println!("Health: {}", health);
-
-    // Multiple bindings in one statement
-    let (x, y) = (10, 20);
-    println!("Position: ({}, {})", x, y);
-
-    println!("Variable binding completed!");
+    if robot_id > 1000 {
+        println!("High-level robot detected");
+    }
 }"#,
                 completion_indicators: vec![
-                    "Level 4: Variable Bindings and Mutability",
-                    "Robot Name: Ferris",
-                    "Robot Level: 4",
-                    "Is Active: true",
-                    "Energy: 100",
-                    "Health: 95",
-                    "Position: (10, 20)",
-                    "Variable binding completed!",
+                    "Robot: Ferris", "ID: 1234", "Max Energy: 100", "Half energy: 50", "High-level robot"
                 ],
             },
-
             TaskTest {
                 task_number: 2,
                 task_name: "Mutable Variables",
                 solution_code: r#"fn main() {
-    println!("Level 4: Mutable Variables");
+    let mut robot_position = 0;
+    let mut energy_level = 100;
+    let mut items_collected = 0;
 
-    // Mutable variables can be changed
-    let mut robot_energy = 100;
-    let mut robot_position = (0, 0);
+    println!("Starting position: {}", robot_position);
+    println!("Starting energy: {}", energy_level);
 
-    println!("Initial energy: {}", robot_energy);
-    println!("Initial position: {:?}", robot_position);
+    // Modify variables
+    robot_position += 5;
+    energy_level -= 10;
+    items_collected += 1;
 
-    // Modify the variables
-    robot_energy -= 25;
-    robot_position.0 = 5;
-    robot_position.1 = 3;
+    println!("After move - Position: {}", robot_position);
+    println!("After move - Energy: {}", energy_level);
+    println!("Items: {}", items_collected);
 
-    println!("Energy after move: {}", robot_energy);
-    println!("New position: {:?}", robot_position);
+    // Loop with mutations
+    for _ in 0..3 {
+        robot_position += 1;
+        energy_level -= 5;
+    }
 
-    // Multiple mutations
-    let mut counter = 0;
-    counter += 1;
-    counter *= 2;
-    counter -= 1;
-
-    println!("Counter value: {}", counter);
-
-    // String mutations
-    let mut message = String::from("Hello");
-    message.push_str(", Rust!");
-    println!("Message: {}", message);
-
-    println!("Mutable variables completed!");
+    println!("Final position: {}", robot_position);
+    println!("Final energy: {}", energy_level);
 }"#,
                 completion_indicators: vec![
-                    "Level 4: Mutable Variables",
-                    "Initial energy: 100",
-                    "Initial position: (0, 0)",
-                    "Energy after move: 75",
-                    "New position: (5, 3)",
-                    "Counter value: 1",
-                    "Message: Hello, Rust!",
-                    "Mutable variables completed!",
+                    "Starting position: 0", "Starting energy: 100", "After move - Position: 5", "Final position: 8", "Final energy"
                 ],
             },
-
             TaskTest {
                 task_number: 3,
-                task_name: "Variable Shadowing",
+                task_name: "Shadowing",
                 solution_code: r#"fn main() {
-    println!("Level 4: Variable Shadowing");
+    let robot_data = "12345";
+    println!("Robot data (string): {}", robot_data);
 
-    // Original variable
-    let x = 5;
-    println!("Original x: {}", x);
+    let robot_data: i32 = robot_data.parse().expect("Failed to parse");
+    println!("Robot data (number): {}", robot_data);
 
-    // Shadow with same name but different value
-    let x = x + 1;
-    println!("Shadowed x: {}", x);
+    let robot_data = robot_data * 2;
+    println!("Robot data (doubled): {}", robot_data);
 
-    // Shadow with different type
-    let x = "now I'm a string";
-    println!("Shadowed x (string): {}", x);
-
-    // Shadowing in inner scope
     {
-        let x = 100;
-        println!("Inner scope x: {}", x);
+        let robot_data = "inner scope";
+        println!("Robot data (inner): {}", robot_data);
     }
-    println!("Outer scope x: {}", x);
 
-    // Multiple shadowing example
-    let spaces = "   ";
-    println!("Spaces as string: '{}'", spaces);
-    let spaces = spaces.len();
-    println!("Spaces as length: {}", spaces);
-
-    // Shadowing vs mutation example
-    let robot_name = "R2D2";
-    println!("Robot: {}", robot_name);
-    let robot_name = format!("{}-Upgraded", robot_name);
-    println!("Upgraded Robot: {}", robot_name);
-
-    println!("Variable shadowing completed!");
+    println!("Robot data (outer): {}", robot_data);
 }"#,
                 completion_indicators: vec![
-                    "Level 4: Variable Shadowing",
-                    "Original x: 5",
-                    "Shadowed x: 6",
-                    "Shadowed x (string): now I'm a string",
-                    "Inner scope x: 100",
-                    "Outer scope x: now I'm a string",
-                    "Spaces as string: '   '",
-                    "Spaces as length: 3",
-                    "Robot: R2D2",
-                    "Upgraded Robot: R2D2-Upgraded",
-                    "Variable shadowing completed!",
+                    "Robot data (string): 12345", "Robot data (number): 12345", "Robot data (doubled): 24690", "Robot data (inner): inner scope", "Robot data (outer): 24690"
                 ],
             },
-
             TaskTest {
                 task_number: 4,
-                task_name: "Scope and Lifetimes",
+                task_name: "Scope",
                 solution_code: r#"fn main() {
-    println!("Level 4: Scope and Lifetimes");
+    let outer_variable = "I'm in the outer scope";
 
-    // Variables live within their scope
-    let outer_var = "I'm in outer scope";
-    println!("Outer variable: {}", outer_var);
+    println!("Outer: {}", outer_variable);
 
-    // Inner scope
     {
-        let inner_var = "I'm in inner scope";
-        println!("Inner variable: {}", inner_var);
-        println!("Can access outer: {}", outer_var);
-
-        // Shadow outer variable
-        let outer_var = "Shadowed in inner scope";
-        println!("Shadowed outer: {}", outer_var);
+        let inner_variable = "I'm in the inner scope";
+        println!("Inner: {}", inner_variable);
+        println!("Can access outer: {}", outer_variable);
     }
 
-    // inner_var is no longer accessible here
-    println!("Back to outer: {}", outer_var);
+    // inner_variable is not accessible here
+    println!("Back to outer: {}", outer_variable);
 
-    // Multiple nested scopes
-    let level = 1;
-    {
-        let level = 2;
-        println!("Level 2 scope: {}", level);
-        {
-            let level = 3;
-            println!("Level 3 scope: {}", level);
-        }
-        println!("Back to level 2: {}", level);
-    }
-    println!("Back to level 1: {}", level);
+    helper_function();
+}
 
-    // Variable dropping demonstration
-    {
-        let temp_data = vec![1, 2, 3, 4, 5];
-        println!("Temp data: {:?}", temp_data);
-    } // temp_data is dropped here
-
-    println!("Scope and lifetimes completed!");
+fn helper_function() {
+    let function_scope = "I'm in function scope";
+    println!("Function: {}", function_scope);
 }"#,
                 completion_indicators: vec![
-                    "Level 4: Scope and Lifetimes",
-                    "Outer variable: I'm in outer scope",
-                    "Inner variable: I'm in inner scope",
-                    "Can access outer: I'm in outer scope",
-                    "Shadowed outer: Shadowed in inner scope",
-                    "Back to outer: I'm in outer scope",
-                    "Level 2 scope: 2",
-                    "Level 3 scope: 3",
-                    "Back to level 2: 2",
-                    "Back to level 1: 1",
-                    "Temp data: [1, 2, 3, 4, 5]",
-                    "Scope and lifetimes completed!",
+                    "Outer: I'm in the outer scope", "Inner: I'm in the inner scope", "Can access outer:", "Back to outer:", "Function: I'm in function scope"
                 ],
             },
-
             TaskTest {
                 task_number: 5,
-                task_name: "Constants and Static Variables",
-                solution_code: r#"// Constants are always immutable and must have type annotations
-const MAX_ENERGY: u32 = 1000;
-const GAME_VERSION: &str = "1.0.0";
-
-// Static variables have 'static lifetime
-static ROBOT_COUNT: u32 = 42;
+                task_name: "Constants",
+                solution_code: r#"const MAX_ENERGY: u32 = 100;
+const MIN_ENERGY: u32 = 0;
+const ROBOT_VERSION: f32 = 2.5;
 
 fn main() {
-    println!("Level 4: Constants and Static Variables");
-
-    // Using constants
     println!("Maximum energy: {}", MAX_ENERGY);
-    println!("Game version: {}", GAME_VERSION);
-    println!("Robot count: {}", ROBOT_COUNT);
+    println!("Minimum energy: {}", MIN_ENERGY);
+    println!("Robot version: {}", ROBOT_VERSION);
 
-    // Constants can be used in any scope
-    {
-        println!("Max energy in inner scope: {}", MAX_ENERGY);
-
-        // Local constant (uncommon but possible)
-        const LOCAL_MULTIPLIER: u32 = 2;
-        let boosted_energy = MAX_ENERGY * LOCAL_MULTIPLIER;
-        println!("Boosted energy: {}", boosted_energy);
-    }
-
-    // Constants vs variables
-    let current_energy = 750;
+    let current_energy = 75;
     let energy_percentage = (current_energy as f32 / MAX_ENERGY as f32) * 100.0;
-    println!("Energy percentage: {:.1}%", energy_percentage);
+    println!("Energy at {}%", energy_percentage);
 
-    // Math with constants
-    const DAMAGE_PER_HIT: u32 = 50;
-    let hits_to_deplete = MAX_ENERGY / DAMAGE_PER_HIT;
-    println!("Hits to deplete energy: {}", hits_to_deplete);
-
-    // String constants
-    println!("Running {} with {} robots", GAME_VERSION, ROBOT_COUNT);
-
-    println!("Constants and static variables completed!");
+    const SPEED_MULTIPLIER: f32 = 1.5;
+    println!("Speed multiplier: {}", SPEED_MULTIPLIER);
 }"#,
                 completion_indicators: vec![
-                    "Level 4: Constants and Static Variables",
-                    "Maximum energy: 1000",
-                    "Game version: 1.0.0",
-                    "Robot count: 42",
-                    "Max energy in inner scope: 1000",
-                    "Boosted energy: 2000",
-                    "Energy percentage: 75.0%",
-                    "Hits to deplete energy: 20",
-                    "Running 1.0.0 with 42 robots",
-                    "Constants and static variables completed!",
+                    "Maximum energy: 100", "Minimum energy: 0", "Robot version: 2.5", "Energy at 75%", "Speed multiplier: 1.5"
                 ],
-            },
+            }
         ],
     }
 }

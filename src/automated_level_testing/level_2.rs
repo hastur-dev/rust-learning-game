@@ -1,4 +1,5 @@
-// Level 2: Functions and Loops - Automated Test Solutions
+// Level 2: Level 2: Functions and Loops - Automated Test Solutions
+// Updated to match actual learning tests
 
 use super::level_1::{LevelTestConfig, TaskTest};
 
@@ -9,68 +10,41 @@ pub fn get_level_2_tests() -> LevelTestConfig {
         tasks: vec![
             TaskTest {
                 task_number: 1,
-                task_name: "Create Function with Print Statement",
+                task_name: "Function with Print Statement",
                 solution_code: r#"fn scan_level() {
     println!("Beginning level scan...");
-    println!("Initializing robot systems...");
 }
 
 fn main() {
-    println!("Level 2: Functions and Loops");
     scan_level();
-    println!("Scan function completed successfully!");
 }"#,
                 completion_indicators: vec![
-                    "Level 2: Functions and Loops",
-                    "Beginning level scan...",
-                    "Initializing robot systems...",
-                    "Scan function completed successfully!",
+                    "Beginning level scan..."
                 ],
             },
-
             TaskTest {
                 task_number: 2,
-                task_name: "Add Nested Loops for Grid Scanning with Robot Gamma",
+                task_name: "Nested Loops",
                 solution_code: r#"fn scan_level() {
     println!("Beginning level scan...");
-    println!("Robot Gamma (◆) cloning demonstration active");
 
     for y in 0..6 {
         for x in 0..6 {
-            let scan_result = format!("tile_{}_{}", x, y);
-            println!("Scanned ({}, {}): {}", x, y, scan_result);
-
-            // Robot Gamma demonstrates cloning at position (2,2)
-            if x == 2 && y == 2 {
-                println!("Robot Gamma detected at position (2,2) - cloning demo active");
-                let original_data = String::from("robot_data");
-                let cloned_data = original_data.clone();
-                println!("Robot Gamma cloned data: {} -> {}", original_data, cloned_data);
-            }
+            println!("Scanning position ({}, {})", x, y);
         }
     }
-
-    println!("Grid scan complete!");
 }
 
 fn main() {
-    println!("Level 2: Functions and Loops");
     scan_level();
-    println!("All scanning operations completed!");
 }"#,
                 completion_indicators: vec![
-                    "Level 2: Functions and Loops",
-                    "Beginning level scan...",
-                    "Scanned (0, 0): tile_0_0",
-                    "Scanned (5, 5): tile_5_5",
-                    "Grid scan complete!",
-                    "All scanning operations completed!",
+                    "Beginning level scan...", "Scanning position (0, 0)", "Scanning position (5, 5)"
                 ],
             },
-
             TaskTest {
                 task_number: 3,
-                task_name: "Create GridInfo Struct",
+                task_name: "Struct with Vec",
                 solution_code: r#"struct GridInfo {
     x: i32,
     y: i32,
@@ -79,61 +53,45 @@ fn main() {
 
 fn scan_level() {
     println!("Beginning level scan...");
-    let mut item_locations = Vec::new();
+
+    let mut found_items = Vec::new();
 
     for y in 0..6 {
         for x in 0..6 {
-            let scan_result = if x == 2 && y == 2 {
-                "energy_cell"
-            } else if x == 4 && y == 1 {
-                "repair_kit"
-            } else {
-                "empty"
+            let grid_info = GridInfo {
+                x: x,
+                y: y,
+                content: format!("tile_{}_{}", x, y),
             };
 
-            if scan_result != "empty" {
-                item_locations.push((x, y, scan_result.to_string()));
-                println!("Found item at ({}, {}): {}", x, y, scan_result);
+            if grid_info.content.contains("3") {
+                found_items.push(grid_info);
             }
         }
     }
 
-    println!("Scan complete! Found {} items", item_locations.len());
-
-    for (x, y, item) in item_locations {
-        println!("Item location: ({}, {}) contains {}", x, y, item);
-    }
+    println!("Found {} locations", found_items.len());
 }
 
 fn main() {
-    println!("Level 2: Functions and Loops");
     scan_level();
-    println!("Struct-based scanning completed!");
 }"#,
                 completion_indicators: vec![
-                    "Level 2: Functions and Loops",
-                    "Beginning level scan...",
-                    "Found item at (2, 2): energy_cell",
-                    "Found item at (4, 1): repair_kit",
-                    "Scan complete! Found 2 items",
-                    "Item location: (2, 2) contains energy_cell",
-                    "Item location: (4, 1) contains repair_kit",
-                    "Struct-based scanning completed!",
+                    "Beginning level scan...", "Found", "locations"
                 ],
             },
-
             TaskTest {
                 task_number: 4,
-                task_name: "Create Item Collection Function",
+                task_name: "Conditional Logic",
                 solution_code: r#"struct GridInfo {
     x: i32,
     y: i32,
     content: String,
 }
 
-fn grab_if_item(scan_result: &str, x: i32, y: i32) -> bool {
-    if scan_result != "empty" && scan_result != "wall" && scan_result != "goal" {
-        println!("Grabbed: {} at ({}, {})", scan_result, x, y);
+fn grab_if_item(scan_result: &str) -> bool {
+    if scan_result != "empty" && scan_result != "wall" {
+        println!("Grabbing: {}", scan_result);
         return true;
     }
     false
@@ -141,44 +99,39 @@ fn grab_if_item(scan_result: &str, x: i32, y: i32) -> bool {
 
 fn scan_level() {
     println!("Beginning level scan...");
-    let mut items_collected = 0;
+
+    let mut found_items = Vec::new();
+    let mut item_count = 0;
 
     for y in 0..6 {
         for x in 0..6 {
-            let scan_result = if x == 2 && y == 2 {
-                "energy_cell"
-            } else if x == 4 && y == 1 {
-                "repair_kit"
-            } else if x == 1 && y == 4 {
-                "upgrade_module"
-            } else {
-                "empty"
+            let grid_info = GridInfo {
+                x: x,
+                y: y,
+                content: format!("tile_{}_{}", x, y),
             };
 
-            if grab_if_item(scan_result, x, y) {
-                items_collected += 1;
+            if grab_if_item(&grid_info.content) {
+                item_count += 1;
+            }
+
+            if grid_info.content.contains("3") {
+                found_items.push(grid_info);
             }
         }
     }
 
-    println!("Scan complete! Collected {} items total", items_collected);
+    println!("Found {} locations", found_items.len());
+    println!("Grabbed {} items", item_count);
 }
 
 fn main() {
-    println!("Level 2: Functions and Loops");
     scan_level();
-    println!("Function-based item collection completed!");
 }"#,
                 completion_indicators: vec![
-                    "Level 2: Functions and Loops",
-                    "Beginning level scan...",
-                    "Grabbed: energy_cell at (2, 2)",
-                    "Grabbed: repair_kit at (4, 1)",
-                    "Grabbed: upgrade_module at (1, 4)",
-                    "Scan complete! Collected 3 items total",
-                    "Function-based item collection completed!",
+                    "Beginning level scan...", "Grabbing:", "Found", "locations", "Grabbed", "items"
                 ],
-            },
+            }
         ],
     }
 }
