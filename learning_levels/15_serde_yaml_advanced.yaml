@@ -1,0 +1,521 @@
+name: "Level 15: Serde YAML and Advanced Features"
+description: "Master YAML processing and advanced Serde features for robot configuration management"
+max_turns: 350
+width: 12
+height: 10
+start: [0, 0]
+
+# Larger grid with YAML configuration files and advanced data structures
+grid:
+  - ["S", ".", ".", ".", ".", "#", "#", ".", ".", ".", ".", "."]
+  - [".", "#", ".", "E", ".", "D", "D", ".", "E", "#", ".", "."]
+  - [".", ".", "#", ".", ".", ".", ".", "#", ".", ".", "#", "."]
+  - ["E", ".", ".", "#", ".", "E", "E", ".", "#", ".", ".", "."]
+  - [".", ".", "D", ".", "#", ".", ".", "#", ".", "D", ".", "."]
+  - [".", "#", ".", ".", ".", "#", "#", ".", ".", ".", "#", "."]
+  - ["E", ".", "#", "D", ".", ".", ".", ".", "D", "#", ".", "E"]
+  - [".", ".", ".", ".", "#", "E", "E", "#", ".", ".", ".", "."]
+  - [".", "#", "E", ".", ".", "D", "D", ".", ".", "E", "#", "."]
+  - [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "G"]
+
+items:
+  - name: "robot_settings_yaml"
+    pos: [3, 1]
+  - name: "mission_config_yaml"
+    pos: [8, 1]
+  - name: "sensor_calibration_yaml"
+    pos: [2, 4]
+  - name: "navigation_map_yaml"
+    pos: [9, 4]
+  - name: "system_defaults_yaml"
+    pos: [5, 6]
+  - name: "advanced_config_yaml"
+    pos: [6, 6]
+  - name: "environment_data_yaml"
+    pos: [2, 8]
+  - name: "performance_tuning_yaml"
+    pos: [9, 8]
+
+enemies:
+  - start_position: [3, 1]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [8, 1]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [0, 3]
+    movement_pattern: "vertical"
+  - start_position: [5, 3]
+    movement_pattern: "horizontal"
+  - start_position: [6, 3]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [11, 3]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [0, 6]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [11, 6]
+    movement_pattern: "vertical"
+  - start_position: [5, 7]
+    movement_pattern: "horizontal"
+  - start_position: [6, 7]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [2, 8]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [9, 8]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+
+doors:
+  - position: [5, 1]
+    initially_open: false
+  - position: [6, 1]
+    initially_open: false
+  - position: [2, 4]
+    initially_open: false
+  - position: [9, 4]
+    initially_open: false
+  - position: [3, 6]
+    initially_open: false
+  - position: [8, 6]
+    initially_open: false
+  - position: [5, 8]
+    initially_open: false
+  - position: [6, 8]
+    initially_open: false
+
+completion_flag: "goal"
+completion_message: |
+  🔧 **LEVEL 15: Serde YAML and Advanced Features**
+
+  Master YAML processing and advanced Serde features for sophisticated robot configuration!
+
+  **📋 TASK 1: Define Advanced Robot Configuration with YAML**
+  Create complex configuration structures that work with YAML format.
+
+  Required:
+  ```rust
+  use serde::{Serialize, Deserialize};
+  use std::collections::HashMap;
+
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  struct AdvancedRobotConfig {
+      metadata: ConfigMetadata,
+      hardware: HardwareConfig,
+      software: SoftwareConfig,
+      missions: Vec<MissionTemplate>,
+      environment_settings: HashMap<String, EnvironmentValue>,
+  }
+
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  struct ConfigMetadata {
+      version: String,
+      created_by: String,
+      last_modified: String,
+      description: Option<String>,
+  }
+
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  struct HardwareConfig {
+      sensors: Vec<SensorConfig>,
+      actuators: Vec<ActuatorConfig>,
+      power_management: PowerConfig,
+  }
+
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  struct SensorConfig {
+      name: String,
+      #[serde(rename = "type")]
+      sensor_type: String,
+      enabled: bool,
+      calibration: HashMap<String, f64>,
+  }
+  ```
+
+  **📋 TASK 2: Process YAML Configuration Files**
+  Load and parse YAML configuration data from collected items.
+
+  Required:
+  ```rust
+  fn process_robot_settings_yaml() -> Result<AdvancedRobotConfig, serde_yaml::Error> {
+      let yaml_data = r#"
+  metadata:
+    version: "2.1.0"
+    created_by: "Engineering Team"
+    last_modified: "2024-01-15"
+    description: "Advanced robot configuration for exploration missions"
+
+  hardware:
+    sensors:
+      - name: "primary_camera"
+        type: "optical"
+        enabled: true
+        calibration:
+          focal_length: 24.5
+          aperture: 2.8
+          iso_sensitivity: 800
+      - name: "lidar_scanner"
+        type: "laser"
+        enabled: true
+        calibration:
+          range_max: 100.0
+          accuracy: 0.05
+          scan_rate: 10.0
+
+    actuators:
+      - name: "main_drive"
+        type: "servo"
+        max_speed: 3.5
+        precision: 0.01
+      - name: "arm_joint_1"
+        type: "stepper"
+        max_speed: 1.2
+        precision: 0.001
+
+    power_management:
+      battery_capacity: 5000
+      low_power_threshold: 15
+      charging_rate: 2.5
+
+  missions:
+    - name: "exploration"
+      priority: "high"
+      estimated_duration: 1800
+    - name: "data_collection"
+      priority: "medium"
+      estimated_duration: 900
+
+  environment_settings:
+    temperature_unit: "celsius"
+    distance_unit: "meters"
+    coordinate_system: "cartesian"
+    logging_level: "info"
+      "#;
+
+      let config: AdvancedRobotConfig = serde_yaml::from_str(yaml_data)?;
+      println!("Loaded advanced config version: {}", config.metadata.version);
+
+      for sensor in &config.hardware.sensors {
+          println!("Sensor '{}' ({}): enabled = {}",
+                   sensor.name, sensor.sensor_type, sensor.enabled);
+      }
+
+      Ok(config)
+  }
+  ```
+
+  **📋 TASK 3: Use Serde Attributes for Custom Serialization**
+  Implement custom field naming, optional fields, and default values.
+
+  Required:
+  ```rust
+  #[derive(Serialize, Deserialize, Debug)]
+  struct MissionProfile {
+      #[serde(rename = "mission_id")]
+      id: String,
+
+      #[serde(default = "default_mission_name")]
+      name: String,
+
+      #[serde(skip_serializing_if = "Option::is_none")]
+      description: Option<String>,
+
+      #[serde(default)]
+      priority: Priority,
+
+      #[serde(with = "duration_seconds")]
+      estimated_time: std::time::Duration,
+
+      #[serde(flatten)]
+      metadata: MissionMetadata,
+  }
+
+  #[derive(Serialize, Deserialize, Debug, Default)]
+  enum Priority {
+      Low,
+      #[default]
+      Medium,
+      High,
+      Critical,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct MissionMetadata {
+      created_at: String,
+      tags: Vec<String>,
+  }
+
+  fn default_mission_name() -> String {
+      "Unnamed Mission".to_string()
+  }
+
+  mod duration_seconds {
+      use serde::{Deserialize, Deserializer, Serialize, Serializer};
+      use std::time::Duration;
+
+      pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+      where
+          S: Serializer,
+      {
+          duration.as_secs().serialize(serializer)
+      }
+
+      pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+      where
+          D: Deserializer<'de>,
+      {
+          let secs = u64::deserialize(deserializer)?;
+          Ok(Duration::from_secs(secs))
+      }
+  }
+  ```
+
+  **📋 TASK 4: Handle Enums and Complex Data Types**
+  Work with enums, nested structures, and polymorphic data.
+
+  Required:
+  ```rust
+  #[derive(Serialize, Deserialize, Debug)]
+  #[serde(tag = "type", content = "data")]
+  enum EnvironmentValue {
+      Text(String),
+      Number(f64),
+      Boolean(bool),
+      List(Vec<String>),
+      Coordinates { x: f64, y: f64, z: f64 },
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct NavigationMap {
+      name: String,
+      dimensions: (u32, u32),
+      waypoints: Vec<Waypoint>,
+      obstacles: Vec<Obstacle>,
+      safe_zones: Vec<Zone>,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct Waypoint {
+      id: String,
+      position: (f64, f64),
+      #[serde(default)]
+      waypoint_type: WaypointType,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  enum WaypointType {
+      Checkpoint,
+      RestArea,
+      DataCollection,
+      Charging,
+  }
+
+  impl Default for WaypointType {
+      fn default() -> Self {
+          WaypointType::Checkpoint
+      }
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  #[serde(untagged)]
+  enum Obstacle {
+      Rectangle { x: f64, y: f64, width: f64, height: f64 },
+      Circle { center: (f64, f64), radius: f64 },
+      Polygon { vertices: Vec<(f64, f64)> },
+  }
+
+  fn process_navigation_map_yaml() -> Result<NavigationMap, serde_yaml::Error> {
+      let yaml_data = r#"
+  name: "Laboratory Floor Map"
+  dimensions: [50, 30]
+  waypoints:
+    - id: "START"
+      position: [0.0, 0.0]
+      waypoint_type: "Checkpoint"
+    - id: "LAB_CENTER"
+      position: [25.0, 15.0]
+      waypoint_type: "DataCollection"
+    - id: "CHARGE_STATION"
+      position: [45.0, 5.0]
+      waypoint_type: "Charging"
+
+  obstacles:
+    - x: 10.0
+      y: 10.0
+      width: 5.0
+      height: 3.0
+    - center: [30.0, 20.0]
+      radius: 2.5
+    - vertices:
+        - [35.0, 10.0]
+        - [40.0, 12.0]
+        - [38.0, 18.0]
+        - [33.0, 16.0]
+
+  safe_zones:
+    - name: "Entry Zone"
+      bounds:
+        min: [0.0, 0.0]
+        max: [5.0, 5.0]
+      "#;
+
+      let map: NavigationMap = serde_yaml::from_str(yaml_data)?;
+      println!("Loaded map '{}' with {} waypoints", map.name, map.waypoints.len());
+      Ok(map)
+  }
+  ```
+
+  **📋 TASK 5: Create Comprehensive YAML Export System**
+  Implement a complete configuration management system with YAML export.
+
+  Required:
+  ```rust
+  #[derive(Serialize, Deserialize, Debug)]
+  struct RobotSystemConfig {
+      #[serde(flatten)]
+      basic_config: AdvancedRobotConfig,
+
+      navigation: NavigationMap,
+
+      mission_profiles: Vec<MissionProfile>,
+
+      performance_tuning: PerformanceTuning,
+
+      #[serde(skip_serializing_if = "Vec::is_empty", default)]
+      error_log: Vec<ErrorEntry>,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct PerformanceTuning {
+      cpu_priority: i32,
+      memory_limit_mb: u32,
+      cache_size: u32,
+      optimization_level: OptimizationLevel,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  enum OptimizationLevel {
+      #[serde(rename = "none")]
+      None,
+      #[serde(rename = "basic")]
+      Basic,
+      #[serde(rename = "aggressive")]
+      Aggressive,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct ErrorEntry {
+      timestamp: String,
+      level: String,
+      message: String,
+  }
+
+  fn export_complete_system_config() -> Result<String, Box<dyn std::error::Error>> {
+      let system_config = RobotSystemConfig {
+          basic_config: process_robot_settings_yaml()?,
+          navigation: process_navigation_map_yaml()?,
+          mission_profiles: vec![
+              MissionProfile {
+                  id: "EXPLORE_001".to_string(),
+                  name: "Deep Exploration".to_string(),
+                  description: Some("Comprehensive area exploration mission".to_string()),
+                  priority: Priority::High,
+                  estimated_time: std::time::Duration::from_secs(3600),
+                  metadata: MissionMetadata {
+                      created_at: "2024-01-15T10:00:00Z".to_string(),
+                      tags: vec!["exploration".to_string(), "mapping".to_string()],
+                  },
+              }
+          ],
+          performance_tuning: PerformanceTuning {
+              cpu_priority: 10,
+              memory_limit_mb: 512,
+              cache_size: 64,
+              optimization_level: OptimizationLevel::Aggressive,
+          },
+          error_log: vec![],
+      };
+
+      let yaml_output = serde_yaml::to_string(&system_config)?;
+
+      println!("=== COMPLETE SYSTEM CONFIGURATION ===");
+      println!("{}", yaml_output);
+
+      // Also save as JSON for comparison
+      let json_output = serde_json::to_string_pretty(&system_config)?;
+      println!("\n=== SAME CONFIG AS JSON ===");
+      println!("{}", json_output);
+
+      Ok(yaml_output)
+  }
+  ```
+
+  **🎯 Goal: Navigate through the complex environment, collect all YAML configuration items, and create a comprehensive system configuration!**
+
+achievement_message: "Outstanding! You've mastered YAML processing and advanced Serde features!"
+next_level_hint: "Next: Level 16 - Custom serialization and error handling techniques"
+
+starting_code: |
+  // Level 15: Serde YAML and Advanced Features
+  // Master YAML processing and advanced Serde capabilities
+
+  // Add these to your Cargo.toml dependencies:
+  // serde = { version = "1.0", features = ["derive"] }
+  // serde_yaml = "0.9"
+  // serde_json = "1.0"
+
+  use serde::{Serialize, Deserialize};
+  use std::collections::HashMap;
+  use std::time::Duration;
+
+  // TODO: Task 1 - Define advanced configuration structures
+  // #[derive(Serialize, Deserialize, Debug, Clone)]
+  // struct AdvancedRobotConfig {
+  //     metadata: ConfigMetadata,
+  //     hardware: HardwareConfig,
+  //     software: SoftwareConfig,
+  //     // Add other fields
+  // }
+
+  // TODO: Task 2 - YAML processing functions
+  // fn process_robot_settings_yaml() -> Result<AdvancedRobotConfig, serde_yaml::Error> {
+  //     // Process YAML configuration data
+  // }
+
+  // TODO: Task 3 - Custom serialization attributes
+  // #[derive(Serialize, Deserialize, Debug)]
+  // struct MissionProfile {
+  //     #[serde(rename = "mission_id")]
+  //     id: String,
+  //     // Add custom attributes
+  // }
+
+  // TODO: Task 4 - Enums and complex types
+  // #[derive(Serialize, Deserialize, Debug)]
+  // #[serde(tag = "type", content = "data")]
+  // enum EnvironmentValue {
+  //     // Define enum variants
+  // }
+
+  // TODO: Task 5 - Complete system configuration
+  // #[derive(Serialize, Deserialize, Debug)]
+  // struct RobotSystemConfig {
+  //     // Comprehensive configuration structure
+  // }
+
+  fn main() {
+      println!("Level 15: Serde YAML and Advanced Features");
+      println!("Process complex YAML configurations with advanced Serde!");
+
+      // TODO: Task 1 - Test advanced configuration structures
+      // TODO: Task 2 - Load YAML configuration files
+      // match process_robot_settings_yaml() {
+      //     Ok(config) => println!("Loaded advanced config: {:?}", config),
+      //     Err(e) => println!("Error loading YAML: {}", e),
+      // }
+
+      // TODO: Task 3 - Test custom serialization
+      // TODO: Task 4 - Process navigation maps and complex data
+      // TODO: Task 5 - Export complete system configuration
+      // export_complete_system_config().unwrap();
+
+      println!("Navigate and collect YAML configuration items!");
+  }
+
+rust_docs_url: "https://docs.rs/serde_yaml/latest/serde_yaml/"

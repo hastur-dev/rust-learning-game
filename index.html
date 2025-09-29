@@ -134,6 +134,36 @@
             <p>• Multiple levels with increasing difficulty</p>
         </div>
 
+        <!-- Game Layout: Left Half = Game Canvas, Right Half = Split between Function List and Code Editor -->
+        <div id="game-layout" style="display: none; width: 100%; height: 80vh; border: 2px solid #00ff41; border-radius: 10px; background: #1a1a1a;">
+            <div style="display: flex; height: 100%;">
+                <!-- Left Half: Game Canvas -->
+                <div style="width: 50%; padding: 10px;">
+                    <canvas id="canvas" style="width: 100%; height: 100%; border: 1px solid #00ff41; border-radius: 5px;"></canvas>
+                </div>
+                
+                <!-- Right Half: Split between Function List (top 1/4) and Code Editor (bottom 3/4) -->
+                <div style="width: 50%; display: flex; flex-direction: column; padding: 10px;">
+                    <!-- Function Definitions (1/4 of right side) -->
+                    <div style="height: 25%; border: 1px solid #666; border-radius: 5px; margin-bottom: 10px; padding: 10px; background: #2a2a2a; overflow-y: auto;">
+                        <h4 style="color: #00ff41; margin-top: 0;">🔧 Function Definitions</h4>
+                        <div id="function-list">
+                            <p style="color: #888;">Available functions will appear here...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- VSCode Monaco Editor (3/4 of right side) -->
+                    <div style="height: 75%; border: 1px solid #666; border-radius: 5px; background: #1e1e1e;">
+                        <div style="padding: 5px 10px; background: #2d2d30; border-bottom: 1px solid #666; color: #cccccc; font-size: 12px;">
+                            📝 Robot Code Editor (Rust)
+                            <button id="run-code" style="float: right; background: #0e639c; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer;">▶ Run Code</button>
+                        </div>
+                        <div id="monaco-editor" style="width: 100%; height: calc(100% - 35px);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="loading" class="loading">
             🔄 Loading game...
         </div>
@@ -144,8 +174,6 @@
             <br>
             <small>Make sure your browser supports WebAssembly and try refreshing the page.</small>
         </div>
-
-        <canvas id="canvas" style="display: none;"></canvas>
     </div>
 
     <div class="footer">
@@ -153,15 +181,94 @@
         <p>Move with WASD, scan with Space, grab with E</p>
     </div>
 
+    <!-- Monaco Editor (VS Code Editor) Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+
     <script type="module">
+        let editor;
+        let gameModule;
+
+        // Initialize Monaco Editor
+        function initMonacoEditor() {
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' }});
+            require(['vs/editor/editor.main'], function() {
+                editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                    value: `// Welcome to Rust Robot Programming Tutorial!
+// This VS Code-style editor will show level-specific starting code.
+// Each level will provide template code that you need to complete.
+
+// Level 1 Example - Hello World:
+// Your task: Make this program print "Hello, Rust!" to complete the level.
+// TODO: Uncomment the line below and fix it to print the correct message
+// println!("Hello, World!");
+
+// After printing, move to collect the goal:
+move("right");
+move("right");
+move("down");
+grab();
+
+// The starting code will be loaded automatically for each level!
+// Follow the TODO comments and instructions to learn Rust programming.`,
+                    language: 'rust',
+                    theme: 'vs-dark',
+                    fontSize: 14,
+                    automaticLayout: true,
+                    minimap: { enabled: true },
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                    lineNumbers: 'on',
+                    roundedSelection: false,
+                    scrollbar: {
+                        vertical: 'visible',
+                        horizontal: 'visible'
+                    }
+                });
+
+                // Update function list with available functions
+                updateFunctionList();
+                
+                console.log('Monaco Editor initialized successfully!');
+            });
+        }
+
+        // Update the function list
+        function updateFunctionList() {
+            const functionList = document.getElementById('function-list');
+            functionList.innerHTML = `
+                <div style="margin-bottom: 8px;"><strong style="color: #569cd6;">move(direction)</strong><br><small style="color: #888;">Move robot: "up", "down", "left", "right"</small></div>
+                <div style="margin-bottom: 8px;"><strong style="color: #569cd6;">grab()</strong><br><small style="color: #888;">Grab items and reveal tiles in range</small></div>
+                <div style="margin-bottom: 8px;"><strong style="color: #569cd6;">scan(direction)</strong><br><small style="color: #888;">Scan in a direction to reveal tiles</small></div>
+                <div style="margin-bottom: 8px;"><strong style="color: #4ec9b0;">println!("message")</strong><br><small style="color: #888;">Display output message in game</small></div>
+                <div style="margin-bottom: 8px;"><strong style="color: #ce9178;">// Comment</strong><br><small style="color: #888;">Add comments to your code</small></div>
+            `;
+        }
+
+        // Handle code execution
+        function executeRobotCode() {
+            if (editor && gameModule) {
+                const code = editor.getValue();
+                console.log('Executing robot code:', code);
+                // Here you would send the code to the game engine
+                // For now, we'll just log it
+                
+                // In a full implementation, you'd call a WASM function like:
+                // gameModule.execute_code(code);
+            }
+        }
+
         async function init() {
             try {
                 const { default: init, start_game } = await import('./pkg/robo_grid_explorer_gui.js');
                 await init();
+                gameModule = { start_game }; // Store reference for later use
                 
-                // Hide loading, show canvas
+                // Initialize Monaco Editor first
+                initMonacoEditor();
+                
+                // Hide loading, show game layout
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('canvas').style.display = 'block';
+                document.getElementById('game-layout').style.display = 'block';
                 
                 // Start the game
                 await start_game();
@@ -177,6 +284,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             init();
             
+            // Add event listener for run code button
+            document.getElementById('run-code').addEventListener('click', executeRobotCode);
+            
             // Make sure canvas can receive keyboard events
             const canvas = document.getElementById('canvas');
             canvas.addEventListener('click', () => {
@@ -185,12 +295,23 @@
             
             // Set canvas as focusable
             canvas.setAttribute('tabindex', '0');
+
+            // Add keyboard shortcut for running code (Ctrl+Enter)
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    executeRobotCode();
+                }
+            });
         });
 
-        // Prevent default behavior for game keys
+        // Prevent default behavior for game keys (but not in editor)
         document.addEventListener('keydown', (e) => {
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
-                e.preventDefault();
+            // Only prevent default if not typing in the Monaco editor
+            if (!document.getElementById('monaco-editor').contains(document.activeElement)) {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+                    e.preventDefault();
+                }
             }
         });
     </script>

@@ -1,0 +1,1177 @@
+warning: output filename collision.
+The bin target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)` has the same output filename as the lib target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)`.
+Colliding filename is: C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game\target\release\deps\robo_grid_explorer_gui.pdb
+The targets should have unique names.
+Consider changing their names to be unique or compiling them separately.
+This may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>.
+warning: output filename collision.
+The bin target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)` has the same output filename as the lib target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)`.
+Colliding filename is: C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game\target\release\robo_grid_explorer_gui.pdb
+The targets should have unique names.
+Consider changing their names to be unique or compiling them separately.
+This may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>.
+   Compiling robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)
+warning: unused import: `warn`
+ --> src\main.rs:4:17
+  |
+4 | use log::{info, warn, error, debug, trace};
+  |                 ^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `error`
+ --> src\gamestate\cursor.rs:4:24
+  |
+4 | use log::{debug, warn, error};
+  |                        ^^^^^
+
+warning: unused import: `game::*`
+ --> src\gamestate\mod.rs:8:9
+  |
+8 | pub use game::*;
+  |         ^^^^^^^
+
+warning: unused import: `crate::gamestate::types::EditorTab`
+ --> src\drawing\ui_drawing.rs:3:5
+  |
+3 | use crate::gamestate::types::EditorTab;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `editor_drawing::*`
+ --> src\drawing\mod.rs:7:9
+  |
+7 | pub use editor_drawing::*;
+  |         ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `warn`
+ --> src\coordinate_system.rs:1:25
+  |
+1 | use log::{debug, error, warn};
+  |                         ^^^^
+
+warning: unused imports: `debug` and `warn`
+ --> src\learning_tests\level17_task1_basic_logging.rs:4:18
+  |
+4 | use log::{trace, debug, info, warn, error};
+  |                  ^^^^^        ^^^^
+
+warning: unused import: `super::*`
+   --> src\learning_tests\level19_task2_bit_flags.rs:566:9
+    |
+566 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `super::*`
+   --> src\learning_tests\level19_task3_bit_manipulation.rs:736:9
+    |
+736 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `super::*`
+   --> src\learning_tests\level19_task4_binary_protocols.rs:901:9
+    |
+901 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `std::fmt`
+ --> src\learning_tests\level19_task5_compression.rs:4:5
+  |
+4 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `super::*`
+   --> src\learning_tests\level19_task5_compression.rs:921:9
+    |
+921 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `super::*`
+   --> src\learning_tests\level20_task2_closures.rs:429:9
+    |
+429 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `super::*`
+   --> src\learning_tests\level20_task3_function_composition.rs:560:9
+    |
+560 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `HashSet`
+ --> src\autocomplete\rust_intellisense.rs:2:33
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src\learning_level_solutions.rs:4:5
+  |
+4 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0562]: `impl Trait` is not allowed in the return type of `Fn` trait bounds
+   --> src\learning_tests\level20_task5_higher_order.rs:479:54
+    |
+479 |     pub fn curry2<A, B, C, F>(f: F) -> impl Fn(A) -> impl Fn(B) -> C
+    |                                                      ^^^^^^^^^^^^^^^
+    |
+    = note: `impl Trait` is only allowed in arguments and return types of functions and methods
+    = note: see issue #99697 <https://github.com/rust-lang/rust/issues/99697> for more information
+
+error[E0277]: expected a `Fn(T)` closure, found `()`
+   --> src\learning_tests\level20_task1_fn_traits.rs:478:54
+    |
+478 |         pub fn compose<F, G, T, U, V>(f: F, g: G) -> impl Fn(T) -> V
+    |                                                      ^^^^^^^^^^^^^^^ expected an `Fn(T)` closure, found `()`
+    |
+    = help: the trait `Fn(T)` is not implemented for `()`
+
+error[E0277]: expected a `Fn(&level20_task1_fn_traits::Robot)` closure, found `()`
+   --> src\learning_tests\level20_task1_fn_traits.rs:491:14
+    |
+491 |         ) -> impl Fn(&Robot) -> String
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^ expected an `Fn(&level20_task1_fn_traits::Robot)` closure, found `()`
+    |
+    = help: the trait `for<'a> Fn(&'a level20_task1_fn_traits::Robot)` is not implemented for `()`
+
+error[E0700]: hidden type for `impl FnMut() -> std::string::String` captures lifetime that does not appear in bounds
+   --> src\learning_tests\level20_task2_closures.rs:179:9
+    |
+174 |           immutable_data: &str,
+    |                           ---- hidden type `{closure@src\learning_tests\level20_task2_closures.rs:179:9: 179:16}` captures the anonymous lifetime defined here
+...
+177 |       ) -> impl FnMut() -> String {
+    |            ---------------------- opaque type defined here
+178 |           let captured_ref = immutable_data; // Captured by reference
+179 | /         move || {
+180 | |             mutable_data.push(owned_data.clone()); // Both moved into closure
+181 | |             format!("{}: {:?}", captured_ref, mutable_data)
+182 | |         }
+    | |_________^
+    |
+help: add a `use<...>` bound to explicitly capture `'_`
+    |
+177 |     ) -> impl FnMut() -> String + use<'_> {
+    |                                 +++++++++
+
+warning: variable does not need to be mutable
+   --> src\learning_tests\level20_task3_function_composition.rs:228:17
+    |
+228 |             let mut current_input = input;
+    |                 ----^^^^^^^^^^^^^
+    |                 |
+    |                 help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` on by default
+
+error[E0507]: cannot move out of `f`, a captured variable in an `Fn` closure
+   --> src\learning_tests\level20_task3_function_composition.rs:311:41
+    |
+305 |     pub fn lift2<T, U, V, F>(f: F) -> impl Fn(Maybe<T>, Maybe<U>) -> Maybe<V>
+    |                              - captured outer variable
+...
+309 |         move |maybe_t, maybe_u| {
+    |         ----------------------- captured by this `Fn` closure
+310 |             Self::apply(
+311 |                 Self::apply(Maybe::some(move |t| move |u| f(t, u)), maybe_t),
+    |                                         ^^^^^^^^          -
+    |                                         |                 |
+    |                                         |                 variable moved due to use in closure
+    |                                         |                 move occurs because `f` has type `F`, which does not implement the `Copy` trait
+    |                                         `f` is moved here
+    |
+help: if `F` implemented `Clone`, you could clone the value
+   --> src\learning_tests\level20_task3_function_composition.rs:305:27
+    |
+305 |     pub fn lift2<T, U, V, F>(f: F) -> impl Fn(Maybe<T>, Maybe<U>) -> Maybe<V>
+    |                           ^ consider constraining this type parameter with `Clone`
+...
+311 |                 Self::apply(Maybe::some(move |t| move |u| f(t, u)), maybe_t),
+    |                                                           - you could clone this value
+
+error[E0277]: expected a `Fn(B)` closure, found `()`
+   --> src\learning_tests\level20_task3_function_composition.rs:594:52
+    |
+594 |         pub fn partial1<A, B, C, F>(f: F, a: A) -> impl Fn(B) -> C
+    |                                                    ^^^^^^^^^^^^^^^ expected an `Fn(B)` closure, found `()`
+    |
+    = help: the trait `Fn(B)` is not implemented for `()`
+
+error[E0277]: expected a `Fn(A)` closure, found `()`
+   --> src\learning_tests\level20_task3_function_composition.rs:603:52
+    |
+603 |         pub fn partial2<A, B, C, F>(f: F, b: B) -> impl Fn(A) -> C
+    |                                                    ^^^^^^^^^^^^^^^ expected an `Fn(A)` closure, found `()`
+    |
+    = help: the trait `Fn(A)` is not implemented for `()`
+
+error[E0277]: expected a `FnMut(&str)` closure, found `()`
+   --> src\learning_tests\level20_task3_function_composition.rs:625:47
+    |
+625 |         pub fn memoize<F>(&mut self, f: F) -> impl FnMut(&str) -> T
+    |                                               ^^^^^^^^^^^^^^^^^^^^^ expected an `FnMut(&str)` closure, found `()`
+    |
+    = help: the trait `for<'a> FnMut(&'a str)` is not implemented for `()`
+
+error[E0277]: expected a `Fn(T)` closure, found `()`
+   --> src\learning_tests\level20_task3_function_composition.rs:639:71
+    |
+639 |         pub fn compose_all<T>(functions: Vec<Box<dyn Fn(T) -> T>>) -> impl Fn(T) -> T
+    |                                                                       ^^^^^^^^^^^^^^^ expected an `Fn(T)` closure, found `()`
+    |
+    = help: the trait `Fn(T)` is not implemented for `()`
+
+error[E0277]: expected a `Fn(T)` closure, found `()`
+   --> src\learning_tests\level20_task3_function_composition.rs:649:14
+    |
+649 |         ) -> impl Fn(T) -> Result<T, E>
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an `Fn(T)` closure, found `()`
+    |
+    = help: the trait `Fn(T)` is not implemented for `()`
+
+warning: value captured by `last_event_time` is never read
+   --> src\learning_tests\level20_task4_callbacks.rs:300:13
+    |
+300 |             last_event_time = event.timestamp;
+    |             ^^^^^^^^^^^^^^^
+    |
+    = help: did you mean to capture by reference instead?
+    = note: `#[warn(unused_assignments)]` on by default
+
+error[E0282]: type annotations needed for `HashMap<_, _>`
+   --> src\learning_tests\level20_task5_higher_order.rs:262:13
+    |
+262 |         let mut cache = HashMap::new();
+    |             ^^^^^^^^^
+...
+265 |                 cached.clone()
+    |                        ----- type must be known at this point
+    |
+help: consider giving `cache` an explicit type, where the type for type parameter `V` is specified
+    |
+262 |         let mut cache: HashMap<K, V> = HashMap::new();
+    |                      +++++++++++++++
+
+error[E0277]: expected a `Fn(T)` closure, found `()`
+   --> src\learning_tests\level20_task5_higher_order.rs:729:72
+    |
+729 |         pub fn compose_many<T>(functions: Vec<Box<dyn Fn(T) -> T>>) -> impl Fn(T) -> T
+    |                                                                        ^^^^^^^^^^^^^^^ expected an `Fn(T)` closure, found `()`
+    |
+    = help: the trait `Fn(T)` is not implemented for `()`
+
+error[E0277]: expected a `Fn(T)` closure, found `()`
+   --> src\learning_tests\level20_task5_higher_order.rs:737:51
+    |
+737 |         pub fn pipe<T, U, V, F, G>(f: F, g: G) -> impl Fn(T) -> V
+    |                                                   ^^^^^^^^^^^^^^^ expected an `Fn(T)` closure, found `()`
+    |
+    = help: the trait `Fn(T)` is not implemented for `()`
+
+warning: value assigned to `show_comprehensive_testing` is never read
+  --> src\editor_test_mode.rs:88:13
+   |
+88 |             show_comprehensive_testing = !show_comprehensive_testing;
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: maybe it is overwritten before being read?
+
+warning: unused variable: `alt_held`
+   --> src\hotkey_test_mode.rs:294:13
+    |
+294 |         let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_alt_held`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: value assigned to `code_modified` is never read
+   --> src\hotkey_test_mode.rs:411:29
+    |
+411 | ...                   code_modified = true;
+    |                       ^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+   --> src\hotkey_test_mode.rs:423:21
+    |
+423 |                     code_modified = true;
+    |                     ^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+   --> src\hotkey_test_mode.rs:442:21
+    |
+442 |                     code_modified = true;
+    |                     ^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `loader`
+    --> src\main.rs:1580:9
+     |
+1580 |     let loader = ProgressiveLoader::new();
+     |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_loader`
+
+warning: variable `current_char_pressed` is assigned to, but never used
+    --> src\main.rs:1658:21
+     |
+1658 |             let mut current_char_pressed = None;
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: consider using `_current_char_pressed` instead
+
+warning: value assigned to `current_char_pressed` is never read
+    --> src\main.rs:1661:21
+     |
+1661 |                     current_char_pressed = Some(character);
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1665:25
+     |
+1665 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1678:21
+     |
+1678 |                     code_modified = true;
+     |                     ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1691:25
+     |
+1691 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1713:21
+     |
+1713 |                     code_modified = true;
+     |                     ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: unused variable: `editor_x`
+    --> src\main.rs:1776:13
+     |
+1776 |         let editor_x = 50.0;
+     |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_x`
+
+warning: unused variable: `editor_y`
+    --> src\main.rs:1777:13
+     |
+1777 |         let editor_y = 100.0;
+     |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_y`
+
+warning: unused variable: `editor_width`
+    --> src\main.rs:1778:13
+     |
+1778 |         let editor_width = screen_width() - 100.0;
+     |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_width`
+
+warning: unused variable: `editor_height`
+    --> src\main.rs:1779:13
+     |
+1779 |         let editor_height = screen_height() - 150.0;
+     |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_height`
+
+warning: variable does not need to be mutable
+    --> src\main.rs:1581:9
+     |
+1581 |     let mut rng = StdRng::seed_from_u64(0xC0FFEE);
+     |         ----^^^
+     |         |
+     |         help: remove this `mut`
+
+warning: unused variable: `loader`
+    --> src\main.rs:1803:9
+     |
+1803 |     let loader = ProgressiveLoader::new();
+     |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_loader`
+
+warning: variable `current_char_pressed` is assigned to, but never used
+    --> src\main.rs:1887:21
+     |
+1887 |             let mut current_char_pressed = None;
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: consider using `_current_char_pressed` instead
+
+warning: value assigned to `current_char_pressed` is never read
+    --> src\main.rs:1890:21
+     |
+1890 |                     current_char_pressed = Some(character);
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1894:25
+     |
+1894 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1907:21
+     |
+1907 |                     code_modified = true;
+     |                     ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1920:25
+     |
+1920 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1950:25
+     |
+1950 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+    --> src\main.rs:1804:9
+     |
+1804 |     let mut rng = StdRng::seed_from_u64(0xDEADBEEF); // Different seed for variety
+     |         ----^^^
+     |         |
+     |         help: remove this `mut`
+
+warning: unused variable: `level_file`
+    --> src\main.rs:2438:13
+     |
+2438 |         let level_file = format!("levels/{:02}_*.yaml", config.level_idx + 1);
+     |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_level_file`
+
+warning: unused variable: `execution_result`
+    --> src\main.rs:2586:9
+     |
+2586 |     let execution_result = execute_test_code(&mut game, solution).await;
+     |         ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_execution_result`
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3151:37
+     |
+3151 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3168:37
+     |
+3168 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3184:37
+     |
+3184 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3217:33
+     |
+3217 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3235:37
+     |
+3235 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+error[E0614]: type `u8` cannot be dereferenced
+   --> src\learning_tests\level19_task3_bit_manipulation.rs:524:60
+    |
+524 |         let compressed = (temp_compressed as u32) << 16 | (*hum as u32) << 8 | (*light as u32);
+    |                                                            ^^^^ can't be dereferenced
+
+error[E0614]: type `u8` cannot be dereferenced
+   --> src\learning_tests\level19_task3_bit_manipulation.rs:524:81
+    |
+524 |         let compressed = (temp_compressed as u32) << 16 | (*hum as u32) << 8 | (*light as u32);
+    |                                                                                 ^^^^^^ can't be dereferenced
+
+error[E0308]: mismatched types
+   --> src\learning_tests\level19_task4_binary_protocols.rs:920:23
+    |
+920 |             ("Light", 180u8, "Compressed"),
+    |                       ^^^^^ expected `f32`, found `u8`
+    |
+help: you can convert a `u8` to an `f32`, producing the floating point representation of the integer
+    |
+920 |             ("Light", 180u8.into(), "Compressed"),
+    |                            +++++++
+
+error[E0308]: mismatched types
+   --> src\learning_tests\level19_task4_binary_protocols.rs:921:24
+    |
+921 |             ("Motion", 1u8, "Delta"),
+    |                        ^^^ expected `f32`, found `u8`
+    |
+help: you can convert a `u8` to an `f32`, producing the floating point representation of the integer
+    |
+921 |             ("Motion", 1u8.into(), "Delta"),
+    |                           +++++++
+
+error[E0282]: type annotations needed for `Vec<_>`
+   --> src\learning_tests\level19_task5_compression.rs:451:13
+    |
+451 |         let mut compressed = Vec::new();
+    |             ^^^^^^^^^^^^^^   ---------- type must be known at this point
+    |
+help: consider giving `compressed` an explicit type, where the type for type parameter `T` is specified
+    |
+451 |         let mut compressed: Vec<T> = Vec::new();
+    |                           ++++++++
+
+warning: unused variable: `old_cursor`
+   --> src\gamestate\cursor.rs:578:17
+    |
+578 |             let old_cursor = self.cursor_position;
+    |                 ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_old_cursor`
+
+warning: unused variable: `start_pos`
+   --> src\gamestate\game.rs:614:21
+    |
+614 |                 let start_pos = self.cursor_position - current_word.len();
+    |                     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_pos`
+
+warning: unused variable: `button_spacing`
+   --> src\menu.rs:549:13
+    |
+549 |         let button_spacing = scale_size(45.0);
+    |             ^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_button_spacing`
+
+warning: unused variable: `scale`
+   --> src\popup.rs:354:13
+    |
+354 |         let scale = ScaledMeasurements::new();
+    |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `font_size`
+   --> src\drawing\editor_drawing.rs:104:9
+    |
+104 |     let font_size = game.get_cached_font_size();
+    |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_font_size`
+
+warning: unused variable: `chars_per_line`
+   --> src\drawing\editor_drawing.rs:119:9
+    |
+119 |     let chars_per_line = ((editor_width - scale_size(60.0)) / sample_char_width) as usize; // Account for line numbers
+    |         ^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_chars_per_line`
+
+warning: unused variable: `grid_info`
+   --> src\learning_tests\level2_task3_struct.rs:156:17
+    |
+156 |             let grid_info = GridInfo {
+    |                 ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_grid_info`
+
+warning: unused variable: `immutable_var`
+   --> src\learning_tests\level4_task5_constants.rs:157:9
+    |
+157 |     let immutable_var = 100;
+    |         ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_immutable_var`
+
+warning: variable does not need to be mutable
+   --> src\learning_tests\level19_task1_basic_bitwise.rs:403:13
+    |
+403 |         let mut status = 0b01010101u8;
+    |             ----^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: unused variable: `action`
+   --> src\learning_tests\level20_task1_fn_traits.rs:380:23
+    |
+380 |         pub fn new<F>(action: F) -> Self
+    |                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_action`
+
+warning: unused variable: `robot`
+   --> src\learning_tests\level20_task1_fn_traits.rs:388:30
+    |
+388 |         pub fn execute(self, robot: &mut Robot) -> String {
+    |                              ^^^^^ help: if this is intentional, prefix it with an underscore: `_robot`
+
+warning: unused variable: `behavior`
+   --> src\learning_tests\level20_task1_fn_traits.rs:405:43
+    |
+405 |         pub fn add_behavior<F>(&mut self, behavior: F)
+    |                                           ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_behavior`
+
+warning: unused variable: `robot`
+   --> src\learning_tests\level20_task1_fn_traits.rs:413:34
+    |
+413 |         pub fn update(&mut self, robot: &mut Robot) {
+    |                                  ^^^^^ help: if this is intentional, prefix it with an underscore: `_robot`
+
+warning: unused variable: `robots`
+   --> src\learning_tests\level20_task1_fn_traits.rs:423:29
+    |
+423 |         pub fn filter_by<F>(robots: &[Robot], predicate: F) -> Vec<&Robot>
+    |                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_robots`
+
+warning: unused variable: `predicate`
+   --> src\learning_tests\level20_task1_fn_traits.rs:423:47
+    |
+423 |         pub fn filter_by<F>(robots: &[Robot], predicate: F) -> Vec<&Robot>
+    |                                               ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_predicate`
+
+warning: unused variable: `robots`
+   --> src\learning_tests\level20_task1_fn_traits.rs:431:30
+    |
+431 |         pub fn find_first<F>(robots: &[Robot], predicate: F) -> Option<&Robot>
+    |                              ^^^^^^ help: if this is intentional, prefix it with an underscore: `_robots`
+
+warning: unused variable: `predicate`
+   --> src\learning_tests\level20_task1_fn_traits.rs:431:48
+    |
+431 |         pub fn find_first<F>(robots: &[Robot], predicate: F) -> Option<&Robot>
+    |                                                ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_predicate`
+
+warning: unused variable: `robots`
+   --> src\learning_tests\level20_task1_fn_traits.rs:439:32
+    |
+439 |         pub fn transform<F, T>(robots: &[Robot], transformer: F) -> Vec<T>
+    |                                ^^^^^^ help: if this is intentional, prefix it with an underscore: `_robots`
+
+warning: unused variable: `transformer`
+   --> src\learning_tests\level20_task1_fn_traits.rs:439:50
+    |
+439 |         pub fn transform<F, T>(robots: &[Robot], transformer: F) -> Vec<T>
+    |                                                  ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_transformer`
+
+warning: unused variable: `robots`
+   --> src\learning_tests\level20_task1_fn_traits.rs:460:49
+    |
+460 |         pub fn process_with_state<F>(&mut self, robots: &mut [Robot], mut processor: F)
+    |                                                 ^^^^^^ help: if this is intentional, prefix it with an underscore: `_robots`
+
+warning: unused variable: `processor`
+   --> src\learning_tests\level20_task1_fn_traits.rs:460:75
+    |
+460 |         pub fn process_with_state<F>(&mut self, robots: &mut [Robot], mut processor: F)
+    |                                                                           ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_processor`
+
+warning: variable does not need to be mutable
+   --> src\learning_tests\level20_task1_fn_traits.rs:460:71
+    |
+460 |         pub fn process_with_state<F>(&mut self, robots: &mut [Robot], mut processor: F)
+    |                                                                       ----^^^^^^^^^
+    |                                                                       |
+    |                                                                       help: remove this `mut`
+
+error: implementation of `Fn` is not general enough
+   --> src\learning_tests\level20_task2_closures.rs:267:49
+    |
+267 |         strategies.insert("direct".to_string(), Box::new(|_robot, x, y| (x, y)) as Box<dyn Fn(&Robot, f64, f64) -> (f64, f64)>);
+    |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ implementation of `Fn` is not general enough
+    |
+    = note: closure with signature `fn(&'2 level20_task2_closures::Robot, f64, f64) -> (f64, f64)` must implement `Fn<(&'1 level20_task2_closures::Robot, f64, f64)>`, for any lifetime `'1`...
+    = note: ...but it actually implements `Fn<(&'2 level20_task2_closures::Robot, f64, f64)>`, for some specific lifetime `'2`
+
+error: implementation of `FnOnce` is not general enough
+   --> src\learning_tests\level20_task2_closures.rs:267:49
+    |
+267 |         strategies.insert("direct".to_string(), Box::new(|_robot, x, y| (x, y)) as Box<dyn Fn(&Robot, f64, f64) -> (f64, f64)>);
+    |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ implementation of `FnOnce` is not general enough
+    |
+    = note: closure with signature `fn(&'2 level20_task2_closures::Robot, f64, f64) -> (f64, f64)` must implement `FnOnce<(&'1 level20_task2_closures::Robot, f64, f64)>`, for any lifetime `'1`...
+    = note: ...but it actually implements `FnOnce<(&'2 level20_task2_closures::Robot, f64, f64)>`, for some specific lifetime `'2`
+
+warning: unused variable: `event_type`
+   --> src\learning_tests\level20_task2_closures.rs:442:40
+    |
+442 |         pub fn subscribe<F>(&mut self, event_type: String, handler: F)
+    |                                        ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_event_type`
+
+warning: unused variable: `handler`
+   --> src\learning_tests\level20_task2_closures.rs:442:60
+    |
+442 |         pub fn subscribe<F>(&mut self, event_type: String, handler: F)
+    |                                                            ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_handler`
+
+warning: unused variable: `event_type`
+   --> src\learning_tests\level20_task2_closures.rs:450:28
+    |
+450 |         pub fn emit(&self, event_type: &str, data: &str) {
+    |                            ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_event_type`
+
+warning: unused variable: `data`
+   --> src\learning_tests\level20_task2_closures.rs:450:46
+    |
+450 |         pub fn emit(&self, event_type: &str, data: &str) {
+    |                                              ^^^^ help: if this is intentional, prefix it with an underscore: `_data`
+
+warning: unused variable: `middleware`
+   --> src\learning_tests\level20_task2_closures.rs:467:34
+    |
+467 |         pub fn add<F>(&mut self, middleware: F)
+    |                                  ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_middleware`
+
+warning: unused variable: `input`
+   --> src\learning_tests\level20_task2_closures.rs:475:31
+    |
+475 |         pub fn process(&self, input: &str) -> String {
+    |                               ^^^^^ help: if this is intentional, prefix it with an underscore: `_input`
+
+warning: unused variable: `key`
+   --> src\learning_tests\level20_task2_closures.rs:493:45
+    |
+493 |         pub fn get_or_compute<F>(&mut self, key: &str, compute: F) -> T
+    |                                             ^^^ help: if this is intentional, prefix it with an underscore: `_key`
+
+warning: unused variable: `compute`
+   --> src\learning_tests\level20_task2_closures.rs:493:56
+    |
+493 |         pub fn get_or_compute<F>(&mut self, key: &str, compute: F) -> T
+    |                                                        ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_compute`
+
+warning: unused variable: `policy`
+   --> src\learning_tests\level20_task2_closures.rs:501:50
+    |
+501 |         pub fn set_eviction_policy<F>(&mut self, policy: F)
+    |                                                  ^^^^^^ help: if this is intentional, prefix it with an underscore: `_policy`
+
+warning: unused variable: `initial`
+   --> src\learning_tests\level20_task2_closures.rs:516:20
+    |
+516 |         pub fn new(initial: T) -> Self {
+    |                    ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_initial`
+
+warning: unused variable: `func`
+   --> src\learning_tests\level20_task2_closures.rs:521:32
+    |
+521 |         pub fn map<U, F>(self, func: F) -> Pipeline<U>
+    |                                ^^^^ help: if this is intentional, prefix it with an underscore: `_func`
+
+warning: unused variable: `predicate`
+   --> src\learning_tests\level20_task2_closures.rs:529:32
+    |
+529 |         pub fn filter<F>(self, predicate: F) -> Option<Pipeline<T>>
+    |                                ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_predicate`
+
+warning: unused variable: `initial_state`
+   --> src\learning_tests\level20_task2_closures.rs:550:20
+    |
+550 |         pub fn new(initial_state: S) -> Self {
+    |                    ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_initial_state`
+
+warning: unused variable: `from`
+   --> src\learning_tests\level20_task2_closures.rs:555:45
+    |
+555 |         pub fn add_transition<F>(&mut self, from: S, to: S, condition: F)
+    |                                             ^^^^ help: if this is intentional, prefix it with an underscore: `_from`
+
+warning: unused variable: `to`
+   --> src\learning_tests\level20_task2_closures.rs:555:54
+    |
+555 |         pub fn add_transition<F>(&mut self, from: S, to: S, condition: F)
+    |                                                      ^^ help: if this is intentional, prefix it with an underscore: `_to`
+
+warning: unused variable: `condition`
+   --> src\learning_tests\level20_task2_closures.rs:555:61
+    |
+555 |         pub fn add_transition<F>(&mut self, from: S, to: S, condition: F)
+    |                                                             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_condition`
+
+warning: unused variable: `f`
+   --> src\learning_tests\level20_task3_function_composition.rs:566:35
+    |
+566 |         pub fn curry2<A, B, C, F>(f: F) -> Box<dyn Fn(A) -> Box<dyn Fn(B) -> C>>
+    |                                   ^ help: if this is intentional, prefix it with an underscore: `_f`
+
+warning: unused variable: `f`
+   --> src\learning_tests\level20_task3_function_composition.rs:577:38
+    |
+577 |         pub fn curry3<A, B, C, D, F>(f: F) -> Box<dyn Fn(A) -> Box<dyn Fn(B) -> Box<dyn Fn(C) -> D>>>
+    |                                      ^ help: if this is intentional, prefix it with an underscore: `_f`
+
+warning: unused variable: `getter`
+   --> src\learning_tests\level20_task3_function_composition.rs:665:27
+    |
+665 |         pub fn new<G, St>(getter: G, setter: St) -> Self
+    |                           ^^^^^^ help: if this is intentional, prefix it with an underscore: `_getter`
+
+warning: unused variable: `setter`
+   --> src\learning_tests\level20_task3_function_composition.rs:665:38
+    |
+665 |         pub fn new<G, St>(getter: G, setter: St) -> Self
+    |                                      ^^^^^^ help: if this is intentional, prefix it with an underscore: `_setter`
+
+warning: unused variable: `source`
+   --> src\learning_tests\level20_task3_function_composition.rs:674:28
+    |
+674 |         pub fn view(&self, source: &S) -> A
+    |                            ^^^^^^ help: if this is intentional, prefix it with an underscore: `_source`
+
+warning: unused variable: `source`
+   --> src\learning_tests\level20_task3_function_composition.rs:682:27
+    |
+682 |         pub fn set(&self, source: S, value: A) -> S {
+    |                           ^^^^^^ help: if this is intentional, prefix it with an underscore: `_source`
+
+warning: unused variable: `value`
+   --> src\learning_tests\level20_task3_function_composition.rs:682:38
+    |
+682 |         pub fn set(&self, source: S, value: A) -> S {
+    |                                      ^^^^^ help: if this is intentional, prefix it with an underscore: `_value`
+
+warning: unused variable: `source`
+   --> src\learning_tests\level20_task3_function_composition.rs:687:31
+    |
+687 |         pub fn over<F>(&self, source: S, f: F) -> S
+    |                               ^^^^^^ help: if this is intentional, prefix it with an underscore: `_source`
+
+warning: unused variable: `f`
+   --> src\learning_tests\level20_task3_function_composition.rs:687:42
+    |
+687 |         pub fn over<F>(&self, source: S, f: F) -> S
+    |                                          ^ help: if this is intentional, prefix it with an underscore: `_f`
+
+error[E0310]: the parameter type `F2` may not live long enough
+   --> src\learning_tests\level20_task4_callbacks.rs:476:20
+    |
+476 |           operation1(Box::new(move |result1| {
+    |  ____________________^
+477 | |             operation2(result1, Box::new(final_callback));
+478 | |         }));
+    | |          ^
+    | |          |
+    | |__________the parameter type `F2` must be valid for the static lifetime...
+    |            ...so that the type `F2` will meet its required lifetime bounds
+    |
+help: consider adding an explicit lifetime bound
+    |
+473 |         F2: FnOnce(i32, Box<dyn FnOnce(String)>) + 'static,
+    |                                                  +++++++++
+
+error[E0310]: the parameter type `F3` may not live long enough
+   --> src\learning_tests\level20_task4_callbacks.rs:476:20
+    |
+476 |           operation1(Box::new(move |result1| {
+    |  ____________________^
+477 | |             operation2(result1, Box::new(final_callback));
+478 | |         }));
+    | |          ^
+    | |          |
+    | |__________the parameter type `F3` must be valid for the static lifetime...
+    |            ...so that the type `F3` will meet its required lifetime bounds
+    |
+help: consider adding an explicit lifetime bound
+    |
+474 |         F3: FnOnce(String) + 'static,
+    |                            +++++++++
+
+error[E0310]: the parameter type `F3` may not live long enough
+   --> src\learning_tests\level20_task4_callbacks.rs:477:33
+    |
+477 |             operation2(result1, Box::new(final_callback));
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^
+    |                                 |
+    |                                 the parameter type `F3` must be valid for the static lifetime...
+    |                                 ...so that the type `F3` will meet its required lifetime bounds
+    |
+help: consider adding an explicit lifetime bound
+    |
+474 |         F3: FnOnce(String) + 'static,
+    |                            +++++++++
+
+warning: unused variable: `priority`
+   --> src\learning_tests\level20_task4_callbacks.rs:743:47
+    |
+743 |         pub fn register_handler<F>(&mut self, priority: u32, handler: F)
+    |                                               ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_priority`
+
+warning: unused variable: `handler`
+   --> src\learning_tests\level20_task4_callbacks.rs:743:62
+    |
+743 |         pub fn register_handler<F>(&mut self, priority: u32, handler: F)
+    |                                                              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_handler`
+
+warning: unused variable: `event`
+   --> src\learning_tests\level20_task4_callbacks.rs:751:28
+    |
+751 |         pub fn emit(&self, event: RobotEvent) {
+    |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_event`
+
+warning: unused variable: `middleware`
+   --> src\learning_tests\level20_task4_callbacks.rs:768:45
+    |
+768 |         pub fn use_middleware<F>(&mut self, middleware: F)
+    |                                             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_middleware`
+
+warning: unused variable: `event`
+   --> src\learning_tests\level20_task4_callbacks.rs:776:35
+    |
+776 |         pub fn process(&self, mut event: RobotEvent) -> RobotEvent {
+    |                                   ^^^^^ help: if this is intentional, prefix it with an underscore: `_event`
+
+warning: variable does not need to be mutable
+   --> src\learning_tests\level20_task4_callbacks.rs:776:31
+    |
+776 |         pub fn process(&self, mut event: RobotEvent) -> RobotEvent {
+    |                               ----^^^^^
+    |                               |
+    |                               help: remove this `mut`
+
+warning: unused variable: `handler`
+   --> src\learning_tests\level20_task4_callbacks.rs:795:40
+    |
+795 |         pub fn subscribe<F>(&mut self, handler: F) -> SubscriptionId
+    |                                        ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_handler`
+
+warning: unused variable: `id`
+   --> src\learning_tests\level20_task4_callbacks.rs:803:39
+    |
+803 |         pub fn unsubscribe(&mut self, id: SubscriptionId) -> bool {
+    |                                       ^^ help: if this is intentional, prefix it with an underscore: `_id`
+
+warning: unused variable: `event`
+   --> src\learning_tests\level20_task4_callbacks.rs:808:28
+    |
+808 |         pub fn emit(&self, event: &RobotEvent) {
+    |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_event`
+
+warning: unused variable: `callback`
+   --> src\learning_tests\level20_task4_callbacks.rs:826:43
+    |
+826 |         pub fn add_callback<F>(&mut self, callback: F)
+    |                                           ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_callback`
+
+warning: unused variable: `input`
+   --> src\learning_tests\level20_task4_callbacks.rs:834:31
+    |
+834 |         pub fn execute(&self, input: &T) -> Vec<String> {
+    |                               ^^^^^ help: if this is intentional, prefix it with an underscore: `_input`
+
+warning: unused variable: `event`
+   --> src\learning_tests\level20_task4_callbacks.rs:851:40
+    |
+851 |         pub fn record_event(&mut self, event: RobotEvent) {
+    |                                        ^^^^^ help: if this is intentional, prefix it with an underscore: `_event`
+
+warning: unused variable: `handler`
+   --> src\learning_tests\level20_task4_callbacks.rs:856:40
+    |
+856 |         pub fn replay_events<F>(&self, handler: F)
+    |                                        ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_handler`
+
+warning: unused variable: `predicate`
+   --> src\learning_tests\level20_task4_callbacks.rs:864:45
+    |
+864 |         pub fn replay_filtered<F, P>(&self, predicate: P, handler: F)
+    |                                             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_predicate`
+
+warning: unused variable: `handler`
+   --> src\learning_tests\level20_task4_callbacks.rs:864:59
+    |
+864 |         pub fn replay_filtered<F, P>(&self, predicate: P, handler: F)
+    |                                                           ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_handler`
+
+warning: unused variable: `mapper`
+   --> src\learning_tests\level20_task5_higher_order.rs:700:32
+    |
+700 |         pub fn map<U, F>(self, mapper: F) -> StreamProcessor<U>
+    |                                ^^^^^^ help: if this is intentional, prefix it with an underscore: `_mapper`
+
+warning: unused variable: `predicate`
+   --> src\learning_tests\level20_task5_higher_order.rs:708:32
+    |
+708 |         pub fn filter<F>(self, predicate: F) -> StreamProcessor<T>
+    |                                ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_predicate`
+
+warning: unused variable: `initial`
+   --> src\learning_tests\level20_task5_higher_order.rs:716:33
+    |
+716 |         pub fn fold<U, F>(self, initial: U, folder: F) -> U
+    |                                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_initial`
+
+warning: unused variable: `folder`
+   --> src\learning_tests\level20_task5_higher_order.rs:716:45
+    |
+716 |         pub fn fold<U, F>(self, initial: U, folder: F) -> U
+    |                                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_folder`
+
+warning: unused variable: `modifier`
+   --> src\learning_tests\level20_task5_higher_order.rs:758:39
+    |
+758 |         pub fn with_modifier<F>(self, modifier: F) -> Self
+    |                                       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_modifier`
+
+warning: unused variable: `base_robot`
+   --> src\learning_tests\level20_task5_higher_order.rs:766:28
+    |
+766 |         pub fn build(self, base_robot: Robot) -> Robot {
+    |                            ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_base_robot`
+
+warning: unused variable: `initial_state`
+   --> src\learning_tests\level20_task5_higher_order.rs:779:20
+    |
+779 |         pub fn new(initial_state: S) -> Self {
+    |                    ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_initial_state`
+
+warning: unused variable: `transition`
+   --> src\learning_tests\level20_task5_higher_order.rs:784:45
+    |
+784 |         pub fn add_transition<F>(&mut self, transition: F)
+    |                                             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_transition`
+
+warning: unused variable: `parse_fn`
+   --> src\learning_tests\level20_task5_higher_order.rs:810:23
+    |
+810 |         pub fn new<F>(parse_fn: F) -> Self
+    |                       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_parse_fn`
+
+warning: unused variable: `mapper`
+   --> src\learning_tests\level20_task5_higher_order.rs:818:32
+    |
+818 |         pub fn map<U, F>(self, mapper: F) -> Parser<U>
+    |                                ^^^^^^ help: if this is intentional, prefix it with an underscore: `_mapper`
+
+warning: unused variable: `next`
+   --> src\learning_tests\level20_task5_higher_order.rs:826:37
+    |
+826 |         pub fn and_then<U, F>(self, next: F) -> Parser<U>
+    |                                     ^^^^ help: if this is intentional, prefix it with an underscore: `_next`
+
+warning: unused variable: `input`
+   --> src\learning_tests\level20_task5_higher_order.rs:834:29
+    |
+834 |         pub fn parse(&self, input: &str) -> Option<(T, &str)> {
+    |                             ^^^^^ help: if this is intentional, prefix it with an underscore: `_input`
+
+warning: unused variable: `expected`
+   --> src\learning_tests\level20_task5_higher_order.rs:842:21
+    |
+842 |         pub fn char(expected: char) -> Self {
+    |                     ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+
+warning: unused variable: `expected`
+   --> src\learning_tests\level20_task5_higher_order.rs:849:23
+    |
+849 |         pub fn string(expected: &str) -> Self {
+    |                       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expected`
+
+warning: unused variable: `action`
+   --> src\hotkeys\mod.rs:207:29
+    |
+207 |                 if let Some(action) = self.parse_vim_mapping(line) {
+    |                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_action`
+
+warning: unused variable: `action`
+   --> src\hotkeys\mod.rs:227:29
+    |
+227 |                 if let Some(action) = self.parse_emacs_binding(line) {
+    |                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_action`
+
+warning: variable does not need to be mutable
+   --> src\test_runner.rs:229:9
+    |
+229 |     let mut hotkey_system = crate::hotkeys::HotkeySystem::new();
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `results`
+   --> src\editor_test_mode.rs:351:41
+    |
+351 | fn handle_editor_input(game: &mut Game, results: &mut HotkeyTestResults) {
+    |                                         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_results`
+
+warning: unused variable: `scale`
+   --> src\editor_test_mode.rs:512:9
+    |
+512 |     let scale = ScaledMeasurements::new();
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `scale`
+   --> src\editor_test_mode.rs:584:9
+    |
+584 |     let scale = ScaledMeasurements::new();
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `scale`
+   --> src\editor_test_mode.rs:635:9
+    |
+635 |     let scale = ScaledMeasurements::new();
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `char_pos`
+   --> src\editor_test_mode.rs:689:13
+    |
+689 |     let mut char_pos = 0;
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_char_pos`
+
+warning: unused variable: `width`
+   --> src\editor_test_mode.rs:683:65
+    |
+683 | fn draw_code_with_autocomplete(game: &mut Game, x: f32, y: f32, width: f32, height: f32) {
+    |                                                                 ^^^^^ help: if this is intentional, prefix it with an underscore: `_width`
+
+warning: variable does not need to be mutable
+   --> src\editor_test_mode.rs:689:9
+    |
+689 |     let mut char_pos = 0;
+    |         ----^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `alt_held`
+    --> src\editor_test_mode.rs:1037:9
+     |
+1037 |     let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_alt_held`
+
+warning: unused variable: `scale`
+    --> src\editor_test_mode.rs:1170:9
+     |
+1170 |     let scale = ScaledMeasurements::new();
+     |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `results`
+    --> src\editor_test_mode.rs:1167:5
+     |
+1167 |     results: &HotkeyTestResults,
+     |     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_results`
+
+warning: variable `out_of_bounds` is assigned to, but never used
+   --> src\main.rs:863:13
+    |
+863 |     let mut out_of_bounds = 0;
+    |             ^^^^^^^^^^^^^
+    |
+    = note: consider using `_out_of_bounds` instead
+
+Some errors have detailed explanations: E0277, E0282, E0308, E0310, E0507, E0562, E0614, E0700.
+For more information about an error, try `rustc --explain E0277`.
+warning: `robo_grid_explorer_gui` (bin "robo_grid_explorer_gui") generated 140 warnings
+error: could not compile `robo_grid_explorer_gui` (bin "robo_grid_explorer_gui") due to 23 previous errors; 140 warnings emitted

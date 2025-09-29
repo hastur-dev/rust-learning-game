@@ -1,0 +1,637 @@
+name: "Level 6: Flow Control and Conditionals"
+grid_size: "11x9"
+start_position: [0, 0]
+max_turns: 180
+fog_of_war: false
+income_per_square: 1
+message: |
+  🔀 **LEVEL 6: Flow Control and Conditionals**
+
+  Master Rust's control flow constructs - if/else, loops, and iteration!
+
+  Learn how to make decisions and repeat actions efficiently in your robot programs.
+
+hint_message: |
+  **Control Flow Tips:**
+  - `if` expressions can return values
+  - `loop` creates infinite loops, `while` has conditions
+  - `for` loops work with iterators and ranges
+  - `break` and `continue` control loop execution
+  - Match expressions provide powerful pattern matching
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/flow_control.html"
+obstacles: 5
+
+items:
+  - name: "if_token"
+    item_file: "items/conditional.rs"
+    spawn_randomly: false
+    location: [3, 2]
+  - name: "loop_token"
+    item_file: "items/loops.rs"
+    spawn_randomly: false
+    location: [8, 3]
+  - name: "for_token"
+    item_file: "items/iteration.rs"
+    spawn_randomly: false
+    location: [2, 7]
+  - name: "match_token"
+    item_file: "items/matching.rs"
+    spawn_randomly: false
+    location: [9, 7]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [10, 8]
+
+tasks:
+  - name: "If/Else Conditionals and Expressions"
+    task_file: "learning_tests::level6_task1_conditionals::level6_task1_tests"
+    task_message: |
+      ## Task 1: If/Else Conditionals and Expressions
+
+      In Rust, `if` is an expression that can return values, making code more concise.
+
+      **Your goal:** Use if/else for decision making and value assignment.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          let energy = 75;
+          let position = (5, 3);
+
+          // Basic if/else statements
+          if energy > 50 {
+              println!("Robot has sufficient energy: {}", energy);
+          } else {
+              println!("Robot needs recharging: {}", energy);
+          }
+
+          // If/else expressions (return values)
+          let status = if energy > 80 {
+              "Excellent"
+          } else if energy > 50 {
+              "Good"
+          } else if energy > 20 {
+              "Low"
+          } else {
+              "Critical"
+          };
+
+          println!("Energy status: {}", status);
+
+          // Complex conditions with logical operators
+          let x = position.0;
+          let y = position.1;
+
+          if x > 0 && y > 0 {
+              println!("Robot is in positive quadrant: ({}, {})", x, y);
+          } else if x == 0 || y == 0 {
+              println!("Robot is on an axis: ({}, {})", x, y);
+          } else {
+              println!("Robot position: ({}, {})", x, y);
+          }
+
+          // Nested if statements
+          if energy > 30 {
+              if x < 10 {
+                  println!("Can move to x={}", x + 1);
+              } else {
+                  println!("At edge, cannot move further right");
+              }
+          } else {
+              println!("Insufficient energy to move");
+          }
+
+          // If let for pattern matching (preview)
+          let maybe_value: Option<i32> = Some(42);
+          if let Some(value) = maybe_value {
+              println!("Found value: {}", value);
+          } else {
+              println!("No value found");
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Excellent!** You've mastered conditional expressions!
+
+      **What you learned:**
+      - `if` as both statements and expressions
+      - Multiple conditions with `else if`
+      - Logical operators: `&&`, `||`, `!`
+      - Nested conditionals and complex logic
+
+    start_task_message: "Let's explore Rust's powerful conditional expressions!"
+
+  - name: "Loops - loop, while, and for"
+    task_file: "learning_tests::level6_task2_loops::level6_task2_tests"
+    task_message: |
+      ## Task 2: Loops - loop, while, and for
+
+      Rust provides several loop constructs for different use cases.
+
+      **Your goal:** Use different types of loops with proper control flow.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          println!("=== Infinite loop with break ===");
+          let mut counter = 0;
+          loop {
+              counter += 1;
+              println!("Loop iteration: {}", counter);
+
+              if counter >= 3 {
+                  println!("Breaking out of infinite loop");
+                  break;
+              }
+          }
+
+          println!("\n=== While loop ===");
+          let mut energy = 100;
+          while energy > 0 {
+              println!("Energy remaining: {}", energy);
+              energy -= 25;
+
+              if energy == 25 {
+                  println!("Low energy warning!");
+                  continue;  // Skip the rest of this iteration
+              }
+          }
+
+          println!("\n=== For loop with range ===");
+          for i in 1..=5 {
+              println!("For loop step: {}", i);
+          }
+
+          println!("\n=== For loop with collection ===");
+          let positions = vec![(0, 0), (1, 2), (3, 4), (5, 6)];
+          for (index, (x, y)) in positions.iter().enumerate() {
+              println!("Position {}: ({}, {})", index, x, y);
+          }
+
+          println!("\n=== Nested loops ===");
+          for row in 0..3 {
+              for col in 0..3 {
+                  if row == col {
+                      print!("X ");
+                  } else {
+                      print!(". ");
+                  }
+              }
+              println!();  // New line after each row
+          }
+
+          println!("\n=== Loop with labeled break ===");
+          'outer: for x in 0..3 {
+              for y in 0..3 {
+                  if x == 1 && y == 1 {
+                      println!("Breaking outer loop at ({}, {})", x, y);
+                      break 'outer;
+                  }
+                  print!("({},{}) ", x, y);
+              }
+          }
+          println!();
+      }
+      ```
+
+    completion_message: |
+      ✅ **Great work!** You understand all loop types!
+
+      **What you learned:**
+      - `loop` for infinite loops with `break`
+      - `while` for conditional loops
+      - `for` loops with ranges and iterators
+      - `continue` and labeled `break`
+
+    start_task_message: "Let's master all of Rust's loop constructs!"
+
+  - name: "Loop Control - break, continue, and labels"
+    task_file: "learning_tests::level6_task3_loop_control::level6_task3_tests"
+    task_message: |
+      ## Task 3: Loop Control - break, continue, and labels
+
+      Control loop execution with break, continue, and loop labels.
+
+      **Your goal:** Use advanced loop control for complex iteration patterns.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          println!("=== Finding prime numbers with continue ===");
+          for num in 2..20 {
+              let mut is_prime = true;
+
+              for i in 2..num {
+                  if num % i == 0 {
+                      is_prime = false;
+                      break;  // No need to check further
+                  }
+              }
+
+              if !is_prime {
+                  continue;  // Skip non-prime numbers
+              }
+
+              println!("{} is prime", num);
+          }
+
+          println!("\n=== Grid search with labeled breaks ===");
+          let target = (2, 3);
+          let mut found = false;
+
+          'search: for row in 0..5 {
+              for col in 0..5 {
+                  println!("Checking ({}, {})", row, col);
+
+                  if (row, col) == target {
+                      println!("Found target at ({}, {})!", row, col);
+                      found = true;
+                      break 'search;  // Break out of both loops
+                  }
+
+                  // Skip certain positions
+                  if row == col {
+                      println!("Skipping diagonal position ({}, {})", row, col);
+                      continue;
+                  }
+              }
+          }
+
+          if !found {
+              println!("Target not found");
+          }
+
+          println!("\n=== Loop returning values ===");
+          let result = loop {
+              let mut input = 0;
+              for i in 1..10 {
+                  input += i;
+                  if input > 20 {
+                      break input;  // Return value from loop
+                  }
+              }
+              break input;
+          };
+
+          println!("Loop returned value: {}", result);
+
+          println!("\n=== Complex robot movement simulation ===");
+          let mut robot_pos = (0, 0);
+          let mut steps = 0;
+
+          'movement: loop {
+              steps += 1;
+
+              // Move robot in a pattern
+              match steps % 4 {
+                  1 => robot_pos.0 += 1,  // Right
+                  2 => robot_pos.1 += 1,  // Up
+                  3 => robot_pos.0 -= 1,  // Left
+                  0 => robot_pos.1 -= 1,  // Down
+                  _ => unreachable!(),
+              }
+
+              println!("Step {}: Robot at ({}, {})", steps, robot_pos.0, robot_pos.1);
+
+              // Check for obstacles (simulate)
+              if robot_pos.0 < -2 || robot_pos.0 > 2 || robot_pos.1 < -2 || robot_pos.1 > 2 {
+                  println!("Hit boundary, reversing direction");
+                  continue 'movement;
+              }
+
+              // Stop after completing a square
+              if steps >= 12 {
+                  println!("Movement pattern completed");
+                  break 'movement;
+              }
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Perfect!** You've mastered advanced loop control!
+
+      **What you learned:**
+      - Using `break` and `continue` strategically
+      - Loop labels for multi-level breaks
+      - Returning values from loops
+      - Complex control flow patterns
+
+    start_task_message: "Let's explore advanced loop control mechanisms!"
+
+  - name: "Match Expressions and Pattern Matching"
+    task_file: "learning_tests::level6_task4_match::level6_task4_tests"
+    task_message: |
+      ## Task 4: Match Expressions and Pattern Matching
+
+      Match is Rust's powerful pattern matching construct, safer than switch statements.
+
+      **Your goal:** Use match for pattern matching with different data types.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          println!("=== Basic match with integers ===");
+          let robot_mode = 2;
+
+          let mode_name = match robot_mode {
+              1 => "Exploration",
+              2 => "Collection",
+              3 => "Return Home",
+              _ => "Unknown Mode",  // Catch-all pattern
+          };
+
+          println!("Robot mode {}: {}", robot_mode, mode_name);
+
+          println!("\n=== Match with ranges ===");
+          let energy_level = 45;
+
+          match energy_level {
+              81..=100 => println!("Energy: Excellent ({}%)", energy_level),
+              61..=80 => println!("Energy: Good ({}%)", energy_level),
+              41..=60 => println!("Energy: Moderate ({}%)", energy_level),
+              21..=40 => println!("Energy: Low ({}%)", energy_level),
+              1..=20 => println!("Energy: Critical ({}%)", energy_level),
+              0 => println!("Energy: Depleted"),
+              _ => println!("Energy: Invalid reading ({})", energy_level),
+          }
+
+          println!("\n=== Match with tuples ===");
+          let position = (3, 4);
+
+          match position {
+              (0, 0) => println!("At origin"),
+              (0, y) => println!("On Y-axis at y={}", y),
+              (x, 0) => println!("On X-axis at x={}", x),
+              (x, y) if x == y => println!("On diagonal at ({}, {})", x, y),
+              (x, y) if x > y => println!("Above diagonal at ({}, {})", x, y),
+              (x, y) => println!("Below diagonal at ({}, {})", x, y),
+          }
+
+          println!("\n=== Match with Option enum ===");
+          let maybe_item: Option<&str> = Some("Energy Cell");
+
+          match maybe_item {
+              Some("Energy Cell") => println!("Found energy cell!"),
+              Some("Key") => println!("Found key!"),
+              Some(item) => println!("Found unknown item: {}", item),
+              None => println!("No item found"),
+          }
+
+          println!("\n=== Match with destructuring ===");
+          let robot_data = (String::from("R2D2"), 100, true);
+
+          match robot_data {
+              (name, energy, active) if energy > 80 && active => {
+                  println!("Robot {} is fully operational with {}% energy", name, energy);
+              }
+              (name, energy, true) => {
+                  println!("Robot {} is active but low energy: {}%", name, energy);
+              }
+              (name, _, false) => {
+                  println!("Robot {} is inactive", name);
+              }
+          }
+
+          println!("\n=== Match as expression ===");
+          let command = "move_right";
+
+          let (dx, dy) = match command {
+              "move_right" => (1, 0),
+              "move_left" => (-1, 0),
+              "move_up" => (0, 1),
+              "move_down" => (0, -1),
+              _ => {
+                  println!("Unknown command: {}", command);
+                  (0, 0)
+              }
+          };
+
+          println!("Command '{}' results in movement: ({}, {})", command, dx, dy);
+      }
+      ```
+
+    completion_message: |
+      ✅ **Amazing!** You've mastered pattern matching!
+
+      **What you learned:**
+      - Match expressions with multiple patterns
+      - Range patterns and guards
+      - Destructuring tuples and enums
+      - Match as both statement and expression
+
+    start_task_message: "Let's explore Rust's powerful pattern matching with match!"
+
+  - name: "Advanced Flow Control Patterns"
+    task_file: "learning_tests::level6_task5_advanced_flow::level6_task5_tests"
+    task_message: |
+      ## Task 5: Advanced Flow Control Patterns
+
+      Combine different control flow constructs for sophisticated program logic.
+
+      **Your goal:** Create complex control flow using multiple constructs together.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          println!("=== Robot pathfinding simulation ===");
+
+          let grid_size = 5;
+          let obstacles = vec![(1, 1), (2, 3), (3, 1)];
+          let mut robot_pos = (0, 0);
+          let target = (4, 4);
+
+          let mut steps = 0;
+          let max_steps = 20;
+
+          'pathfinding: loop {
+              steps += 1;
+
+              if steps > max_steps {
+                  println!("Pathfinding failed: too many steps");
+                  break 'pathfinding;
+              }
+
+              println!("Step {}: Robot at ({}, {})", steps, robot_pos.0, robot_pos.1);
+
+              // Check if we reached the target
+              if robot_pos == target {
+                  println!("Target reached in {} steps!", steps);
+                  break 'pathfinding;
+              }
+
+              // Determine next move
+              let mut next_moves = Vec::new();
+
+              // Try all four directions
+              for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+                  let new_pos = (robot_pos.0 + dx, robot_pos.1 + dy);
+
+                  // Check bounds
+                  if new_pos.0 >= 0 && new_pos.0 < grid_size &&
+                     new_pos.1 >= 0 && new_pos.1 < grid_size {
+
+                      // Check for obstacles
+                      let is_obstacle = obstacles.iter().any(|&obs| obs == new_pos);
+
+                      if !is_obstacle {
+                          next_moves.push(new_pos);
+                      }
+                  }
+              }
+
+              // Choose best move (closest to target)
+              if next_moves.is_empty() {
+                  println!("No valid moves available!");
+                  break 'pathfinding;
+              }
+
+              let best_move = next_moves.iter().min_by_key(|&&(x, y)| {
+                  let distance = (target.0 - x).abs() + (target.1 - y).abs();
+                  distance
+              });
+
+              if let Some(&new_pos) = best_move {
+                  robot_pos = new_pos;
+
+                  match new_pos {
+                      pos if pos == target => {
+                          println!("Will reach target on next iteration!");
+                      }
+                      (x, y) if x == target.0 || y == target.1 => {
+                          println!("Aligned with target!");
+                      }
+                      _ => {
+                          let remaining_distance = (target.0 - new_pos.0).abs() +
+                                                  (target.1 - new_pos.1).abs();
+                          println!("Distance to target: {}", remaining_distance);
+                      }
+                  }
+              }
+
+              // Add some delay simulation
+              if steps % 3 == 0 {
+                  println!("Recalculating path...");
+                  continue 'pathfinding;
+              }
+          }
+
+          println!("\n=== Resource management simulation ===");
+          let mut resources = vec![("Energy", 100), ("Fuel", 80), ("Repair", 60)];
+
+          for cycle in 1..=5 {
+              println!("--- Cycle {} ---", cycle);
+
+              for (resource_name, amount) in resources.iter_mut() {
+                  match resource_name.as_ref() {
+                      "Energy" => {
+                          *amount -= 15;
+                          if *amount < 20 {
+                              println!("⚠️ {} critically low: {}", resource_name, amount);
+                          }
+                      }
+                      "Fuel" => {
+                          *amount -= 10;
+                          if *amount <= 0 {
+                              println!("🚨 {} depleted!", resource_name);
+                              *amount = 0;
+                          }
+                      }
+                      "Repair" => {
+                          if cycle % 2 == 0 {
+                              *amount += 20;
+                              println!("🔧 {} replenished: {}", resource_name, amount);
+                          }
+                      }
+                      _ => println!("Unknown resource: {}", resource_name),
+                  }
+              }
+
+              // Check if all resources are too low
+              let total_resources: i32 = resources.iter().map(|(_, amount)| *amount).sum();
+              if total_resources < 50 {
+                  println!("💀 Critical resource shortage! Emergency stop!");
+                  break;
+              }
+          }
+
+          println!("Final resources: {:?}", resources);
+      }
+      ```
+
+    completion_message: |
+      🎉 **Outstanding!** You've mastered complex flow control!
+
+      **What you accomplished:**
+      - Combining loops, conditionals, and match expressions
+      - Advanced pattern matching with guards
+      - Complex decision-making algorithms
+      - Real-world programming patterns
+      - Resource management and pathfinding logic
+
+      **You're ready for advanced data structures and pattern matching!**
+
+    start_task_message: "Let's combine all flow control concepts in complex scenarios!"
+
+starting_code: |
+  // Level 6: Flow Control and Conditionals
+  // Master decision making and iteration in Rust
+
+  fn main() {
+      println!("Level 6: Flow Control and Conditionals");
+
+      // TODO: Task 1 - Use if/else conditionals
+      // let energy = 75;
+      // let status = if energy > 50 { "Good" } else { "Low" };
+      // println!("Energy status: {}", status);
+
+      // TODO: Task 2 - Use different loop types
+      // for i in 1..=3 {
+      //     println!("For loop iteration: {}", i);
+      // }
+      //
+      // let mut counter = 0;
+      // while counter < 3 {
+      //     println!("While loop: {}", counter);
+      //     counter += 1;
+      // }
+
+      // TODO: Task 3 - Use break and continue
+      // for num in 1..10 {
+      //     if num % 2 == 0 {
+      //         continue;  // Skip even numbers
+      //     }
+      //     if num > 7 {
+      //         break;     // Stop at 7
+      //     }
+      //     println!("Odd number: {}", num);
+      // }
+
+      // TODO: Task 4 - Use match expressions
+      // let robot_mode = 2;
+      // match robot_mode {
+      //     1 => println!("Exploration mode"),
+      //     2 => println!("Collection mode"),
+      //     _ => println!("Unknown mode"),
+      // }
+
+      // TODO: Task 5 - Combine control flow constructs
+      // let target = (3, 3);
+      // for x in 0..5 {
+      //     for y in 0..5 {
+      //         if (x, y) == target {
+      //             println!("Found target at ({}, {})!", x, y);
+      //             break;
+      //         }
+      //     }
+      // }
+
+      println!("Complete all tasks to master flow control!");
+  }
+
+achievement_message: "🎉 Excellent! You've mastered Rust's flow control and conditional logic!"
+next_level_hint: "Next: Pattern matching, structs, and custom data types!"
+completion_flag: "goal"

@@ -243,3 +243,19 @@ pub fn create_time_slow_item(pos: Pos, duration_ms: u32) -> Item {
         collected: false,
     }
 }
+
+pub fn create_door_key_item(pos: Pos) -> Item {
+    Item {
+        name: "door_key".to_string(),
+        pos,
+        capabilities: ItemCapabilities {
+            scanner_range: None,
+            grabber_boost: None,
+            credits_value: Some(10),
+            time_slow_duration: None,
+            special_functions: vec!["open_door".to_string()],
+            rust_code: None,
+        },
+        collected: false,
+    }
+}

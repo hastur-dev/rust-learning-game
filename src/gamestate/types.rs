@@ -1,0 +1,262 @@
+use crate::level::LevelSpec;
+use crate::grid::Grid;
+use crate::robot::Robot;
+use crate::item::ItemManager;
+use crate::menu::Menu;
+use crate::popup::PopupSystem;
+use rand::rngs::StdRng;
+
+#[cfg(not(target_arch = "wasm32"))]
+use crossbeam_channel::Receiver;
+#[cfg(not(target_arch = "wasm32"))]
+use notify::Event;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RustFunction {
+    Move,
+    Grab,
+    Scan,
+    LaserDirection,
+    LaserTile,
+    OpenDoor,
+    SkipLevel,
+    GotoLevel,
+    Println,
+    Eprintln, // Error messages
+    Panic,    // Critical errors
+}
+
+#[derive(Clone, Debug)]
+pub struct UndoState {
+    pub code: String,
+    pub cursor_position: usize,
+    pub selection_start: Option<usize>,
+    pub selection_end: Option<usize>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FunctionCall {
+    pub function: RustFunction,
+    pub direction: Option<(i32, i32)>, // for move, scan, and laser direction
+    pub coordinates: Option<(i32, i32)>, // for laser tile targeting
+    pub level_number: Option<usize>, // for goto_level
+    pub boolean_param: Option<bool>, // for open_door
+    pub message: Option<String>, // for println
+}
+
+#[derive(Clone, Debug)]
+pub struct TutorialState {
+    pub task_completed: [bool; 5], // Track completion of 5 tutorial tasks
+    pub current_task: usize,       // Current active task (0-4)
+    pub variables_used: Vec<String>, // Track variables created by user
+    pub scan_output_stored: bool,  // Track if scan output was stored in variable
+    pub u32_move_used: bool,      // Track if move with u32 was used
+}
+
+#[derive(Debug)]
+pub struct Game {
+    pub level_idx: usize,
+    pub levels: Vec<LevelSpec>,
+    pub grid: Grid,
+    pub robot: Robot,
+    pub item_manager: ItemManager,
+    pub rng: StdRng,
+    pub credits: u32,
+    pub turns: usize,
+    pub max_turns: usize,
+    pub discovered_this_level: usize,
+    pub finished: bool,
+    pub scan_armed: bool,
+    pub execution_result: String,
+    pub code_editor_active: bool,
+    pub selected_function_to_view: Option<RustFunction>,
+    pub robot_code_path: String,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub file_watcher_receiver: Option<Receiver<notify::Result<Event>>>,
+    pub robot_code_modified: bool,
+    pub current_code: String,
+    pub cursor_position: usize,
+    pub code_execution_requested: bool, // Flag to request code execution via Ctrl+Shift+Enter
+    pub selection_start: Option<usize>, // Start of text selection (None = no selection)
+    pub selection_end: Option<usize>,   // End of text selection (None = no selection)
+    pub mouse_drag_start: Option<(f32, f32)>, // Mouse position when drag started (None = no drag)
+    pub is_dragging: bool,              // Whether we're currently dragging to select text
+    pub code_scroll_offset: usize, // Top line displayed in editor
+    pub code_lines_visible: usize, // Number of lines visible in editor
+    pub tutorial_scroll_offset: usize, // Top line displayed in tutorial overlay
+    pub enemy_step_paused: bool,
+    pub time_slow_active: bool,
+    pub time_slow_duration_ms: u32,
+    pub menu: Menu,
+    pub popup_system: PopupSystem,
+    pub stunned_enemies: std::collections::HashMap<usize, u8>, // enemy_index -> remaining_stun_turns
+    pub temporary_removed_obstacles: std::collections::HashMap<(i32, i32), u8>, // position -> remaining_turns
+    pub println_outputs: Vec<String>, // Track println outputs for completion conditions
+    pub error_outputs: Vec<String>, // Track error/eprintln outputs for completion conditions
+    pub panic_occurred: bool, // Track if panic occurred for completion conditions
+    pub tutorial_state: TutorialState, // Tutorial system for progressive learning
+    #[cfg(not(target_arch = "wasm32"))]
+    pub rust_checker: Option<crate::rust_checker::RustChecker>, // Cargo integration for syntax checking
+    // Continuous key press support
+    pub key_backspace_held_time: f32,
+    pub key_space_held_time: f32,
+    pub key_char_held_time: f32,       // For any character key currently held
+    pub last_char_pressed: Option<char>, // Track which character is being held
+    // Arrow key continuous press support
+    pub key_up_held_time: f32,
+    pub key_down_held_time: f32,
+    pub key_left_held_time: f32,
+    pub key_right_held_time: f32,
+    pub key_repeat_initial_delay: f32, // Delay before key starts repeating (in seconds)
+    pub key_repeat_interval: f32,      // Interval between repeats (in seconds)
+    // Font measurement caching for cursor positioning
+    pub cached_font_size: f32,         // Currently cached font size for editor
+    pub cached_char_width: f32,        // Width of 'M' character at cached font size
+    pub cached_line_height: f32,       // Line height at cached font size
+    pub needs_font_refresh: bool,      // Flag to indicate font measurements need refresh
+    // Editor tab system (above editor)
+    pub editor_tab: EditorTab, // Current active tab above the editor
+    // Coordinate transformation system
+    pub coordinate_transformer: crate::coordinate_system::CoordinateTransformer, // Global/window mouse coordinate handling
+    // System key safety mechanism
+    pub last_system_key_time: f64,    // Time when last system key combination was detected
+    // Debug flags
+    pub enable_coordinate_logs: bool, // Enable detailed coordinate transformation logs
+    pub enable_key_press_logs: bool,  // Enable detailed key press and hotkey logs
+    pub last_key_log_time: f64,       // Time of last key press log (for rate limiting)
+    pub last_exec_log_time: f64,      // Time of last execution log (for rate limiting)
+    // Window tracking timer
+    pub last_window_update_time: f64, // Time of last window coordinate update (for throttling)
+    pub last_mouse_click_time: f64,   // Time of last mouse click (for click rate limiting)
+    // Autocomplete system
+    pub autocomplete_engine: crate::autocomplete::AutocompleteEngine,
+    pub autocomplete_enabled: bool,   // Global autocomplete enable/disable
+    // Hotkey system
+    pub hotkey_system: crate::hotkeys::HotkeySystem,
+    // Undo functionality (clipboard now uses OS)
+    pub undo_stack: Vec<UndoState>,
+    pub redo_stack: Vec<UndoState>,
+}
+
+// Learning level configuration
+#[derive(Debug, Clone)]
+pub struct LearningLevelConfig {
+    pub level_idx: usize,
+    pub max_tasks: usize,
+    pub name: String,
+}
+
+impl Game {
+    // Define which levels are learning levels and their task counts
+    pub fn get_learning_level_configs() -> Vec<LearningLevelConfig> {
+        vec![
+            LearningLevelConfig {
+                level_idx: 0,
+                max_tasks: 5,
+                name: "Level 1: Rust Basics".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 1,
+                max_tasks: 4,
+                name: "Level 2: Functions, Loops, and Structs".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 2,
+                max_tasks: 5,
+                name: "Level 3: Primitives and Data Types".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 3,
+                max_tasks: 5,
+                name: "Level 4: Variable Bindings and Mutability".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 4,
+                max_tasks: 5,
+                name: "Level 5: Types and Casting".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 5,
+                max_tasks: 5,
+                name: "Level 6: Ownership Basics".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 6,
+                max_tasks: 5,
+                name: "Level 7: Advanced Ownership and Lifetimes".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 7,
+                max_tasks: 5,
+                name: "Level 8: Structs and Robot Systems".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 8,
+                max_tasks: 5,
+                name: "Level 9: Enums and State Machines".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 9,
+                max_tasks: 5,
+                name: "Level 10: Collections and Vectors".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 10,
+                max_tasks: 5,
+                name: "Level 11: Advanced Error Handling".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 13,
+                max_tasks: 5,
+                name: "Level 14: Serde JSON Basics".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 14,
+                max_tasks: 5,
+                name: "Level 15: Serde YAML Advanced".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 15,
+                max_tasks: 5,
+                name: "Level 16: Serde Custom Error Handling".to_string(),
+            },
+            LearningLevelConfig {
+                level_idx: 17,
+                max_tasks: 5,
+                name: "Level 18: Direct Memory Management".to_string(),
+            },
+        ]
+    }
+    
+    // Check if a level is a learning level
+    pub fn is_learning_level(&self, level_idx: usize) -> bool {
+        Self::get_learning_level_configs()
+            .iter()
+            .any(|config| config.level_idx == level_idx)
+    }
+    
+    // Get the max tasks for a learning level
+    pub fn get_max_tasks_for_level(&self, level_idx: usize) -> Option<usize> {
+        Self::get_learning_level_configs()
+            .iter()
+            .find(|config| config.level_idx == level_idx)
+            .map(|config| config.max_tasks)
+    }
+    
+    // Check if current level tutorial is complete
+    pub fn is_current_level_tutorial_complete(&self) -> bool {
+        if let Some(max_tasks) = self.get_max_tasks_for_level(self.level_idx) {
+            self.tutorial_state.current_task >= max_tasks
+        } else {
+            true // Non-learning levels are always "complete"
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum EditorTab {
+    Commands,
+    Logs,
+    Tasks,
+    Editor,
+}

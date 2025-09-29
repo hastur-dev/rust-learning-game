@@ -1,0 +1,299 @@
+# Level 18: Direct Memory Management
+# This level teaches advanced memory management concepts including raw pointers, Box, Rc, Arc, and manual allocation
+# Players learn to work directly with memory while understanding Rust's safety guarantees
+
+level_id: 18
+name: "Robot Memory Core Recovery"
+description: "CRITICAL: Your robot's memory core is damaged! Manually manage memory banks, repair corrupted pointers, and restore vital data before permanent memory loss"
+next_level: 19
+
+# Grid layout: 14x10 with memory zones and allocation areas
+grid:
+  width: 14
+  height: 10
+  start_position: [1, 1]
+
+walls:
+  - [0, 0, 13, 0]    # Top wall
+  - [0, 9, 13, 9]    # Bottom wall
+  - [0, 0, 0, 9]     # Left wall
+  - [13, 0, 13, 9]   # Right wall
+  - [4, 2, 9, 2]     # Stack memory area
+  - [4, 7, 9, 7]     # Heap memory area
+  - [6, 3, 6, 6]     # Memory barrier
+
+# Items teach different memory management concepts
+items:
+  # Task 1: Raw pointers and unsafe blocks
+  - position: [2, 1]
+    item_type: "corrupted_memory_bank"
+    name: "Robot Memory Bank Alpha - CORRUPTED"
+    description: "💥 MEMORY CORRUPTION DETECTED! The robot's primary memory bank has been damaged. Critical data is scattered across raw memory addresses!"
+    content: |
+      ⚠️  MEMORY BANK ALPHA - CRITICAL FAILURE ⚠️
+
+      🔍 MEMORY SCAN RESULTS:
+      Memory Bank Address 0x1000: [0x42, 0x43, 0x44, 0x45]  // Robot ID: 1145259586
+      Memory Bank Address 0x1004: [0x48, 0x65, 0x6C, 0x6C]  // Mission Code: "Hell"
+      Memory Bank Address 0x1008: [0x6F, 0x21, 0x00, 0x00]  // Mission Code: "o!" (damaged)
+
+      🚨 EMERGENCY SITUATION: Your robot's memory management system has failed!
+      The automatic memory protection is offline. You must manually access
+      raw memory addresses to recover the robot's identity and mission data.
+
+      🎯 MEMORY RECOVERY MISSION:
+      - Create raw pointers (*const, *mut) to access damaged memory banks
+      - Use unsafe blocks to directly read from memory addresses
+      - Implement pointer arithmetic to traverse corrupted memory regions
+      - Safely extract and reconstruct the robot's ID and mission code
+
+      💀 WARNING: Direct memory access without proper handling will cause
+      total robot shutdown! Use extreme caution with unsafe operations.
+
+      🏆 SUCCESS: Robot identity and mission parameters restored!
+    requirements:
+      - "Create and dereference raw pointers using *const T and *mut T"
+      - "Implement unsafe blocks for pointer operations"
+      - "Use pointer arithmetic to traverse memory"
+      - "Convert between raw pointers and references safely"
+
+  # Task 2: Box allocation and heap management
+  - position: [11, 1]
+    item_type: "robot_memory_expansion_unit"
+    name: "Robot Memory Expansion Protocol"
+    description: "🔧 The robot needs MORE MEMORY! Install additional memory banks using heap allocation to handle massive sensor data arrays."
+    content: |
+      🔧 ROBOT MEMORY EXPANSION REQUIRED 🔧
+
+      📊 CURRENT MEMORY CRISIS:
+      - Sensor Data Array: [1000 readings] - TOO LARGE FOR STACK!
+      - Navigation Tree: Unknown depth pathfinding data - STACK OVERFLOW RISK!
+      - Mission Buffer: Growing task queue - DYNAMIC SIZE NEEDED!
+      - Backup Systems: Mission-critical data redundancy required
+
+      🤖 SITUATION: Your robot has encountered massive datasets that exceed
+      its stack memory capacity! The built-in memory is designed for small,
+      fixed-size data. To handle large sensor arrays and deep navigation trees,
+      you must manually allocate heap memory.
+
+      🎯 MEMORY EXPANSION MISSION:
+      - Use Box<T> to allocate large sensor data arrays on the heap
+      - Create recursive navigation trees using Box for safe indirection
+      - Implement dynamic mission buffers with automatic cleanup
+      - Understand heap vs stack: when robot needs each type
+
+      🧠 ROBOT LEARNING: Heap memory = unlimited size, stack memory = fast but limited
+
+      🏆 SUCCESS: Robot can now handle massive datasets and complex navigation!
+    requirements:
+      - "Allocate large data structures using Box<T>"
+      - "Create recursive data structures with Box for indirection"
+      - "Implement custom types that require heap allocation"
+      - "Demonstrate Box ownership transfer and automatic deallocation"
+
+  # Task 3: Reference counting with Rc and Arc
+  - position: [2, 8]
+    item_type: "shared_memory"
+    name: "Shared Memory Controller"
+    description: "Shared memory system requiring reference counting for multiple owners"
+    content: |
+      // Shared data requiring multiple ownership
+      Shared Resources:
+      - Configuration: Multiple modules need read access
+      - Cache: Shared between worker threads
+      - Event Log: Multiple loggers writing to same buffer
+      - Resource Pool: Connection pool shared across components
+
+      Task: Implement shared ownership using Rc for single-threaded and Arc for multi-threaded
+      Requirements:
+      - Use Rc<T> for single-threaded shared ownership
+      - Use Arc<T> for thread-safe shared ownership
+      - Implement weak references to break cycles
+      - Understand reference counting and memory leaks
+    requirements:
+      - "Implement shared ownership using Rc<T> for single-threaded scenarios"
+      - "Use Arc<T> for thread-safe shared ownership"
+      - "Create weak references with Weak<T> to avoid cycles"
+      - "Demonstrate reference counting behavior and cycle prevention"
+
+  # Task 4: Manual memory allocation with allocators
+  - position: [11, 8]
+    item_type: "allocator_interface"
+    name: "Custom Allocator System"
+    description: "Low-level allocator requiring manual memory management"
+    content: |
+      // Custom allocation requirements
+      Allocator Specs:
+      - Pool Allocator: Pre-allocate fixed-size blocks
+      - Arena Allocator: Allocate from contiguous buffer
+      - Stack Allocator: LIFO allocation pattern
+      - Tracking Allocator: Monitor allocation patterns
+
+      Task: Implement custom allocators using std::alloc and Layout
+      Requirements:
+      - Use std::alloc for raw memory allocation/deallocation
+      - Create Layout descriptors for memory requirements
+      - Implement custom allocator traits
+      - Handle allocation failures and error conditions
+    requirements:
+      - "Use std::alloc::alloc and std::alloc::dealloc for raw allocation"
+      - "Create proper Layout descriptors for memory alignment"
+      - "Implement custom allocator with proper error handling"
+      - "Track allocation patterns and detect leaks"
+
+  # Task 5: Memory-mapped files and zero-copy operations
+  - position: [6, 5]
+    item_type: "memory_map"
+    name: "Memory-Mapped Data Processor"
+    description: "Memory-mapped file system requiring zero-copy operations"
+    content: |
+      // Memory-mapped data requiring zero-copy processing
+      File Mapping Requirements:
+      - Large Dataset: 100MB sensor data file
+      - Binary Protocol: Network packets in memory
+      - Shared Memory: IPC between processes
+      - Circular Buffer: Lock-free producer/consumer
+
+      Task: Implement memory mapping and zero-copy data processing
+      Requirements:
+      - Create memory-mapped file interfaces
+      - Implement zero-copy data structures
+      - Use slice operations for efficient data access
+      - Handle memory safety with lifetimes and borrows
+    requirements:
+      - "Implement memory-mapped file access using system APIs"
+      - "Create zero-copy data structures with proper lifetime management"
+      - "Use slice operations for efficient memory access"
+      - "Ensure memory safety with Rust's borrow checker"
+
+# Robot Alpha - Ownership Transfer Demonstration Robot
+robots:
+  - position: [3, 3]
+    robot_type: "ownership_demonstration"
+    name: "Robot Alpha - Ownership Transfer"
+    movement_pattern: "ownership_demo"
+    description: "⚡ Robot Alpha demonstrates ownership transfer mechanics for memory management"
+    color: "cyan"
+
+# Enemies represent memory management challenges
+enemies:
+  - position: [5, 4]
+    enemy_type: "memory_leak"
+    name: "Memory Leak Monster"
+    health: 40
+    description: "Untracked allocations causing memory leaks - defeat by proper cleanup"
+
+  - position: [8, 4]
+    enemy_type: "dangling_pointer"
+    name: "Dangling Pointer Demon"
+    health: 35
+    description: "Invalid memory access through dangling pointers - defeat with lifetime management"
+
+  - position: [3, 5]
+    enemy_type: "buffer_overflow"
+    name: "Buffer Overflow Beast"
+    health: 45
+    description: "Unsafe memory access beyond boundaries - defeat with bounds checking"
+
+  - position: [10, 5]
+    enemy_type: "use_after_free"
+    name: "Use-After-Free Fiend"
+    health: 38
+    description: "Accessing freed memory - defeat with ownership tracking"
+
+  - position: [6, 2]
+    enemy_type: "race_condition"
+    name: "Memory Race Specter"
+    health: 42
+    description: "Concurrent memory access conflicts - defeat with synchronization"
+
+# Doors represent memory management concept progression
+doors:
+  - position: [3, 3]
+    door_type: "unsafe_door"
+    name: "Unsafe Memory Gate"
+    key_requirement: "Raw pointer manipulation mastery"
+    description: "Access to advanced unsafe memory operations"
+
+  - position: [10, 3]
+    door_type: "heap_door"
+    name: "Heap Allocation Chamber"
+    key_requirement: "Box allocation proficiency"
+    description: "Enter dynamic memory management area"
+
+  - position: [3, 6]
+    door_type: "shared_door"
+    name: "Shared Memory Portal"
+    key_requirement: "Reference counting expertise"
+    description: "Access to shared ownership mechanisms"
+
+  - position: [10, 6]
+    door_type: "allocator_door"
+    name: "Custom Allocator Vault"
+    key_requirement: "Manual allocation skills"
+    description: "Advanced allocator implementation zone"
+
+# Task definitions with learning objectives
+tasks:
+  - id: 1
+    name: "Raw Pointer Operations"
+    description: "Master raw pointer creation, dereferencing, and arithmetic in unsafe blocks"
+    requirements:
+      - "Create raw pointers using *const T and *mut T syntax"
+      - "Implement unsafe blocks for pointer dereferencing operations"
+      - "Use pointer arithmetic to traverse memory layouts"
+      - "Convert safely between raw pointers and references"
+    item_location: [2, 1]
+    completion_message: "Raw pointer mastery achieved! Low-level memory access under your control."
+
+  - id: 2
+    name: "Box Heap Allocation"
+    description: "Implement heap allocation using Box for large data and recursive structures"
+    requirements:
+      - "Allocate large data structures using Box<T> for heap storage"
+      - "Create recursive data structures using Box for indirection"
+      - "Implement custom types requiring heap allocation"
+      - "Demonstrate automatic deallocation and ownership transfer"
+    item_location: [11, 1]
+    completion_message: "Heap allocation mastered! Dynamic memory management with automatic cleanup."
+
+  - id: 3
+    name: "Reference Counting Mastery"
+    description: "Implement shared ownership using Rc and Arc with cycle prevention"
+    requirements:
+      - "Use Rc<T> for single-threaded shared ownership scenarios"
+      - "Implement Arc<T> for thread-safe shared ownership"
+      - "Create Weak<T> references to prevent reference cycles"
+      - "Demonstrate proper reference counting and cycle detection"
+    item_location: [2, 8]
+    completion_message: "Shared ownership perfected! Multiple owners managed safely and efficiently."
+
+  - id: 4
+    name: "Custom Allocator Implementation"
+    description: "Create custom allocators using std::alloc with proper error handling"
+    requirements:
+      - "Use std::alloc::alloc and dealloc for raw memory management"
+      - "Create Layout descriptors with proper alignment requirements"
+      - "Implement custom allocator traits with error handling"
+      - "Track allocation patterns and detect memory leaks"
+    item_location: [11, 8]
+    completion_message: "Custom allocation achieved! Memory management completely under your control."
+
+  - id: 5
+    name: "Memory Mapping and Zero-Copy"
+    description: "Implement memory-mapped files and zero-copy data processing techniques"
+    requirements:
+      - "Create memory-mapped file interfaces for large datasets"
+      - "Implement zero-copy data structures with lifetime management"
+      - "Use slice operations for efficient memory access patterns"
+      - "Ensure memory safety with Rust's ownership system"
+    item_location: [6, 5]
+    completion_message: "Zero-copy mastery complete! Maximum performance with memory safety guaranteed."
+
+completion_requirements:
+  - "Complete all 5 memory management tasks"
+  - "Defeat all memory-related enemies"
+  - "Open all memory concept doors"
+  - "Demonstrate understanding of raw pointers, smart pointers, and custom allocation"
+
+final_message: "Level 18 Complete: Memory Management Mastery achieved! You've conquered direct memory manipulation while maintaining Rust's safety guarantees. Ready for bitwise operations!"

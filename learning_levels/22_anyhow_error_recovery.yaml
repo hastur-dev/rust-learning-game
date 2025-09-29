@@ -1,0 +1,354 @@
+# Level 22: Anyhow Error Recovery System
+# This level teaches the anyhow library for robust error handling and recovery
+# Players learn to build resilient robot systems that can recover from any failure
+
+level_id: 22
+name: "Robot Emergency Recovery Protocol"
+description: "🚨 MISSION CRITICAL! Your robot is encountering catastrophic errors in hostile territory! Build an emergency recovery system using anyhow to save the mission!"
+next_level: 23
+
+# Grid layout: 18x10 with error recovery stations and emergency systems
+grid:
+  width: 18
+  height: 10
+  start_position: [1, 1]
+
+walls:
+  - [0, 0, 17, 0]    # Top wall
+  - [0, 9, 17, 9]    # Bottom wall
+  - [0, 0, 0, 9]     # Left wall
+  - [17, 0, 17, 9]   # Right wall
+  - [5, 1, 5, 8]     # Error handling zone
+  - [11, 1, 11, 8]   # Recovery system zone
+  - [3, 3, 15, 3]    # Horizontal divider
+  - [3, 6, 15, 6]    # Emergency protocols divider
+
+# Items teach different anyhow error handling concepts
+items:
+  # Task 1: Basic anyhow error handling and Result wrapping
+  - position: [2, 2]
+    item_type: "robot_malfunction_detector"
+    name: "Critical System Malfunction Detector"
+    description: "🚨 SYSTEM FAILURE! Multiple robot subsystems are failing with different error types. Build a unified error handling system!"
+    content: |
+      🚨 MULTIPLE SYSTEM FAILURES DETECTED 🚨
+
+      🔍 ERROR ANALYSIS:
+      - Sensor Array: "Connection timeout after 30 seconds" (std::io::Error)
+      - Navigation: "Invalid GPS coordinates: latitude out of range" (ParseFloatError)
+      - Power Core: "Battery voltage below critical threshold: 3.2V" (PowerError)
+      - Memory Bank: "Allocation failed: insufficient heap space" (std::alloc::AllocError)
+
+      ⚡ CRISIS SITUATION: Your robot is experiencing cascading failures! Each
+      subsystem is generating different types of errors, making it impossible
+      to handle them with standard Result<T, E> types. The mission will fail
+      unless you build a unified error recovery system.
+
+      🎯 EMERGENCY RECOVERY MISSION:
+      - Use anyhow::Result to handle ANY error type in one unified system
+      - Convert different error types into anyhow::Error for consistent handling
+      - Add context to errors with .context() for better debugging
+      - Create error chains that show the full failure cascade
+      - Build recovery functions that can handle any system failure
+
+      🛡️ ROBOT SURVIVAL PRINCIPLE: One error handler to rule them all!
+
+      🏆 SUCCESS: Robot can now survive ANY error and continue the mission!
+
+      ⚠️ MISSION CRITICAL: Without unified error handling, the robot will be lost in hostile territory!
+    requirements:
+      - "Use anyhow::Result<T> for unified error handling"
+      - "Convert different error types to anyhow::Error"
+      - "Add context to errors using .context() method"
+      - "Create error recovery functions that handle any failure type"
+
+  # Task 2: Error context and chaining for debugging
+  - position: [8, 2]
+    item_type: "error_forensics_lab"
+    name: "Robot Error Forensics Laboratory"
+    description: "🔍 DEBUG MODE! The robot's errors are cryptic and unhelpful. Build a forensics system to trace error origins and add meaningful context!"
+    content: |
+      🔍 ROBOT ERROR FORENSICS LAB 🔍
+
+      🚫 CRYPTIC ERROR MESSAGES DETECTED:
+      - "Permission denied" (Where? What permission? Why?)
+      - "Invalid input" (What input? From which sensor? Expected what?)
+      - "Connection failed" (To what? Network? Device? Database?)
+      - "Parse error" (Parsing what data? At which position? Expected format?)
+
+      🕵️ FORENSICS CHALLENGE: The robot is failing, but the error messages are
+      useless for debugging! In hostile territory, every second counts. You need
+      to build a forensics system that captures the FULL story of each failure:
+      what the robot was trying to do, where it failed, and why.
+
+      🎯 FORENSICS PROGRAMMING MISSION:
+      - Use .with_context() to add meaningful descriptions to errors
+      - Build error chains that show the complete failure path
+      - Add operation context: "while scanning sector 7", "during battery check"
+      - Include relevant data: coordinates, sensor readings, timestamps
+      - Create helpful error messages for rapid field diagnosis
+
+      🔬 FORENSICS PRINCIPLES:
+      Context + Original Error = Complete Failure Story
+      Error Chain = Path from root cause to final failure
+      Meaningful Messages = Fast debugging and recovery
+
+      🏆 FORENSICS MASTERY: Robot errors now tell the complete story for instant debugging!
+
+      ⏱️ TIME CRITICAL: Cryptic errors waste precious time in emergency situations!
+    requirements:
+      - "Use .with_context() to add meaningful error descriptions"
+      - "Build error chains showing complete failure paths"
+      - "Add operational context to all error points"
+      - "Create helpful error messages for field debugging"
+
+  # Task 3: Error propagation and the ? operator with anyhow
+  - position: [14, 2]
+    item_type: "robot_mission_coordinator"
+    name: "Robot Mission Coordination Center"
+    description: "🎯 MISSION COMPLEXITY! Your robot must execute multi-step missions where ANY failure should abort gracefully. Build automatic error propagation!"
+    content: |
+      🎯 COMPLEX MISSION COORDINATION CENTER 🎯
+
+      🚀 MULTI-STEP MISSION SEQUENCE:
+      Step 1: Initialize sensors → "Sensor calibration failed"
+      Step 2: Plan navigation route → "Path planning algorithm error"
+      Step 3: Charge battery systems → "Charging station communication timeout"
+      Step 4: Upload mission data → "Network connection lost"
+      Step 5: Begin exploration → "Cannot proceed without previous steps"
+
+      🔄 MISSION COMPLEXITY: Advanced missions require MULTIPLE operations to
+      succeed. If ANY step fails, the entire mission must abort gracefully
+      with a clear explanation of where and why it failed. Manual error
+      checking at each step is tedious and error-prone.
+
+      🎯 MISSION CONTROL PROGRAMMING:
+      - Use ? operator with anyhow::Result for automatic error propagation
+      - Build mission functions that fail fast on any error
+      - Maintain error context through the entire mission chain
+      - Create graceful mission abort procedures
+      - Design retry mechanisms for recoverable failures
+
+      🚀 MISSION CONTROL PRINCIPLES:
+      Fast Failure = Quick abort when mission cannot continue
+      Error Propagation = Automatic failure handling through mission steps
+      Context Preservation = Know exactly where mission failed
+
+      🏆 MISSION MASTERY: Robot can execute complex missions with bulletproof error handling!
+
+      🛡️ RELIABILITY: Mission failures are contained and debuggable!
+    requirements:
+      - "Use ? operator with anyhow::Result for error propagation"
+      - "Build mission functions with automatic failure handling"
+      - "Maintain error context through operation chains"
+      - "Create graceful abort procedures for failed missions"
+
+  # Task 4: Custom error types with anyhow and error downcasting
+  - position: [6, 7]
+    item_type: "robot_subsystem_monitor"
+    name: "Robot Subsystem Monitoring Station"
+    description: "🔧 SPECIALIZED SYSTEMS! Different robot subsystems need specialized error handling. Build a monitoring system that can handle and recover from specific error types!"
+    content: |
+      🔧 ROBOT SUBSYSTEM MONITORING STATION 🔧
+
+      🤖 SPECIALIZED SUBSYSTEM ERRORS:
+      Navigation Error: GPS signal lost, need fallback to inertial navigation
+      Power Error: Battery overheating, need emergency cooling protocol
+      Communication Error: Radio interference, need frequency switching
+      Sensor Error: Calibration drift, need recalibration sequence
+      Storage Error: Disk corruption, need data recovery procedures
+
+      ⚙️ SPECIALIZED CHALLENGE: Different robot subsystems have different failure
+      modes and recovery procedures! A navigation error needs GPS fallback,
+      but a power error needs cooling protocols. You need a monitoring system
+      that can identify specific error types and trigger appropriate recovery.
+
+      🎯 SUBSYSTEM MONITORING MISSION:
+      - Create custom error types for each robot subsystem
+      - Use anyhow for unified error handling across all subsystems
+      - Implement error downcasting to identify specific error types
+      - Build specialized recovery procedures for each error category
+      - Create monitoring dashboard that shows subsystem health
+
+      🔧 SUBSYSTEM MONITORING PRINCIPLES:
+      Custom Errors = Specific failure information for each subsystem
+      Downcasting = Extract specific error details for targeted recovery
+      Unified Handling = One error system for all subsystems
+      Specialized Recovery = Different fixes for different failures
+
+      🏆 MONITORING MASTERY: Robot can identify and recover from any subsystem failure!
+
+      🛡️ SYSTEM RESILIENCE: Robot continues operating even when subsystems fail!
+    requirements:
+      - "Create custom error types for robot subsystems"
+      - "Use anyhow::Error for unified cross-subsystem error handling"
+      - "Implement error downcasting to identify specific error types"
+      - "Build specialized recovery procedures for each error category"
+
+  # Task 5: Advanced error recovery and retry mechanisms
+  - position: [9, 7]
+    item_type: "robot_resilience_core"
+    name: "Robot Resilience and Self-Recovery Core"
+    description: "🛡️ ULTIMATE SURVIVAL! Build the robot's ultimate survival system - automatic error recovery, retry mechanisms, and adaptive resilience!"
+    content: |
+      🛡️ ROBOT ULTIMATE SURVIVAL PROTOCOL 🛡️
+
+      🚀 ADAPTIVE RESILIENCE REQUIREMENTS:
+      Transient Errors: Network glitches, temporary sensor failures (retry with backoff)
+      Resource Errors: Low battery, insufficient memory (graceful degradation)
+      Environmental Errors: Extreme conditions, interference (adaptation protocols)
+      Hardware Errors: Component failures, calibration drift (self-repair sequences)
+      Mission Errors: Blocked paths, changed objectives (replanning algorithms)
+
+      🛡️ ULTIMATE CHALLENGE: Build a robot that NEVER gives up! In hostile
+      territory, temporary failures shouldn't end the mission. The robot needs
+      to automatically retry failed operations, adapt to harsh conditions,
+      degrade gracefully when resources are low, and recover from hardware issues.
+
+      🎯 RESILIENCE PROGRAMMING MISSION:
+      - Implement automatic retry with exponential backoff for transient errors
+      - Build graceful degradation systems for resource constraints
+      - Create adaptive protocols that adjust to environmental conditions
+      - Design self-repair sequences for hardware component failures
+      - Implement circuit breaker patterns to prevent cascade failures
+
+      🛡️ ULTIMATE SURVIVAL PRINCIPLES:
+      Retry Logic = Never give up on temporary failures
+      Graceful Degradation = Continue mission with reduced capabilities
+      Self-Repair = Automatic recovery from hardware issues
+      Circuit Breakers = Prevent small failures from becoming big ones
+      Adaptive Resilience = Evolution in response to hostile conditions
+
+      🏆 ULTIMATE MASTERY: Robot becomes virtually indestructible with adaptive self-recovery!
+
+      🚀 MISSION ASSURED: Robot can complete missions under ANY conditions!
+    requirements:
+      - "Implement retry mechanisms with exponential backoff patterns"
+      - "Build graceful degradation for resource constraint situations"
+      - "Create adaptive error handling that adjusts to conditions"
+      - "Design self-repair sequences for automatic recovery"
+      - "Implement circuit breaker patterns to prevent cascade failures"
+
+# Enemies represent error handling challenges
+enemies:
+  - position: [4, 4]
+    enemy_type: "cascade_failure"
+    name: "Cascade Failure Demon"
+    health: 45
+    description: "One error triggers multiple system failures - defeat with proper error isolation"
+
+  - position: [9, 4]
+    enemy_type: "cryptic_error"
+    name: "Cryptic Error Specter"
+    health: 35
+    description: "Unhelpful error messages that hide the real problem - defeat with context"
+
+  - position: [13, 4]
+    enemy_type: "error_swallowing"
+    name: "Error Swallowing Void"
+    health: 40
+    description: "Errors disappear without proper handling - defeat with explicit error management"
+
+  - position: [7, 8]
+    enemy_type: "retry_storm"
+    name: "Infinite Retry Storm"
+    health: 38
+    description: "Endless retry loops that never succeed - defeat with intelligent retry logic"
+
+  - position: [11, 8]
+    enemy_type: "panic_inducer"
+    name: "System Panic Inducer"
+    health: 50
+    description: "Unhandled errors that crash the entire system - defeat with resilient error handling"
+
+# Doors represent error handling mastery progression
+doors:
+  - position: [1, 4]
+    door_type: "unified_errors"
+    name: "Unified Error Gateway"
+    key_requirement: "Basic anyhow error handling mastery"
+    description: "Access to advanced error debugging systems"
+
+  - position: [6, 5]
+    door_type: "context_door"
+    name: "Error Context Portal"
+    key_requirement: "Error forensics and context expertise"
+    description: "Enter mission coordination systems"
+
+  - position: [10, 5]
+    door_type: "propagation_door"
+    name: "Error Propagation Chamber"
+    key_requirement: "Mission coordination and propagation skills"
+    description: "Access to specialized subsystem monitoring"
+
+  - position: [16, 5]
+    door_type: "resilience_door"
+    name: "Ultimate Resilience Vault"
+    key_requirement: "Complete error handling mastery"
+    description: "Robot ultimate survival protocol access"
+
+# Task definitions with learning objectives
+tasks:
+  - id: 1
+    name: "Unified Error Recovery System"
+    description: "Build a unified error handling system using anyhow to manage all robot subsystem failures"
+    requirements:
+      - "Use anyhow::Result<T> for unified error handling across all systems"
+      - "Convert different error types into anyhow::Error for consistency"
+      - "Add meaningful context to errors using .context() method"
+      - "Create recovery functions that handle any type of system failure"
+    item_location: [2, 2]
+    completion_message: "Unified error system online! Robot can now handle ANY error type and continue operating."
+
+  - id: 2
+    name: "Error Forensics Laboratory"
+    description: "Build comprehensive error debugging with context chains and meaningful messages"
+    requirements:
+      - "Use .with_context() to add meaningful error descriptions"
+      - "Build error chains that show complete failure paths"
+      - "Add operational context to all critical error points"
+      - "Create helpful error messages for rapid field diagnosis"
+    item_location: [8, 2]
+    completion_message: "Error forensics complete! Robot failures now provide detailed debugging information."
+
+  - id: 3
+    name: "Mission Coordination Center"
+    description: "Implement automatic error propagation for complex multi-step robot missions"
+    requirements:
+      - "Use ? operator with anyhow::Result for seamless error propagation"
+      - "Build mission functions with automatic failure handling"
+      - "Maintain error context through entire operation chains"
+      - "Create graceful mission abort procedures for any failure"
+    item_location: [14, 2]
+    completion_message: "Mission coordination perfected! Robot can execute complex missions with bulletproof error handling."
+
+  - id: 4
+    name: "Subsystem Monitoring Station"
+    description: "Create specialized error handling for different robot subsystems with downcasting"
+    requirements:
+      - "Create custom error types for each robot subsystem"
+      - "Use anyhow::Error for unified cross-subsystem error handling"
+      - "Implement error downcasting to identify specific error types"
+      - "Build specialized recovery procedures for each error category"
+    item_location: [6, 7]
+    completion_message: "Subsystem monitoring achieved! Robot can identify and recover from any specialized failure."
+
+  - id: 5
+    name: "Ultimate Resilience Core"
+    description: "Build advanced error recovery with retry mechanisms and adaptive resilience"
+    requirements:
+      - "Implement retry mechanisms with exponential backoff patterns"
+      - "Build graceful degradation for resource constraint situations"
+      - "Create adaptive error handling that adjusts to environmental conditions"
+      - "Design self-repair sequences for automatic recovery"
+      - "Implement circuit breaker patterns to prevent cascade failures"
+    item_location: [9, 7]
+    completion_message: "Ultimate resilience achieved! Robot is now virtually indestructible with adaptive self-recovery."
+
+completion_requirements:
+  - "Complete all 5 error recovery tasks"
+  - "Defeat all error-related enemies"
+  - "Open all error handling progression doors"
+  - "Demonstrate mastery of anyhow library for robust robot systems"
+
+final_message: "Level 22 Complete: Robot Emergency Recovery Protocol mastered! Your robot can now survive ANY error and continue its mission under the most hostile conditions. Ultimate reliability achieved!"

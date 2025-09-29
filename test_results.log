@@ -1,0 +1,2186 @@
+warning: output filename collision.
+The bin target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)` has the same output filename as the lib target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)`.
+Colliding filename is: C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game\target\release\deps\robo_grid_explorer_gui.pdb
+The targets should have unique names.
+Consider changing their names to be unique or compiling them separately.
+This may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>.
+warning: output filename collision.
+The bin target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)` has the same output filename as the lib target `robo_grid_explorer_gui` in package `robo_grid_explorer_gui v0.2.0 (C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game)`.
+Colliding filename is: C:\Users\LecherousCthulhu\Documents\coding\rust-work\rust-steam-game\target\release\robo_grid_explorer_gui.pdb
+The targets should have unique names.
+Consider changing their names to be unique or compiling them separately.
+This may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>.
+warning: unused import: `warn`
+ --> src\main.rs:4:17
+  |
+4 | use log::{info, warn, error, debug, trace};
+  |                 ^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `error`
+ --> src\gamestate\cursor.rs:4:24
+  |
+4 | use log::{debug, warn, error};
+  |                        ^^^^^
+
+warning: unused import: `game::*`
+ --> src\gamestate\mod.rs:8:9
+  |
+8 | pub use game::*;
+  |         ^^^^^^^
+
+warning: unused import: `crate::gamestate::types::EditorTab`
+ --> src\drawing\ui_drawing.rs:3:5
+  |
+3 | use crate::gamestate::types::EditorTab;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `editor_drawing::*`
+ --> src\drawing\mod.rs:7:9
+  |
+7 | pub use editor_drawing::*;
+  |         ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `warn`
+ --> src\coordinate_system.rs:1:25
+  |
+1 | use log::{debug, error, warn};
+  |                         ^^^^
+
+warning: unused import: `HashSet`
+ --> src\autocomplete\rust_intellisense.rs:2:33
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `types::*`
+  --> src\learning_test_runner.rs:10:23
+   |
+10 |     gamestate::{Game, types::*},
+   |                       ^^^^^^^^
+
+warning: value assigned to `show_comprehensive_testing` is never read
+  --> src\editor_test_mode.rs:88:13
+   |
+88 |             show_comprehensive_testing = !show_comprehensive_testing;
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: maybe it is overwritten before being read?
+   = note: `#[warn(unused_assignments)]` on by default
+
+warning: unused variable: `alt_held`
+   --> src\hotkey_test_mode.rs:294:13
+    |
+294 |         let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_alt_held`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: value assigned to `code_modified` is never read
+   --> src\hotkey_test_mode.rs:411:29
+    |
+411 | ...                   code_modified = true;
+    |                       ^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+   --> src\hotkey_test_mode.rs:423:21
+    |
+423 |                     code_modified = true;
+    |                     ^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+   --> src\hotkey_test_mode.rs:442:21
+    |
+442 |                     code_modified = true;
+    |                     ^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `loader`
+    --> src\main.rs:1580:9
+     |
+1580 |     let loader = ProgressiveLoader::new();
+     |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_loader`
+
+warning: variable `current_char_pressed` is assigned to, but never used
+    --> src\main.rs:1658:21
+     |
+1658 |             let mut current_char_pressed = None;
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: consider using `_current_char_pressed` instead
+
+warning: value assigned to `current_char_pressed` is never read
+    --> src\main.rs:1661:21
+     |
+1661 |                     current_char_pressed = Some(character);
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1665:25
+     |
+1665 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1678:21
+     |
+1678 |                     code_modified = true;
+     |                     ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1691:25
+     |
+1691 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1713:21
+     |
+1713 |                     code_modified = true;
+     |                     ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: unused variable: `editor_x`
+    --> src\main.rs:1776:13
+     |
+1776 |         let editor_x = 50.0;
+     |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_x`
+
+warning: unused variable: `editor_y`
+    --> src\main.rs:1777:13
+     |
+1777 |         let editor_y = 100.0;
+     |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_y`
+
+warning: unused variable: `editor_width`
+    --> src\main.rs:1778:13
+     |
+1778 |         let editor_width = screen_width() - 100.0;
+     |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_width`
+
+warning: unused variable: `editor_height`
+    --> src\main.rs:1779:13
+     |
+1779 |         let editor_height = screen_height() - 150.0;
+     |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_editor_height`
+
+warning: variable does not need to be mutable
+    --> src\main.rs:1581:9
+     |
+1581 |     let mut rng = StdRng::seed_from_u64(0xC0FFEE);
+     |         ----^^^
+     |         |
+     |         help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` on by default
+
+warning: unused variable: `loader`
+    --> src\main.rs:1803:9
+     |
+1803 |     let loader = ProgressiveLoader::new();
+     |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_loader`
+
+warning: variable `current_char_pressed` is assigned to, but never used
+    --> src\main.rs:1887:21
+     |
+1887 |             let mut current_char_pressed = None;
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: consider using `_current_char_pressed` instead
+
+warning: value assigned to `current_char_pressed` is never read
+    --> src\main.rs:1890:21
+     |
+1890 |                     current_char_pressed = Some(character);
+     |                     ^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1894:25
+     |
+1894 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1907:21
+     |
+1907 |                     code_modified = true;
+     |                     ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1920:25
+     |
+1920 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:1950:25
+     |
+1950 |                         code_modified = true;
+     |                         ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+    --> src\main.rs:1804:9
+     |
+1804 |     let mut rng = StdRng::seed_from_u64(0xDEADBEEF); // Different seed for variety
+     |         ----^^^
+     |         |
+     |         help: remove this `mut`
+
+warning: unused variable: `level_file`
+    --> src\main.rs:2438:13
+     |
+2438 |         let level_file = format!("levels/{:02}_*.yaml", config.level_idx + 1);
+     |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_level_file`
+
+warning: unused variable: `execution_result`
+    --> src\main.rs:2586:9
+     |
+2586 |     let execution_result = execute_test_code(&mut game, solution).await;
+     |         ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_execution_result`
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3151:37
+     |
+3151 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3168:37
+     |
+3168 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3184:37
+     |
+3184 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3217:33
+     |
+3217 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: value assigned to `code_modified` is never read
+    --> src\main.rs:3235:37
+     |
+3235 | ...                   code_modified = true;
+     |                       ^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: unused variable: `old_cursor`
+   --> src\gamestate\cursor.rs:578:17
+    |
+578 |             let old_cursor = self.cursor_position;
+    |                 ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_old_cursor`
+
+warning: unused variable: `start_pos`
+   --> src\gamestate\game.rs:614:21
+    |
+614 |                 let start_pos = self.cursor_position - current_word.len();
+    |                     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_pos`
+
+warning: unused variable: `button_spacing`
+   --> src\menu.rs:549:13
+    |
+549 |         let button_spacing = scale_size(45.0);
+    |             ^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_button_spacing`
+
+warning: unused variable: `scale`
+   --> src\popup.rs:354:13
+    |
+354 |         let scale = ScaledMeasurements::new();
+    |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `font_size`
+   --> src\drawing\editor_drawing.rs:104:9
+    |
+104 |     let font_size = game.get_cached_font_size();
+    |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_font_size`
+
+warning: unused variable: `chars_per_line`
+   --> src\drawing\editor_drawing.rs:119:9
+    |
+119 |     let chars_per_line = ((editor_width - scale_size(60.0)) / sample_char_width) as usize; // Account for line numbers
+    |         ^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_chars_per_line`
+
+warning: unused variable: `grid_info`
+   --> src\learning_tests\level2_task3_struct.rs:156:17
+    |
+156 |             let grid_info = GridInfo {
+    |                 ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_grid_info`
+
+warning: unused variable: `immutable_var`
+   --> src\learning_tests\level4_task5_constants.rs:157:9
+    |
+157 |     let immutable_var = 100;
+    |         ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_immutable_var`
+
+warning: unused variable: `action`
+   --> src\hotkeys\mod.rs:207:29
+    |
+207 |                 if let Some(action) = self.parse_vim_mapping(line) {
+    |                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_action`
+
+warning: unused variable: `action`
+   --> src\hotkeys\mod.rs:227:29
+    |
+227 |                 if let Some(action) = self.parse_emacs_binding(line) {
+    |                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_action`
+
+warning: variable does not need to be mutable
+   --> src\test_runner.rs:229:9
+    |
+229 |     let mut hotkey_system = crate::hotkeys::HotkeySystem::new();
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `results`
+   --> src\editor_test_mode.rs:351:41
+    |
+351 | fn handle_editor_input(game: &mut Game, results: &mut HotkeyTestResults) {
+    |                                         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_results`
+
+warning: unused variable: `scale`
+   --> src\editor_test_mode.rs:512:9
+    |
+512 |     let scale = ScaledMeasurements::new();
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `scale`
+   --> src\editor_test_mode.rs:584:9
+    |
+584 |     let scale = ScaledMeasurements::new();
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `scale`
+   --> src\editor_test_mode.rs:635:9
+    |
+635 |     let scale = ScaledMeasurements::new();
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `char_pos`
+   --> src\editor_test_mode.rs:689:13
+    |
+689 |     let mut char_pos = 0;
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_char_pos`
+
+warning: unused variable: `width`
+   --> src\editor_test_mode.rs:683:65
+    |
+683 | fn draw_code_with_autocomplete(game: &mut Game, x: f32, y: f32, width: f32, height: f32) {
+    |                                                                 ^^^^^ help: if this is intentional, prefix it with an underscore: `_width`
+
+warning: variable does not need to be mutable
+   --> src\editor_test_mode.rs:689:9
+    |
+689 |     let mut char_pos = 0;
+    |         ----^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `alt_held`
+    --> src\editor_test_mode.rs:1037:9
+     |
+1037 |     let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
+     |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_alt_held`
+
+warning: unused variable: `scale`
+    --> src\editor_test_mode.rs:1170:9
+     |
+1170 |     let scale = ScaledMeasurements::new();
+     |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_scale`
+
+warning: unused variable: `results`
+    --> src\editor_test_mode.rs:1167:5
+     |
+1167 |     results: &HotkeyTestResults,
+     |     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_results`
+
+warning: variable `out_of_bounds` is assigned to, but never used
+   --> src\main.rs:863:13
+    |
+863 |     let mut out_of_bounds = 0;
+    |             ^^^^^^^^^^^^^
+    |
+    = note: consider using `_out_of_bounds` instead
+
+warning: function `parse_println_message` is never used
+   --> src\main.rs:349:4
+    |
+349 | fn parse_println_message(param: &str, code: &str) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: function `extract_variable_value` is never used
+   --> src\main.rs:385:4
+    |
+385 | fn extract_variable_value(var_name: &str, code: &str) -> Option<String> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `extract_print_statements_from_rust_code` is never used
+   --> src\main.rs:422:4
+    |
+422 | fn extract_print_statements_from_rust_code(code: &str) -> Vec<String> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `old_extract_crates_from_code` is never used
+   --> src\main.rs:483:4
+    |
+483 | fn old_extract_crates_from_code(code: &str) -> HashSet<String> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `existing_deps_from_cargo_toml` is never used
+   --> src\main.rs:511:4
+    |
+511 | fn existing_deps_from_cargo_toml(cargo_toml_path: &str) -> HashSet<String> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `cargo_add_available` is never used
+   --> src\main.rs:535:4
+    |
+535 | fn cargo_add_available() -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `ensure_crates_in_cargo` is never used
+   --> src\main.rs:545:4
+    |
+545 | fn ensure_crates_in_cargo(new_crates: &HashSet<String>) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `auto_add_crates_from_robot_code` is never used
+   --> src\main.rs:582:4
+    |
+582 | fn auto_add_crates_from_robot_code(robot_code_path: &str) -> String {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `parse_rust_code` is never used
+   --> src\main.rs:956:4
+    |
+956 | fn parse_rust_code(code: &str) -> Vec<FunctionCall> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `load_external_code` is never used
+    --> src\main.rs:1247:4
+     |
+1247 | fn load_external_code(file_path: &str) -> Result<String, String> {
+     |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `load_yaml_levels` is never used
+    --> src\main.rs:1434:4
+     |
+1434 | fn load_yaml_levels() -> Vec<LevelSpec> {
+     |    ^^^^^^^^^^^^^^^^
+
+warning: struct `ShopItem` is never constructed
+    --> src\main.rs:1458:8
+     |
+1458 | struct ShopItem {
+     |        ^^^^^^^^
+
+warning: function `shop_items` is never used
+    --> src\main.rs:1464:4
+     |
+1464 | fn shop_items(game: &Game) -> Vec<ShopItem> {
+     |    ^^^^^^^^^^
+
+warning: function `reset_crash_recovery` is never used
+    --> src\main.rs:2697:4
+     |
+2697 | fn reset_crash_recovery() {
+     |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `emergency_game_recovery` is never used
+    --> src\main.rs:2719:4
+     |
+2719 | fn emergency_game_recovery(game: &mut Game) {
+     |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `EXCEPTION_ACCESS_VIOLATION` is never used
+  --> src\crash_protection.rs:10:7
+   |
+10 | const EXCEPTION_ACCESS_VIOLATION: u32 = 0xC0000005;
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `EXCEPTION_CONTINUE_EXECUTION` is never used
+  --> src\crash_protection.rs:12:7
+   |
+12 | const EXCEPTION_CONTINUE_EXECUTION: i32 = -1;
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `EXCEPTION_CONTINUE_SEARCH` is never used
+  --> src\crash_protection.rs:14:7
+   |
+14 | const EXCEPTION_CONTINUE_SEARCH: i32 = 0;
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: static `EMERGENCY_SHUTDOWN_MODE` is never used
+  --> src\crash_protection.rs:25:8
+   |
+25 | static EMERGENCY_SHUTDOWN_MODE: AtomicBool = AtomicBool::new(false);
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_emergency_shutdown_active` is never used
+  --> src\crash_protection.rs:43:8
+   |
+43 | pub fn is_emergency_shutdown_active() -> bool {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `unhandled_exception_filter` is never used
+  --> src\crash_protection.rs:48:27
+   |
+48 | unsafe extern "system" fn unhandled_exception_filter(
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `setup_system_crash_protection` is never used
+   --> src\crash_protection.rs:122:8
+    |
+122 | pub fn setup_system_crash_protection() {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `safe_system_operation` is never used
+   --> src\crash_protection.rs:140:8
+    |
+140 | pub fn safe_system_operation<F, R>(operation: F, operation_name: &str, default_result: R) -> R
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_crash_count` is never used
+   --> src\crash_protection.rs:169:8
+    |
+169 | pub fn get_crash_count() -> usize {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `reset_crash_count` is never used
+   --> src\crash_protection.rs:173:8
+    |
+173 | pub fn reset_crash_count() {
+    |        ^^^^^^^^^^^^^^^^^
+
+warning: function `safe_is_key_pressed` is never used
+   --> src\crash_protection.rs:192:8
+    |
+192 | pub fn safe_is_key_pressed(key: KeyCode) -> bool {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `safe_is_key_down` is never used
+   --> src\crash_protection.rs:196:8
+    |
+196 | pub fn safe_is_key_down(key: KeyCode) -> bool {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `safe_screen_width` is never used
+   --> src\crash_protection.rs:200:8
+    |
+200 | pub fn safe_screen_width() -> f32 {
+    |        ^^^^^^^^^^^^^^^^^
+
+warning: function `safe_screen_height` is never used
+   --> src\crash_protection.rs:204:8
+    |
+204 | pub fn safe_screen_height() -> f32 {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `safe_mouse_position` is never used
+   --> src\crash_protection.rs:208:8
+    |
+208 | pub fn safe_mouse_position() -> (f32, f32) {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: associated function `from_yaml_file` is never used
+   --> src\level\mod.rs:128:12
+    |
+127 | impl YamlLevelConfig {
+    | -------------------- associated function in this implementation
+128 |     pub fn from_yaml_file<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn std::error::Error>> {
+    |            ^^^^^^^^^^^^^^
+
+warning: function `load_yaml_levels_from_directory` is never used
+   --> src\level\mod.rs:293:8
+    |
+293 | pub fn load_yaml_levels_from_directory<P: AsRef<Path>>(dir: P) -> Vec<YamlLevelConfig> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `get_collected_items`, `get_active_items`, and `add_dummy_item` are never used
+   --> src\item.rs:94:12
+    |
+49  | impl ItemManager {
+    | ---------------- methods in this implementation
+...
+94  |     pub fn get_collected_items(&self) -> Vec<&Item> {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+98  |     pub fn get_active_items(&self) -> Vec<&Item> {
+    |            ^^^^^^^^^^^^^^^^
+...
+102 |     pub fn add_dummy_item(&mut self, name: &str) {
+    |            ^^^^^^^^^^^^^^
+
+warning: function `create_grabber_upgrade` is never used
+   --> src\item.rs:199:8
+    |
+199 | pub fn create_grabber_upgrade(pos: Pos) -> Item {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `create_credit_gem` is never used
+   --> src\item.rs:215:8
+    |
+215 | pub fn create_credit_gem(pos: Pos, value: u32) -> Item {
+    |        ^^^^^^^^^^^^^^^^^
+
+warning: function `create_time_slow_item` is never used
+   --> src\item.rs:231:8
+    |
+231 | pub fn create_time_slow_item(pos: Pos, duration_ms: u32) -> Item {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `create_door_key_item` is never used
+   --> src\item.rs:247:8
+    |
+247 | pub fn create_door_key_item(pos: Pos) -> Item {
+    |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `is_blocked_with_temp_removal` and `get_enemies_at_position` are never used
+   --> src\grid\mod.rs:326:12
+    |
+32  | impl Grid {
+    | --------- methods in this implementation
+...
+326 |     pub fn is_blocked_with_temp_removal(&self, pos: Pos, temp_removed: &std::collections::HashMap<(i32, i32), u8>) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+340 |     pub fn get_enemies_at_position(&self, pos: Pos) -> Vec<&Enemy> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `auto_grab_enabled` is never read
+  --> src\robot\mod.rs:18:9
+   |
+14 | pub struct Robot {
+   |            ----- field in this struct
+...
+18 |     pub auto_grab_enabled: bool,
+   |         ^^^^^^^^^^^^^^^^^
+   |
+   = note: `Robot` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> src\robot\mod.rs:48:12
+    |
+21  | impl Robot {
+    | ---------- methods in this implementation
+...
+48  |     pub fn move_by(&mut self, dx: i32, dy: i32) {
+    |            ^^^^^^^
+...
+57  |     pub fn add_to_inventory(&mut self, item_name: String) {
+    |            ^^^^^^^^^^^^^^^^
+...
+61  |     pub fn has_item(&self, item_name: &str) -> bool {
+    |            ^^^^^^^^
+...
+65  |     pub fn remove_from_inventory(&mut self, item_name: &str) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+73  |     pub fn get_scanner_range(&self) -> i32 {
+    |            ^^^^^^^^^^^^^^^^^
+...
+81  |     pub fn upgrade_scanner(&mut self) {
+    |            ^^^^^^^^^^^^^^^
+...
+96  |     pub fn clear_inventory(&mut self) {
+    |            ^^^^^^^^^^^^^^^
+...
+106 |     pub fn can_grab_at(&self, target: Pos) -> bool {
+    |            ^^^^^^^^^^^
+...
+128 |     pub fn get_scanner_positions(&self, direction: (i32, i32), grid_width: i32, grid_height: i32) -> Vec<Pos> {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+155 |     pub fn toggle_auto_grab(&mut self) {
+    |            ^^^^^^^^^^^^^^^^
+...
+159 |     pub fn set_auto_grab(&mut self, enabled: bool) {
+    |            ^^^^^^^^^^^^^
+...
+169 |     pub fn has_door_key(&self) -> bool {
+    |            ^^^^^^^^^^^^
+...
+174 |     pub fn get_door_positions(&self, grid_width: i32, grid_height: i32) -> Vec<Pos> {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+193 |     pub fn can_open_door_at(&self, target: Pos) -> bool {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: variants `Println`, `Eprintln`, and `Panic` are never constructed
+  --> src\gamestate\types.rs:24:5
+   |
+15 | pub enum RustFunction {
+   |          ------------ variants in this enum
+...
+24 |     Println,
+   |     ^^^^^^^
+25 |     Eprintln, // Error messages
+   |     ^^^^^^^^
+26 |     Panic,    // Critical errors
+   |     ^^^^^
+   |
+   = note: `RustFunction` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: field `message` is never read
+  --> src\gamestate\types.rs:44:9
+   |
+38 | pub struct FunctionCall {
+   |            ------------ field in this struct
+...
+44 |     pub message: Option<String>, // for println
+   |         ^^^^^^^
+   |
+   = note: `FunctionCall` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: fields `variables_used`, `scan_output_stored`, and `u32_move_used` are never read
+  --> src\gamestate\types.rs:51:9
+   |
+48 | pub struct TutorialState {
+   |            ------------- fields in this struct
+...
+51 |     pub variables_used: Vec<String>, // Track variables created by user
+   |         ^^^^^^^^^^^^^^
+52 |     pub scan_output_stored: bool,  // Track if scan output was stored in variable
+   |         ^^^^^^^^^^^^^^^^^^
+53 |     pub u32_move_used: bool,      // Track if move with u32 was used
+   |         ^^^^^^^^^^^^^
+   |
+   = note: `TutorialState` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: fields `selected_function_to_view`, `code_lines_visible`, `editor_tab`, and `hotkey_system` are never read
+   --> src\gamestate\types.rs:72:9
+    |
+57  | pub struct Game {
+    |            ---- fields in this struct
+...
+72  |     pub selected_function_to_view: Option<RustFunction>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+84  |     pub code_lines_visible: usize, // Number of lines visible in editor
+    |         ^^^^^^^^^^^^^^^^^^
+...
+116 |     pub editor_tab: EditorTab, // Current active tab above the editor
+    |         ^^^^^^^^^^
+...
+130 |     pub hotkey_system: crate::hotkeys::HotkeySystem,
+    |         ^^^^^^^^^^^^^
+    |
+    = note: `Game` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: variants `Logs`, `Tasks`, and `Editor` are never constructed
+   --> src\gamestate\types.rs:195:5
+    |
+193 | pub enum EditorTab {
+    |          --------- variants in this enum
+194 |     Commands,
+195 |     Logs,
+    |     ^^^^
+196 |     Tasks,
+    |     ^^^^^
+197 |     Editor,
+    |     ^^^^^^
+    |
+    = note: `EditorTab` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> src\gamestate\cursor.rs:104:8
+    |
+6   | impl Game {
+    | --------- methods in this implementation
+...
+104 |     fn position_cursor_at_click_internal(&mut self, click_x: f32, click_y: f32, editor_bounds: (f32, f32, f32, f32)) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+356 |     pub fn has_selection(&self) -> bool {
+    |            ^^^^^^^^^^^^^
+...
+456 |     pub fn get_text_position(&mut self, line_index: usize, col_index: usize, editor_bounds: (f32, f32, f32, f32)) -> (f32, f32) {
+    |            ^^^^^^^^^^^^^^^^^
+...
+483 |     pub fn get_character_at_position(&mut self, click_x: f32, click_y: f32, editor_bounds: (f32, f32, f32, f32)) -> Option<(usize, usize)> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+622 |     pub fn select_left(&mut self) {
+    |            ^^^^^^^^^^^
+...
+631 |     pub fn select_right(&mut self) {
+    |            ^^^^^^^^^^^^
+...
+640 |     pub fn select_up(&mut self) {
+    |            ^^^^^^^^^
+...
+649 |     pub fn select_down(&mut self) {
+    |            ^^^^^^^^^^^
+
+warning: multiple methods are never used
+   --> src\gamestate\game.rs:107:12
+    |
+10  | impl Game {
+    | --------- methods in this implementation
+...
+107 |     pub fn get_gui_functions(&self) -> Vec<RustFunction> {
+    |            ^^^^^^^^^^^^^^^^^
+...
+636 |     pub fn toggle_autocomplete(&mut self) {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+665 |     pub fn handle_hotkey(&mut self, key: macroquad::prelude::KeyCode, ctrl: bool, shift: bool, alt: bool) -> bool {
+    |            ^^^^^^^^^^^^^
+...
+673 |     fn execute_hotkey_action(&mut self, action: crate::hotkeys::EditorAction) -> bool {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+691 |     pub fn load_hotkey_config(&mut self) -> Result<(), String> {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+695 |     pub fn save_hotkey_config(&self) -> Result<(), String> {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+700 |     pub fn apply_menu_settings(&mut self, settings: &crate::menu::GameSettings) {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+712 |     pub fn toggle_vscode_integration_setting(&mut self) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+718 |     pub fn is_vscode_available(&self) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+794 |     pub fn cut_to_clipboard(&mut self) -> bool {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: variants `IncreaseSfxVolume`, `IncreaseMusicVolume`, and `ToggleVSCodeIntegration` are never constructed
+  --> src\menu.rs:31:5
+   |
+18 | pub enum MenuAction {
+   |          ---------- variants in this enum
+...
+31 |     IncreaseSfxVolume,
+   |     ^^^^^^^^^^^^^^^^^
+32 |     DecreaseSfxVolume,
+33 |     IncreaseMusicVolume,
+   |     ^^^^^^^^^^^^^^^^^^^
+...
+38 |     ToggleVSCodeIntegration,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `MenuAction` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `is_level_unlocked` is never used
+   --> src\menu.rs:163:12
+    |
+114 | impl PlayerProgress {
+    | ------------------- method in this implementation
+...
+163 |     pub fn is_level_unlocked(&self, level: usize) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+
+warning: method `update_from_actual_screen` is never used
+   --> src\menu.rs:234:12
+    |
+201 | impl GameSettings {
+    | ----------------- method in this implementation
+...
+234 |     pub fn update_from_actual_screen(&mut self) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `scroll_offset` is never read
+   --> src\menu.rs:247:9
+    |
+242 | pub struct Menu {
+    |            ---- field in this struct
+...
+247 |     pub scroll_offset: f32,
+    |         ^^^^^^^^^^^^^
+    |
+    = note: `Menu` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `draw` is never used
+   --> src\menu.rs:769:12
+    |
+254 | impl Menu {
+    | --------- method in this implementation
+...
+769 |     pub fn draw(&self) {
+    |            ^^^^
+
+warning: method `description` is never used
+  --> src\movement_patterns\mod.rs:20:8
+   |
+8  | pub trait MovementPattern: Send + Sync + std::fmt::Debug {
+   |           --------------- method in this trait
+...
+20 |     fn description(&self) -> &'static str {
+   |        ^^^^^^^^^^^
+
+warning: methods `show_tutorial` and `is_showing` are never used
+   --> src\popup.rs:71:12
+    |
+41  | impl PopupSystem {
+    | ---------------- methods in this implementation
+...
+71  |     pub fn show_tutorial(&mut self, content: String) {
+    |            ^^^^^^^^^^^^^
+...
+312 |     pub fn is_showing(&self) -> bool {
+    |            ^^^^^^^^^^
+
+warning: function `get_function_definition` is never used
+  --> src\drawing\ui_drawing.rs:42:4
+   |
+42 | fn get_function_definition(func: RustFunction) -> &'static str {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_function_definitions` is never used
+  --> src\drawing\ui_drawing.rs:84:8
+   |
+84 | pub fn draw_function_definitions(game: &mut Game) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_commands_content` is never used
+  --> src\drawing\ui_drawing.rs:99:4
+   |
+99 | fn draw_commands_content(game: &Game, def_x: f32, def_y: f32, def_width: f32, def_height: f32, scale: &ScaledMeasurements) {
+   |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_tasks_content` is never used
+   --> src\drawing\ui_drawing.rs:160:4
+    |
+160 | fn draw_tasks_content(game: &Game, def_x: f32, def_y: f32, def_width: f32, def_height: f32, scale: &ScaledMeasurements) {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_logs_content` is never used
+   --> src\drawing\ui_drawing.rs:327:4
+    |
+327 | fn draw_logs_content(game: &Game, def_x: f32, def_y: f32, def_width: f32, def_height: f32, scale: &ScaledMeasurements) {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `wrap_log_text` is never used
+   --> src\drawing\ui_drawing.rs:411:4
+    |
+411 | fn wrap_log_text(text: &str, max_width: f32, font_size: f32) -> Vec<String> {
+    |    ^^^^^^^^^^^^^
+
+warning: function `handle_shop` is never used
+   --> src\drawing\ui_drawing.rs:520:8
+    |
+520 | pub fn handle_shop(_game: &mut Game) {
+    |        ^^^^^^^^^^^
+
+warning: field `column` is never read
+ --> src\rust_checker.rs:9:9
+  |
+7 | pub struct CompilerError {
+  |            ------------- field in this struct
+8 |     pub line: usize,
+9 |     pub column: usize,
+  |         ^^^^^^
+  |
+  = note: `CompilerError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `button_height` is never read
+   --> src\font_scaling.rs:178:9
+    |
+171 | pub struct ScaledMeasurements {
+    |            ------------------ field in this struct
+...
+178 |     pub button_height: f32, // 25.0 base
+    |         ^^^^^^^^^^^^^
+
+warning: method `get_cached_asset` is never used
+   --> src\cache.rs:171:12
+    |
+61  | impl GameCache {
+    | -------------- method in this implementation
+...
+171 |     pub fn get_cached_asset(&self, key: &str) -> Option<&CachedAsset> {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: method `is_complete` is never used
+   --> src\progressive_loader.rs:322:12
+    |
+36  | impl ProgressiveLoader {
+    | ---------------------- method in this implementation
+...
+322 |     pub fn is_complete(&self) -> bool {
+    |            ^^^^^^^^^^^
+
+warning: struct `GlobalCoordinate` is never constructed
+ --> src\coordinate_system.rs:4:12
+  |
+4 | pub struct GlobalCoordinate {
+  |            ^^^^^^^^^^^^^^^^
+
+warning: struct `WindowCoordinate` is never constructed
+  --> src\coordinate_system.rs:10:12
+   |
+10 | pub struct WindowCoordinate {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `EditorCoordinate` is never constructed
+  --> src\coordinate_system.rs:16:12
+   |
+16 | pub struct EditorCoordinate {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: associated items `get_global_mouse_position`, `global_to_window`, `window_to_editor`, and `get_precise_mouse_position_in_editor` are never used
+   --> src\coordinate_system.rs:41:12
+    |
+34  | impl CoordinateTransformer {
+    | -------------------------- associated items in this implementation
+...
+41  |     pub fn get_global_mouse_position(enable_logs: bool) -> Option<GlobalCoordinate> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+426 |     pub fn global_to_window(&self, global: GlobalCoordinate, enable_logs: bool) -> Option<WindowCoordinate> {
+    |            ^^^^^^^^^^^^^^^^
+...
+445 |     pub fn window_to_editor(&self, window: WindowCoordinate, editor_bounds: (f32, f32, f32, f32), enable_logs: bool) -> EditorCoordinate {
+    |            ^^^^^^^^^^^^^^^^
+...
+461 |     pub fn get_precise_mouse_position_in_editor(&mut self, editor_bounds: (f32, f32, f32, f32), enable_logs: bool) -> Option<EditorCoordi...
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `UserCodeAnalyzer` is never constructed
+ --> src\learning_tests\test_utils.rs:7:12
+  |
+7 | pub struct UserCodeAnalyzer {
+  |            ^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+  --> src\learning_tests\test_utils.rs:12:12
+   |
+11 | impl UserCodeAnalyzer {
+   | --------------------- associated items in this implementation
+12 |     pub fn new(code: &str) -> Self {
+   |            ^^^
+...
+19 |     pub fn contains_function(&self, function_name: &str) -> bool {
+   |            ^^^^^^^^^^^^^^^^^
+...
+25 |     pub fn contains_struct(&self, struct_name: &str) -> bool {
+   |            ^^^^^^^^^^^^^^^
+...
+31 |     pub fn count_pattern(&self, pattern: &str) -> usize {
+   |            ^^^^^^^^^^^^^
+...
+36 |     pub fn has_nested_for_loops(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^^^^^^
+...
+43 |     pub fn contains_println_with_text(&self, text: &str) -> bool {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+49 |     pub fn contains_println(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^^
+...
+54 |     pub fn execute_and_capture_output(&self) -> Result<ExecutionResult, String> {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ExecutionResult` is never constructed
+  --> src\learning_tests\test_utils.rs:94:12
+   |
+94 | pub struct ExecutionResult {
+   |            ^^^^^^^^^^^^^^^
+
+warning: function `load_user_code` is never used
+   --> src\learning_tests\test_utils.rs:101:8
+    |
+101 | pub fn load_user_code() -> Result<String, String> {
+    |        ^^^^^^^^^^^^^^
+
+warning: function `create_analyzer` is never used
+   --> src\learning_tests\test_utils.rs:107:8
+    |
+107 | pub fn create_analyzer() -> Result<UserCodeAnalyzer, String> {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `main` is never used
+  --> src\learning_tests\level1_task1_hello.rs:51:4
+   |
+51 | fn main() {
+   |    ^^^^
+
+warning: function `scan_level` is never used
+  --> src\learning_tests\level2_task1_function.rs:76:4
+   |
+76 | fn scan_level() {
+   |    ^^^^^^^^^^
+
+warning: function `main` is never used
+  --> src\learning_tests\level2_task1_function.rs:80:4
+   |
+80 | fn main() {
+   |    ^^^^
+
+warning: function `scan_level` is never used
+   --> src\learning_tests\level2_task2_loops.rs:112:4
+    |
+112 | fn scan_level() {
+    |    ^^^^^^^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level2_task2_loops.rs:122:4
+    |
+122 | fn main() {
+    |    ^^^^
+
+warning: struct `GridInfo` is never constructed
+   --> src\learning_tests\level2_task3_struct.rs:141:8
+    |
+141 | struct GridInfo {
+    |        ^^^^^^^^
+
+warning: function `scan_level` is never used
+   --> src\learning_tests\level2_task3_struct.rs:147:4
+    |
+147 | fn scan_level() {
+    |    ^^^^^^^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level2_task3_struct.rs:171:4
+    |
+171 | fn main() {
+    |    ^^^^
+
+warning: struct `GridInfo` is never constructed
+   --> src\learning_tests\level2_task4_conditional.rs:176:8
+    |
+176 | struct GridInfo {
+    |        ^^^^^^^^
+
+warning: function `scan_level` is never used
+   --> src\learning_tests\level2_task4_conditional.rs:182:4
+    |
+182 | fn scan_level() {
+    |    ^^^^^^^^^^
+
+warning: function `grab_if_item` is never used
+   --> src\learning_tests\level2_task4_conditional.rs:202:4
+    |
+202 | fn grab_if_item(scan_result: &str) {
+    |    ^^^^^^^^^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level2_task4_conditional.rs:208:4
+    |
+208 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+  --> src\learning_tests\level3_task1_integers.rs:94:4
+   |
+94 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level3_task2_floats.rs:105:4
+    |
+105 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level3_task3_booleans.rs:109:4
+    |
+109 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level3_task4_characters.rs:115:4
+    |
+115 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level3_task5_type_inference.rs:129:4
+    |
+129 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level4_task1_immutable.rs:121:4
+    |
+121 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level4_task2_mutable.rs:125:4
+    |
+125 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level4_task3_shadowing.rs:129:4
+    |
+129 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level4_task4_scope.rs:145:4
+    |
+145 | fn main() {
+    |    ^^^^
+
+warning: function `calculate_something` is never used
+   --> src\learning_tests\level4_task4_scope.rs:171:4
+    |
+171 | fn calculate_something() -> i32 {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_ENERGY` is never used
+   --> src\learning_tests\level4_task5_constants.rs:136:7
+    |
+136 | const MAX_ENERGY: i32 = 1000;
+    |       ^^^^^^^^^^
+
+warning: constant `ROBOT_NAME` is never used
+   --> src\learning_tests\level4_task5_constants.rs:137:7
+    |
+137 | const ROBOT_NAME: &str = "Ferris";
+    |       ^^^^^^^^^^
+
+warning: constant `PI` is never used
+   --> src\learning_tests\level4_task5_constants.rs:138:7
+    |
+138 | const PI: f64 = 3.141592653589793;
+    |       ^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level4_task5_constants.rs:140:4
+    |
+140 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level5_task1_casting.rs:117:4
+    |
+117 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level5_task2_from_into.rs:126:4
+    |
+126 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level5_task3_parsing.rs:131:4
+    |
+131 | fn main() {
+    |    ^^^^
+
+warning: struct `RobotState` is never constructed
+   --> src\learning_tests\level5_task4_custom_conversion.rs:136:8
+    |
+136 | struct RobotState {
+    |        ^^^^^^^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level5_task4_custom_conversion.rs:156:4
+    |
+156 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level5_task5_inference.rs:130:4
+    |
+130 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+  --> src\learning_tests\level11_task1_async_function.rs:96:4
+   |
+96 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+  --> src\learning_tests\level11_task2_block_on.rs:94:4
+   |
+94 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level11_task3_spawn_tasks.rs:109:4
+    |
+109 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level14_task1_serializable_struct.rs:121:4
+    |
+121 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level14_task2_deserialize_json.rs:124:4
+    |
+124 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level14_task3_serialize_state.rs:137:4
+    |
+137 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level15_task1_yaml_config.rs:151:4
+    |
+151 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level16_task1_custom_serialize.rs:150:4
+    |
+150 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+  --> src\learning_tests\level17_task1_basic_logging.rs:94:4
+   |
+94 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level18_task1_raw_pointers.rs:104:4
+    |
+104 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level19_task1_bitwise_basic.rs:119:4
+    |
+119 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level20_task1_fn_trait.rs:116:4
+    |
+116 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level21_task1_arithmetic_traits.rs:122:4
+    |
+122 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> src\learning_tests\level22_task1_unified_errors.rs:127:4
+    |
+127 | fn main() {
+    |    ^^^^
+
+warning: field `priority` is never read
+  --> src\autocomplete\mod.rs:11:9
+   |
+8  | pub struct AutocompleteSuggestion {
+   |            ---------------------- field in this struct
+...
+11 |     pub priority: u8, // 0 = highest priority
+   |         ^^^^^^^^
+   |
+   = note: `AutocompleteSuggestion` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `name`, `kind`, and `location` are never read
+  --> src\autocomplete\mod.rs:26:9
+   |
+25 | pub struct CodeSymbol {
+   |            ---------- fields in this struct
+26 |     pub name: String,
+   |         ^^^^
+27 |     pub kind: SymbolKind,
+   |         ^^^^
+28 |     pub location: usize, // Position in code where defined
+   |         ^^^^^^^^
+   |
+   = note: `CodeSymbol` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `keywords` and `built_in_functions` are never read
+  --> src\autocomplete\mod.rs:34:5
+   |
+32 | pub struct CodeAnalyzer {
+   |            ------------ fields in this struct
+33 |     symbols: Vec<CodeSymbol>,
+34 |     keywords: HashSet<String>,
+   |     ^^^^^^^^
+35 |     built_in_functions: HashSet<String>,
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `CodeAnalyzer` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: methods `get_symbols`, `get_keywords`, and `get_built_in_functions` are never used
+   --> src\autocomplete\mod.rs:180:12
+    |
+38  | impl CodeAnalyzer {
+    | ----------------- methods in this implementation
+...
+180 |     pub fn get_symbols(&self) -> &[CodeSymbol] {
+    |            ^^^^^^^^^^^
+...
+184 |     pub fn get_keywords(&self) -> &HashSet<String> {
+    |            ^^^^^^^^^^^^
+...
+188 |     pub fn get_built_in_functions(&self) -> &HashSet<String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `analyzer`, `use_vscode`, and `vscode_integration` are never read
+   --> src\autocomplete\mod.rs:195:5
+    |
+194 | pub struct AutocompleteEngine {
+    |            ------------------ fields in this struct
+195 |     analyzer: CodeAnalyzer,
+    |     ^^^^^^^^
+...
+198 |     use_vscode: bool,
+    |     ^^^^^^^^^^
+199 |     vscode_integration: Option<vscode_integration::VSCodeIntegration>,
+    |     ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `AutocompleteEngine` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> src\autocomplete\mod.rs:249:8
+    |
+203 | impl AutocompleteEngine {
+    | ----------------------- methods in this implementation
+...
+249 |     fn get_current_word(&self, code: &str, cursor_position: usize) -> String {
+    |        ^^^^^^^^^^^^^^^^
+...
+285 |     fn generate_suggestion(&self, partial_word: &str) -> Option<AutocompleteSuggestion> {
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+348 |     pub fn clear_suggestion(&mut self) {
+    |            ^^^^^^^^^^^^^^^^
+...
+352 |     pub fn is_enabled(&self) -> bool {
+    |            ^^^^^^^^^^
+...
+363 |     pub fn set_vscode_enabled(&mut self, enabled: bool) {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+367 |     pub fn is_vscode_enabled(&self) -> bool {
+    |            ^^^^^^^^^^^^^^^^^
+...
+371 |     pub fn is_vscode_available(&self) -> bool {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+375 |     fn get_vscode_suggestion(&mut self, code: &str, cursor_position: usize, current_word: &str) -> Option<AutocompleteSuggestion> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+392 |     pub fn cursor_to_line_character(&self, code: &str, cursor_position: usize) -> (u32, u32) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `vscode_path`, `workspace_path`, `rust_analyzer_available`, and `request_id` are never read
+  --> src\autocomplete\vscode_integration.rs:46:5
+   |
+45 | pub struct VSCodeIntegration {
+   |            ----------------- fields in this struct
+46 |     vscode_path: Option<PathBuf>,
+   |     ^^^^^^^^^^^
+47 |     workspace_path: PathBuf,
+   |     ^^^^^^^^^^^^^^
+48 |     rust_analyzer_available: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+49 |     request_id: u32,
+   |     ^^^^^^^^^^
+   |
+   = note: `VSCodeIntegration` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple associated items are never used
+   --> src\autocomplete\vscode_integration.rs:53:12
+    |
+52  | impl VSCodeIntegration {
+    | ---------------------- associated items in this implementation
+53  |     pub fn new(workspace_path: PathBuf) -> Self {
+    |            ^^^
+...
+66  |     pub fn is_available(&self) -> bool {
+    |            ^^^^^^^^^^^^
+...
+71  |     pub fn get_completions(&mut self, file_content: &str, line: u32, character: u32) -> Option<Vec<super::AutocompleteSuggestion>> {
+    |            ^^^^^^^^^^^^^^^
+...
+91  |     fn find_vscode_installation() -> Option<PathBuf> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+112 |     fn command_exists(command: &Path) -> bool {
+    |        ^^^^^^^^^^^^^^
+...
+121 |     fn check_rust_analyzer_availability(vscode_path: &Option<PathBuf>) -> bool {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+144 |     fn get_rust_analyzer_completions(&mut self, file_path: &Path, line: u32, character: u32) -> Option<Vec<super::AutocompleteSuggestion>> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+149 |     fn try_rust_analyzer_direct(&mut self, file_path: &Path, line: u32, character: u32) -> Option<Vec<super::AutocompleteSuggestion>> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+268 |     fn get_rust_analyzer_background_completions(&mut self, workspace_path: &Path, file_path: &Path, line: u32, character: u32) -> Option<...
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+323 |     fn communicate_with_rust_analyzer(&mut self, child: &mut std::process::Child, file_path: &Path, line: u32, character: u32) -> Option<...
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+396 |     fn send_lsp_notification(&self, stdin: &mut std::process::ChildStdin, notification: &serde_json::Value) -> Result<(), Box<dyn std::er...
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+404 |     fn parse_content_length(&self, header: &str) -> Option<usize> {
+    |        ^^^^^^^^^^^^^^^^^^^^
+...
+410 |     fn read_completion_response(&mut self, reader: &mut BufReader<&mut std::process::ChildStdout>) -> Option<Vec<super::AutocompleteSugge...
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+438 |     fn send_lsp_request(&self, stdin: &mut std::process::ChildStdin, request: &LSPRequest) -> Result<(), Box<dyn std::error::Error>> {
+    |        ^^^^^^^^^^^^^^^^
+...
+447 |     fn read_lsp_response(&self, reader: &mut BufReader<&mut std::process::ChildStdout>) -> Result<LSPResponse, Box<dyn std::error::Error>> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+469 |     fn parse_completion_response(&self, response: LSPResponse) -> Option<Vec<super::AutocompleteSuggestion>> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+509 |     fn lsp_completion_kind_to_symbol_kind(&self, lsp_kind: u32) -> super::SymbolKind {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+540 |     pub fn setup_workspace(&self) -> Result<(), Box<dyn std::error::Error>> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: fields `detail`, `insert_text`, and `snippet` are never read
+   --> src\autocomplete\rust_intellisense.rs:178:9
+    |
+175 | pub struct CompletionItem {
+    |            -------------- fields in this struct
+...
+178 |     pub detail: String,
+    |         ^^^^^^
+179 |     pub insert_text: Option<String>,
+    |         ^^^^^^^^^^^
+180 |     pub snippet: Option<String>,
+    |         ^^^^^^^
+    |
+    = note: `CompletionItem` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variants `Trait`, `Module`, `Constant`, `Field`, and `Parameter` are never constructed
+   --> src\autocomplete\rust_intellisense.rs:190:5
+    |
+184 | pub enum CompletionKind {
+    |          -------------- variants in this enum
+...
+190 |     Trait,
+    |     ^^^^^
+191 |     Module,
+    |     ^^^^^^
+192 |     Variable,
+193 |     Constant,
+    |     ^^^^^^^^
+...
+197 |     Field,
+    |     ^^^^^
+198 |     Parameter,
+    |     ^^^^^^^^^
+    |
+    = note: `CompletionKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: methods `with_insert_text` and `with_snippet` are never used
+   --> src\autocomplete\rust_intellisense.rs:212:12
+    |
+201 | impl CompletionItem {
+    | ------------------- methods in this implementation
+...
+212 |     pub fn with_insert_text(mut self, text: &str) -> Self {
+    |            ^^^^^^^^^^^^^^^^
+...
+217 |     pub fn with_snippet(mut self, snippet: &str) -> Self {
+    |            ^^^^^^^^^^^^
+
+warning: method `clear_cache` is never used
+   --> src\autocomplete\rust_intellisense.rs:423:12
+    |
+233 | impl RustIntellisense {
+    | --------------------- method in this implementation
+...
+423 |     pub fn clear_cache(&mut self) {
+    |            ^^^^^^^^^^^
+
+warning: multiple variants are never constructed
+  --> src\hotkeys\mod.rs:33:5
+   |
+21 | pub enum EditorAction {
+   |          ------------ variants in this enum
+...
+33 |     Uncomment,
+   |     ^^^^^^^^^
+...
+38 |     MoveCursorUp,
+   |     ^^^^^^^^^^^^
+39 |     MoveCursorDown,
+   |     ^^^^^^^^^^^^^^
+40 |     MoveCursorLeft,
+   |     ^^^^^^^^^^^^^^
+41 |     MoveCursorRight,
+   |     ^^^^^^^^^^^^^^^
+42 |     MoveCursorWordLeft,
+   |     ^^^^^^^^^^^^^^^^^^
+43 |     MoveCursorWordRight,
+   |     ^^^^^^^^^^^^^^^^^^^
+44 |     MoveCursorLineStart,
+   |     ^^^^^^^^^^^^^^^^^^^
+45 |     MoveCursorLineEnd,
+   |     ^^^^^^^^^^^^^^^^^
+46 |     MoveCursorDocStart,
+   |     ^^^^^^^^^^^^^^^^^^
+47 |     MoveCursorDocEnd,
+   |     ^^^^^^^^^^^^^^^^
+48 |     SelectUp,
+   |     ^^^^^^^^
+49 |     SelectDown,
+   |     ^^^^^^^^^^
+50 |     SelectLeft,
+   |     ^^^^^^^^^^
+51 |     SelectRight,
+   |     ^^^^^^^^^^^
+52 |     SelectWordLeft,
+   |     ^^^^^^^^^^^^^^
+53 |     SelectWordRight,
+   |     ^^^^^^^^^^^^^^^
+54 |     SelectLineStart,
+   |     ^^^^^^^^^^^^^^^
+55 |     SelectLineEnd,
+   |     ^^^^^^^^^^^^^
+56 |     SelectAll_,
+   |     ^^^^^^^^^^
+   |
+   = note: `EditorAction` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `default_bindings` and `config_path` are never read
+  --> src\hotkeys\mod.rs:65:5
+   |
+63 | pub struct HotkeySystem {
+   |            ------------ fields in this struct
+64 |     bindings: HashMap<String, EditorAction>,
+65 |     default_bindings: HashMap<String, EditorAction>,
+   |     ^^^^^^^^^^^^^^^^
+66 |     config_path: String,
+   |     ^^^^^^^^^^^
+   |
+   = note: `HotkeySystem` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple methods are never used
+   --> src\hotkeys\mod.rs:103:12
+    |
+69  | impl HotkeySystem {
+    | ----------------- methods in this implementation
+...
+103 |     pub fn load_config(&mut self) -> Result<(), String> {
+    |            ^^^^^^^^^^^
+...
+126 |     pub fn save_config(&self) -> Result<(), String> {
+    |            ^^^^^^^^^^^
+...
+152 |     pub fn get_action_for_input(&self, key: KeyCode, ctrl: bool, shift: bool, alt: bool) -> Option<EditorAction> {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+157 |     pub fn set_binding(&mut self, key_combo: String, action: EditorAction) {
+    |            ^^^^^^^^^^^
+...
+161 |     pub fn remove_binding(&mut self, key_combo: &str) {
+    |            ^^^^^^^^^^^^^^
+...
+165 |     pub fn reset_to_defaults(&mut self) {
+    |            ^^^^^^^^^^^^^^^^^
+...
+173 |     pub fn import_vscode_keybindings(&mut self, vscode_path: &str) -> Result<(), String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+198 |     pub fn import_vim_config(&mut self, vim_path: &str) -> Result<(), String> {
+    |            ^^^^^^^^^^^^^^^^^
+...
+218 |     pub fn import_emacs_config(&mut self, emacs_path: &str) -> Result<(), String> {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+238 |     fn format_key_combination(&self, key: &str, modifiers: &[String]) -> String {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+...
+254 |     fn parse_key_combination(&self, key_combo: &str) -> (String, Vec<String>) {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+266 |     fn format_input_combination(&self, key: KeyCode, ctrl: bool, shift: bool, alt: bool) -> String {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+278 |     fn keycode_to_string(&self, key: KeyCode) -> String {
+    |        ^^^^^^^^^^^^^^^^^
+...
+346 |     fn parse_action(&self, action_str: &str) -> Option<EditorAction> {
+    |        ^^^^^^^^^^^^
+...
+371 |     fn action_to_string(&self, action: &EditorAction) -> String {
+    |        ^^^^^^^^^^^^^^^^
+...
+396 |     fn vscode_command_to_action(&self, command: &str) -> Option<EditorAction> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+417 |     fn vscode_key_to_combo(&self, vscode_key: &str) -> String {
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+426 |     fn parse_vim_mapping(&self, _line: &str) -> Option<EditorAction> {
+    |        ^^^^^^^^^^^^^^^^^
+...
+432 |     fn parse_emacs_binding(&self, _line: &str) -> Option<EditorAction> {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_autocomplete_integration_tests` is never used
+ --> src\test_runner.rs:4:8
+  |
+4 | pub fn run_autocomplete_integration_tests() {
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_code_analyzer` is never used
+  --> src\test_runner.rs:18:4
+   |
+18 | fn test_code_analyzer() {
+   |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `test_autocomplete_engine` is never used
+  --> src\test_runner.rs:68:4
+   |
+68 | fn test_autocomplete_engine() {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_game_integration` is never used
+   --> src\test_runner.rs:111:4
+    |
+111 | fn test_game_integration() {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_hotkey_system` is never used
+   --> src\test_runner.rs:151:4
+    |
+151 | fn test_hotkey_system() {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `test_menu_settings_integration` is never used
+   --> src\test_runner.rs:283:4
+    |
+283 | fn test_menu_settings_integration() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `HotkeyTestResults` is never constructed
+ --> src\editor_test_mode.rs:9:8
+  |
+9 | struct HotkeyTestResults {
+  |        ^^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+  --> src\editor_test_mode.rs:19:8
+   |
+18 | impl HotkeyTestResults {
+   | ---------------------- associated items in this implementation
+19 |     fn new() -> Self {
+   |        ^^^
+...
+30 |     fn record_hotkey_test(&mut self, hotkey: String, success: bool) {
+   |        ^^^^^^^^^^^^^^^^^^
+...
+34 |     fn add_autocomplete_test(&mut self, result: String) {
+   |        ^^^^^^^^^^^^^^^^^^^^^
+...
+38 |     fn add_tab_test(&mut self, result: String) {
+   |        ^^^^^^^^^^^^
+...
+42 |     fn add_cursor_test(&mut self, result: String) {
+   |        ^^^^^^^^^^^^^^^
+...
+46 |     fn add_text_test(&mut self, result: String) {
+   |        ^^^^^^^^^^^^^
+...
+50 |     fn add_settings_test(&mut self, result: String) {
+   |        ^^^^^^^^^^^^^^^^^
+
+warning: function `run_editor_test_mode` is never used
+  --> src\editor_test_mode.rs:55:14
+   |
+55 | pub async fn run_editor_test_mode() {
+   |              ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `create_test_game` is never used
+   --> src\editor_test_mode.rs:107:4
+    |
+107 | fn create_test_game() -> Game {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `run_hotkey_tests` is never used
+   --> src\editor_test_mode.rs:155:4
+    |
+155 | fn run_hotkey_tests(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `test_autocomplete_behavior` is never used
+   --> src\editor_test_mode.rs:188:4
+    |
+188 | fn test_autocomplete_behavior(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_tab_key_behavior` is never used
+   --> src\editor_test_mode.rs:226:4
+    |
+226 | fn test_tab_key_behavior(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_cursor_movement` is never used
+   --> src\editor_test_mode.rs:266:4
+    |
+266 | fn test_cursor_movement(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_text_editing` is never used
+   --> src\editor_test_mode.rs:292:4
+    |
+292 | fn test_text_editing(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `test_common_hotkeys` is never used
+   --> src\editor_test_mode.rs:324:4
+    |
+324 | fn test_common_hotkeys(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `handle_editor_input` is never used
+   --> src\editor_test_mode.rs:351:4
+    |
+351 | fn handle_editor_input(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `move_cursor_up` is never used
+   --> src\editor_test_mode.rs:406:4
+    |
+406 | fn move_cursor_up(game: &mut Game) {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `move_cursor_down` is never used
+   --> src\editor_test_mode.rs:438:4
+    |
+438 | fn move_cursor_down(game: &mut Game) {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `print_final_hotkey_report` is never used
+   --> src\editor_test_mode.rs:470:4
+    |
+470 | fn print_final_hotkey_report(results: &HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_test_editor` is never used
+   --> src\editor_test_mode.rs:511:4
+    |
+511 | fn draw_test_editor(game: &mut Game, show_hotkey_help: bool, results: &HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `draw_hotkey_help` is never used
+   --> src\editor_test_mode.rs:583:4
+    |
+583 | fn draw_hotkey_help() {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `draw_test_results_sidebar` is never used
+   --> src\editor_test_mode.rs:628:4
+    |
+628 | fn draw_test_results_sidebar(results: &HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_code_with_autocomplete` is never used
+   --> src\editor_test_mode.rs:683:4
+    |
+683 | fn draw_code_with_autocomplete(game: &mut Game, x: f32, y: f32, width: f32, height: f32) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_autocomplete_overlay` is never used
+   --> src\editor_test_mode.rs:735:4
+    |
+735 | fn draw_autocomplete_overlay(suggestion: &str, x: f32, y: f32, font_size: f32) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_settings_menu_functionality` is never used
+   --> src\editor_test_mode.rs:747:4
+    |
+747 | fn test_settings_menu_functionality(results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_tab_key_no_suggestion` is never used
+   --> src\editor_test_mode.rs:800:4
+    |
+800 | fn test_tab_key_no_suggestion(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_click_drag_selection` is never used
+   --> src\editor_test_mode.rs:894:4
+    |
+894 | fn test_click_drag_selection(game: &mut Game, results: &mut HotkeyTestResults) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `handle_editor_input_with_hotkey_detection` is never used
+    --> src\editor_test_mode.rs:1034:4
+     |
+1034 | fn handle_editor_input_with_hotkey_detection(game: &mut Game, results: &mut HotkeyTestResults, hotkey_suite: &mut HotkeyTestSuite) {
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_test_editor_with_hotkey_suite` is never used
+    --> src\editor_test_mode.rs:1164:4
+     |
+1164 | fn draw_test_editor_with_hotkey_suite(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_clipboard_undo_workflow` is never used
+    --> src\editor_test_mode.rs:1248:4
+     |
+1248 | fn test_clipboard_undo_workflow(game: &mut Game, results: &mut HotkeyTestResults) {
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `HotkeyTestResult` is never constructed
+  --> src\hotkey_test_mode.rs:11:12
+   |
+11 | pub struct HotkeyTestResult {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `HotkeyTestSuite` is never constructed
+  --> src\hotkey_test_mode.rs:19:12
+   |
+19 | pub struct HotkeyTestSuite {
+   |            ^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `mark_test_result`, `get_completion_percentage`, and `is_complete` are never used
+   --> src\hotkey_test_mode.rs:27:12
+    |
+26  | impl HotkeyTestSuite {
+    | -------------------- associated items in this implementation
+27  |     pub fn new() -> Self {
+    |            ^^^
+...
+151 |     pub fn mark_test_result(&mut self, hotkey: &str, success: bool, notes: String) {
+    |            ^^^^^^^^^^^^^^^^
+...
+165 |     pub fn get_completion_percentage(&self) -> f32 {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+170 |     pub fn is_complete(&self) -> bool {
+    |            ^^^^^^^^^^^
+
+warning: function `run_hotkey_test_mode` is never used
+   --> src\hotkey_test_mode.rs:175:14
+    |
+175 | pub async fn run_hotkey_test_mode(enable_all_logs: bool) {
+    |              ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_solution_for_level` is never used
+  --> src\learning_level_solutions.rs:59:8
+   |
+59 | pub fn get_solution_for_level(level_name: &str) -> Option<&'static str> {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `get_results` is never used
+   --> src\learning_test_runner.rs:384:12
+    |
+52  | impl LearningLevelTestRunner {
+    | ---------------------------- method in this implementation
+...
+384 |     pub fn get_results(&self) -> &[LevelTestResult] {
+    |            ^^^^^^^^^^^
+
+warning: creating a shared reference to mutable static
+  --> src\crash_protection.rs:40:14
+   |
+40 |     unsafe { BLACKLISTED_ADDRESSES.len() }
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+   = note: `#[warn(static_mut_refs)]` on by default
+
+warning: creating a mutable reference to mutable static
+  --> src\crash_protection.rs:95:21
+   |
+95 |                     BLACKLISTED_ADDRESSES.push(current_address);
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ mutable reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html>
+   = note: mutable references to mutable statics are dangerous; it's undefined behavior if any other pointer to the static is used or if any other reference is created for the static while the mutable reference lives
+
+warning: `robo_grid_explorer_gui` (bin "robo_grid_explorer_gui") generated 236 warnings (run `cargo fix --bin "robo_grid_explorer_gui"` to apply 12 suggestions)
+    Finished `release` profile [optimized] target(s) in 0.35s
+     Running `target\release\robo_grid_explorer_gui.exe --test-learning-levels --all-logs`
+[2025-09-22T21:15:26Z INFO  robo_grid_explorer_gui] Starting Learning Levels Test Mode
+[2025-09-22T21:15:26Z INFO  robo_grid_explorer_gui::learning_test_runner] Starting automated learning level tests
+[2025-09-22T21:15:26Z INFO  robo_grid_explorer_gui::learning_test_runner] Initializing Learning Level Test Runner
+[2025-09-22T21:15:28Z INFO  robo_grid_explorer_gui::learning_test_runner] Starting test for level 0: Level 1 - Hello Rust!
+[2025-09-22T21:15:28Z INFO  robo_grid_explorer_gui::learning_test_runner] Prepared to input solution of 43 characters
+[2025-09-22T21:15:30Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 20/43 characters
+[2025-09-22T21:15:31Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 40/43 characters
+[2025-09-22T21:15:31Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 43/43 characters
+[2025-09-22T21:15:31Z INFO  robo_grid_explorer_gui::learning_test_runner] Solution input complete! Code length: 43
+[2025-09-22T21:15:31Z INFO  robo_grid_explorer_gui::learning_test_runner] Final code:
+    fn main() {
+        println!("Hello, Rust!");
+    }
+[2025-09-22T21:15:32Z INFO  robo_grid_explorer_gui::learning_test_runner] Executing solution for level 0
+[2025-09-22T21:15:32Z INFO  robo_grid_explorer_gui::learning_test_runner] Code to execute:
+    fn main() {
+        println!("Hello, Rust!");
+    }
+[2025-09-22T21:15:32Z INFO  robo_grid_explorer_gui::learning_test_runner] Code execution result: Print statements executed successfully!
+[2025-09-22T21:15:32Z INFO  robo_grid_explorer_gui::learning_test_runner] Println outputs: ["Hello, Rust!"]
+[2025-09-22T21:15:32Z INFO  robo_grid_explorer_gui::learning_test_runner] Level 0 completion flag triggered: println:Hello, Rust!
+[2025-09-22T21:15:32Z INFO  robo_grid_explorer_gui::learning_test_runner] ✅ Level 1 - Level 1 - Hello Rust! completed in 3.9637461s
+[2025-09-22T21:15:34Z INFO  robo_grid_explorer_gui::learning_test_runner] Advancing to level 2
+[2025-09-22T21:15:35Z INFO  robo_grid_explorer_gui::learning_test_runner] Starting test for level 1: Level 2: Functions and Loops
+[2025-09-22T21:15:35Z INFO  robo_grid_explorer_gui::learning_test_runner] Prepared to input solution of 542 characters
+[2025-09-22T21:15:36Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 20/542 characters
+[2025-09-22T21:15:37Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 40/542 characters
+[2025-09-22T21:15:39Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 60/542 characters
+[2025-09-22T21:15:40Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 80/542 characters
+[2025-09-22T21:15:41Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 100/542 characters
+[2025-09-22T21:15:42Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 120/542 characters
+[2025-09-22T21:15:43Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 140/542 characters
+[2025-09-22T21:15:45Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 160/542 characters
+[2025-09-22T21:15:46Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 180/542 characters
+[2025-09-22T21:15:47Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 200/542 characters
+[2025-09-22T21:15:48Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 220/542 characters
+[2025-09-22T21:15:49Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 240/542 characters
+[2025-09-22T21:15:50Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 260/542 characters
+[2025-09-22T21:15:52Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 280/542 characters
+[2025-09-22T21:15:53Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 300/542 characters
+[2025-09-22T21:15:54Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 320/542 characters
+[2025-09-22T21:15:55Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 340/542 characters
+[2025-09-22T21:15:56Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 360/542 characters
+[2025-09-22T21:15:58Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 380/542 characters
+[2025-09-22T21:15:59Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 400/542 characters
+[2025-09-22T21:16:00Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 420/542 characters
+[2025-09-22T21:16:01Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 440/542 characters
+[2025-09-22T21:16:03Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 460/542 characters
+[2025-09-22T21:16:04Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 480/542 characters
+[2025-09-22T21:16:05Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 500/542 characters
+[2025-09-22T21:16:06Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 520/542 characters
+[2025-09-22T21:16:07Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 540/542 characters
+[2025-09-22T21:16:07Z INFO  robo_grid_explorer_gui::learning_test_runner] Typing progress: 542/542 characters
+[2025-09-22T21:16:07Z INFO  robo_grid_explorer_gui::learning_test_runner] Solution input complete! Code length: 542
+[2025-09-22T21:16:07Z INFO  robo_grid_explorer_gui::learning_test_runner] Final code:
+    struct GridInfo {
+        x: i32,
+        y: i32,
+        content: String,
+    }
+    
+    fn scan_level() {
+        println!("Beginning level scan...");
+    
+        for y in 0..6 {
+            for x in 0..6 {
+                // Movement and scanning code
+            }
+        }
+    }
+    
+    fn grab_if_item(scan_result: &str) {
+        if scan_result.contains("item") {
+            // grab the item
+        }
+    }
+    
+    fn main() {
+        println!("Level 2: Functions, Loops, and Structs");
+        println!("Remember: All code must be in functions!");
+    
+        scan_level();
+    
+        println!("All tasks complete! Moving to goal...");
+    }
+[2025-09-22T21:16:08Z INFO  robo_grid_explorer_gui::learning_test_runner] Executing solution for level 1
+[2025-09-22T21:16:08Z INFO  robo_grid_explorer_gui::learning_test_runner] Code to execute:
+    struct GridInfo {
+        x: i32,
+        y: i32,
+        content: String,
+    }
+    
+    fn scan_level() {
+        println!("Beginning level scan...");
+    
+        for y in 0..6 {
+            for x in 0..6 {
+                // Movement and scanning code
+            }
+        }
+    }
+    
+    fn grab_if_item(scan_result: &str) {
+        if scan_result.contains("item") {
+            // grab the item
+        }
+    }
+    
+    fn main() {
+        println!("Level 2: Functions, Loops, and Structs");
+        println!("Remember: All code must be in functions!");
+    
+        scan_level();
+    
+        println!("All tasks complete! Moving to goal...");
+    }
+[2025-09-22T21:16:09Z INFO  robo_grid_explorer_gui::learning_test_runner] Code execution result: Print statements executed successfully!
+[2025-09-22T21:16:09Z INFO  robo_grid_explorer_gui::learning_test_runner] Println outputs: ["Level 2: Functions, Loops, and Structs", "Remember: All code must be in functions!", "All tasks complete! Moving to goal..."]
+[2025-09-22T21:16:13Z INFO  robo_grid_explorer_gui::learning_test_runner] ✅ Level 2 - Level 2: Functions and Loops completed in 38.4166097s
+[2025-09-22T21:16:15Z INFO  robo_grid_explorer_gui::learning_test_runner] All levels tested!
+
+============================================================
+LEARNING LEVEL TEST RESULTS
+============================================================
+Total Levels Tested: 2
+✅ Passed: 2
+❌ Failed: 0
+Success Rate: 100.0%
+
+Detailed Results:
+------------------------------------------------------------
+[✅ PASS] Level 1 - Level 1 - Hello Rust! (3.9637461s)
+[✅ PASS] Level 2 - Level 2: Functions and Loops (38.4166097s)
+============================================================
+Total test time: 49.8659438s
+[2025-09-22T21:16:15Z INFO  robo_grid_explorer_gui::learning_test_runner] Tests complete. Press SPACE to exit or ESC to quit immediately.

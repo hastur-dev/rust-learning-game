@@ -1,0 +1,699 @@
+name: "Level 16: Serde Custom Serialization and Error Handling"
+description: "Master custom serialization, error handling, and advanced Serde techniques"
+max_turns: 400
+width: 14
+height: 12
+start: [0, 0]
+
+# Complex grid with challenging navigation and diverse data items
+grid:
+  - ["S", ".", ".", ".", "#", "#", "#", "#", ".", ".", ".", ".", ".", "."]
+  - [".", "#", "E", ".", ".", "D", ".", "D", ".", ".", "E", "#", ".", "."]
+  - [".", ".", "#", ".", "#", ".", "#", ".", "#", ".", "#", ".", ".", "."]
+  - ["E", ".", ".", "#", ".", ".", "E", ".", ".", "#", ".", ".", "E", "."]
+  - [".", "#", "D", ".", "#", "#", ".", "#", "#", ".", "D", "#", ".", "."]
+  - [".", ".", ".", ".", ".", ".", "#", ".", ".", ".", ".", ".", ".", "."]
+  - ["#", "#", "E", "#", "#", ".", "E", ".", "#", "#", "E", "#", "#", "."]
+  - [".", ".", ".", ".", ".", ".", "#", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", "D", ".", "#", "#", ".", "#", "#", ".", "D", "#", ".", "."]
+  - ["E", ".", ".", "#", ".", ".", "E", ".", ".", "#", ".", ".", "E", "."]
+  - [".", ".", "#", ".", "#", ".", "#", ".", "#", ".", "#", ".", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "G"]
+
+items:
+  - name: "legacy_format_data"
+    pos: [2, 1]
+  - name: "corrupted_json_data"
+    pos: [10, 1]
+  - name: "custom_binary_format"
+    pos: [2, 4]
+  - name: "versioned_config"
+    pos: [10, 4]
+  - name: "encrypted_data_block"
+    pos: [6, 5]
+  - name: "mixed_format_data"
+    pos: [2, 6]
+  - name: "streaming_data_source"
+    pos: [10, 6]
+  - name: "malformed_yaml"
+    pos: [2, 8]
+  - name: "compressed_archive"
+    pos: [10, 8]
+  - name: "validation_test_data"
+    pos: [6, 9]
+  - name: "migration_data"
+    pos: [2, 10]
+  - name: "performance_metrics"
+    pos: [10, 10]
+
+enemies:
+  - start_position: [2, 1]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [10, 1]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [0, 3]
+    movement_pattern: "vertical"
+  - start_position: [6, 3]
+    movement_pattern: "horizontal"
+  - start_position: [12, 3]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [2, 6]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [6, 6]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [10, 6]
+    movement_pattern: "vertical"
+  - start_position: [0, 9]
+    movement_pattern: "horizontal"
+  - start_position: [6, 9]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [12, 9]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+
+doors:
+  - position: [5, 1]
+    initially_open: false
+  - position: [7, 1]
+    initially_open: false
+  - position: [2, 4]
+    initially_open: false
+  - position: [10, 4]
+    initially_open: false
+  - position: [2, 8]
+    initially_open: false
+  - position: [10, 8]
+    initially_open: false
+
+completion_flag: "goal"
+completion_message: |
+  🛠️ **LEVEL 16: Serde Custom Serialization and Error Handling**
+
+  Master advanced Serde techniques including custom serialization, robust error handling, and data migration!
+
+  **📋 TASK 1: Implement Custom Serialize and Deserialize Traits**
+  Create custom serialization logic for complex data types that don't fit standard patterns.
+
+  Required:
+  ```rust
+  use serde::{Serialize, Serializer, Deserialize, Deserializer, de};
+  use std::fmt;
+
+  #[derive(Debug, Clone)]
+  struct EncryptedData {
+      encrypted_payload: Vec<u8>,
+      algorithm: String,
+      key_id: String,
+  }
+
+  impl Serialize for EncryptedData {
+      fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+      where
+          S: Serializer,
+      {
+          use serde::ser::SerializeStruct;
+          let mut state = serializer.serialize_struct("EncryptedData", 3)?;
+
+          // Encode binary data as base64
+          let encoded_payload = base64_encode(&self.encrypted_payload);
+          state.serialize_field("payload", &encoded_payload)?;
+          state.serialize_field("algorithm", &self.algorithm)?;
+          state.serialize_field("key_id", &self.key_id)?;
+          state.end()
+      }
+  }
+
+  impl<'de> Deserialize<'de> for EncryptedData {
+      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+      where
+          D: Deserializer<'de>,
+      {
+          #[derive(Deserialize)]
+          #[serde(field_identifier, rename_all = "lowercase")]
+          enum Field { Payload, Algorithm, KeyId }
+
+          struct EncryptedDataVisitor;
+
+          impl<'de> de::Visitor<'de> for EncryptedDataVisitor {
+              type Value = EncryptedData;
+
+              fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                  formatter.write_str("struct EncryptedData")
+              }
+
+              fn visit_map<V>(self, mut map: V) -> Result<EncryptedData, V::Error>
+              where
+                  V: de::MapAccess<'de>,
+              {
+                  let mut payload = None;
+                  let mut algorithm = None;
+                  let mut key_id = None;
+
+                  while let Some(key) = map.next_key()? {
+                      match key {
+                          Field::Payload => {
+                              if payload.is_some() {
+                                  return Err(de::Error::duplicate_field("payload"));
+                              }
+                              let encoded: String = map.next_value()?;
+                              payload = Some(base64_decode(&encoded)
+                                  .map_err(de::Error::custom)?);
+                          }
+                          Field::Algorithm => {
+                              if algorithm.is_some() {
+                                  return Err(de::Error::duplicate_field("algorithm"));
+                              }
+                              algorithm = Some(map.next_value()?);
+                          }
+                          Field::KeyId => {
+                              if key_id.is_some() {
+                                  return Err(de::Error::duplicate_field("key_id"));
+                              }
+                              key_id = Some(map.next_value()?);
+                          }
+                      }
+                  }
+
+                  let payload = payload.ok_or_else(|| de::Error::missing_field("payload"))?;
+                  let algorithm = algorithm.ok_or_else(|| de::Error::missing_field("algorithm"))?;
+                  let key_id = key_id.ok_or_else(|| de::Error::missing_field("key_id"))?;
+
+                  Ok(EncryptedData { encrypted_payload: payload, algorithm, key_id })
+              }
+          }
+
+          const FIELDS: &'static [&'static str] = &["payload", "algorithm", "key_id"];
+          deserializer.deserialize_struct("EncryptedData", FIELDS, EncryptedDataVisitor)
+      }
+  }
+
+  fn base64_encode(data: &[u8]) -> String {
+      // Simplified base64 encoding - in real code use the base64 crate
+      format!("base64:{}", data.iter().map(|b| format!("{:02x}", b)).collect::<String>())
+  }
+
+  fn base64_decode(encoded: &str) -> Result<Vec<u8>, String> {
+      if let Some(hex_data) = encoded.strip_prefix("base64:") {
+          // Simplified decoding
+          Ok(hex_data.chars().collect::<Vec<_>>()
+              .chunks(2)
+              .map(|chunk| u8::from_str_radix(&chunk.iter().collect::<String>(), 16))
+              .collect::<Result<Vec<_>, _>>()
+              .map_err(|e| format!("Decode error: {}", e))?)
+      } else {
+          Err("Invalid base64 format".to_string())
+      }
+  }
+  ```
+
+  **📋 TASK 2: Implement Robust Error Handling for Data Processing**
+  Create comprehensive error handling for various data corruption scenarios.
+
+  Required:
+  ```rust
+  use serde_json;
+  use serde_yaml;
+  use std::error::Error;
+  use std::fmt;
+
+  #[derive(Debug)]
+  enum DataProcessingError {
+      JsonError(serde_json::Error),
+      YamlError(serde_yaml::Error),
+      ValidationError(String),
+      CorruptedData(String),
+      UnsupportedFormat(String),
+      MigrationError(String),
+  }
+
+  impl fmt::Display for DataProcessingError {
+      fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+          match self {
+              DataProcessingError::JsonError(e) => write!(f, "JSON processing error: {}", e),
+              DataProcessingError::YamlError(e) => write!(f, "YAML processing error: {}", e),
+              DataProcessingError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
+              DataProcessingError::CorruptedData(msg) => write!(f, "Data corruption detected: {}", msg),
+              DataProcessingError::UnsupportedFormat(format) => write!(f, "Unsupported format: {}", format),
+              DataProcessingError::MigrationError(msg) => write!(f, "Migration error: {}", msg),
+          }
+      }
+  }
+
+  impl Error for DataProcessingError {}
+
+  impl From<serde_json::Error> for DataProcessingError {
+      fn from(error: serde_json::Error) -> Self {
+          DataProcessingError::JsonError(error)
+      }
+  }
+
+  impl From<serde_yaml::Error> for DataProcessingError {
+      fn from(error: serde_yaml::Error) -> Self {
+          DataProcessingError::YamlError(error)
+      }
+  }
+
+  fn process_corrupted_json_data() -> Result<serde_json::Value, DataProcessingError> {
+      let corrupted_json = r#"
+          {
+              "id": 12345,
+              "name": "Corrupted Data Set
+              "data": [1, 2, 3, 4, 5
+              "timestamp": "2024-01-15T10:30:00Z"
+          }
+      "#;
+
+      // Try to parse as-is first
+      match serde_json::from_str::<serde_json::Value>(corrupted_json) {
+          Ok(value) => Ok(value),
+          Err(e) => {
+              println!("Initial parse failed: {}", e);
+
+              // Attempt repair strategies
+              let repaired = attempt_json_repair(corrupted_json)?;
+
+              match serde_json::from_str::<serde_json::Value>(&repaired) {
+                  Ok(value) => {
+                      println!("Successfully repaired and parsed JSON");
+                      Ok(value)
+                  }
+                  Err(e) => Err(DataProcessingError::CorruptedData(
+                      format!("Unable to repair JSON: {}", e)
+                  ))
+              }
+          }
+      }
+  }
+
+  fn attempt_json_repair(corrupted: &str) -> Result<String, DataProcessingError> {
+      let mut repaired = corrupted.to_string();
+
+      // Fix common issues
+      if !repaired.contains(r#""name": "Corrupted Data Set""#) {
+          repaired = repaired.replace(
+              r#""name": "Corrupted Data Set"#,
+              r#""name": "Corrupted Data Set""#
+          );
+      }
+
+      if !repaired.contains(r#""data": [1, 2, 3, 4, 5]"#) {
+          repaired = repaired.replace(
+              r#""data": [1, 2, 3, 4, 5"#,
+              r#""data": [1, 2, 3, 4, 5]"#
+          );
+      }
+
+      Ok(repaired)
+  }
+  ```
+
+  **📋 TASK 3: Handle Version Migration and Backward Compatibility**
+  Implement systems to handle data format evolution and migration.
+
+  Required:
+  ```rust
+  #[derive(Serialize, Deserialize, Debug)]
+  #[serde(tag = "version")]
+  enum VersionedConfig {
+      #[serde(rename = "1.0")]
+      V1(ConfigV1),
+      #[serde(rename = "2.0")]
+      V2(ConfigV2),
+      #[serde(rename = "3.0")]
+      V3(ConfigV3),
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct ConfigV1 {
+      name: String,
+      speed: f64,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct ConfigV2 {
+      name: String,
+      max_speed: f64,
+      acceleration: f64,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct ConfigV3 {
+      metadata: ConfigMetadata,
+      performance: PerformanceConfig,
+      features: Vec<String>,
+  }
+
+  impl VersionedConfig {
+      fn migrate_to_latest(self) -> ConfigV3 {
+          match self {
+              VersionedConfig::V1(v1) => {
+                  println!("Migrating from v1.0 to v3.0");
+                  ConfigV3 {
+                      metadata: ConfigMetadata {
+                          name: v1.name,
+                          version: "3.0".to_string(),
+                          migrated_from: Some("1.0".to_string()),
+                      },
+                      performance: PerformanceConfig {
+                          max_speed: v1.speed,
+                          acceleration: 1.0, // Default value
+                          efficiency_mode: false,
+                      },
+                      features: vec!["basic_movement".to_string()],
+                  }
+              }
+              VersionedConfig::V2(v2) => {
+                  println!("Migrating from v2.0 to v3.0");
+                  ConfigV3 {
+                      metadata: ConfigMetadata {
+                          name: v2.name,
+                          version: "3.0".to_string(),
+                          migrated_from: Some("2.0".to_string()),
+                      },
+                      performance: PerformanceConfig {
+                          max_speed: v2.max_speed,
+                          acceleration: v2.acceleration,
+                          efficiency_mode: false,
+                      },
+                      features: vec!["basic_movement".to_string(), "acceleration_control".to_string()],
+                  }
+              }
+              VersionedConfig::V3(v3) => v3,
+          }
+      }
+  }
+
+  fn process_versioned_config() -> Result<ConfigV3, DataProcessingError> {
+      let config_data = r#"
+          {
+              "version": "1.0",
+              "name": "Legacy Robot",
+              "speed": 2.5
+          }
+      "#;
+
+      let versioned: VersionedConfig = serde_json::from_str(config_data)?;
+      let latest = versioned.migrate_to_latest();
+
+      println!("Migration successful: {:?}", latest);
+      Ok(latest)
+  }
+  ```
+
+  **📋 TASK 4: Validate Data Integrity and Schema Compliance**
+  Implement comprehensive data validation during deserialization.
+
+  Required:
+  ```rust
+  use serde::de::{self, Visitor};
+
+  #[derive(Debug)]
+  struct ValidatedRobotConfig {
+      id: u32,
+      name: String,
+      coordinates: (f64, f64),
+      sensors: Vec<String>,
+  }
+
+  impl<'de> Deserialize<'de> for ValidatedRobotConfig {
+      fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+      where
+          D: Deserializer<'de>,
+      {
+          #[derive(Deserialize)]
+          struct RawConfig {
+              id: u32,
+              name: String,
+              coordinates: (f64, f64),
+              sensors: Vec<String>,
+          }
+
+          let raw = RawConfig::deserialize(deserializer)?;
+
+          // Validation logic
+          if raw.id == 0 {
+              return Err(de::Error::custom("Robot ID cannot be zero"));
+          }
+
+          if raw.name.trim().is_empty() {
+              return Err(de::Error::custom("Robot name cannot be empty"));
+          }
+
+          if raw.name.len() > 50 {
+              return Err(de::Error::custom("Robot name too long (max 50 characters)"));
+          }
+
+          if raw.coordinates.0.abs() > 1000.0 || raw.coordinates.1.abs() > 1000.0 {
+              return Err(de::Error::custom("Coordinates out of valid range (-1000 to 1000)"));
+          }
+
+          if raw.sensors.is_empty() {
+              return Err(de::Error::custom("Robot must have at least one sensor"));
+          }
+
+          for sensor in &raw.sensors {
+              if !["camera", "lidar", "ultrasonic", "gyroscope", "accelerometer"].contains(&sensor.as_str()) {
+                  return Err(de::Error::custom(format!("Unknown sensor type: {}", sensor)));
+              }
+          }
+
+          Ok(ValidatedRobotConfig {
+              id: raw.id,
+              name: raw.name,
+              coordinates: raw.coordinates,
+              sensors: raw.sensors,
+          })
+      }
+  }
+
+  fn process_validation_test_data() -> Result<ValidatedRobotConfig, DataProcessingError> {
+      let test_cases = vec![
+          r#"{"id": 0, "name": "Test", "coordinates": [0.0, 0.0], "sensors": ["camera"]}"#,
+          r#"{"id": 123, "name": "", "coordinates": [0.0, 0.0], "sensors": ["camera"]}"#,
+          r#"{"id": 123, "name": "Valid Robot", "coordinates": [2000.0, 0.0], "sensors": ["camera"]}"#,
+          r#"{"id": 123, "name": "Valid Robot", "coordinates": [0.0, 0.0], "sensors": []}"#,
+          r#"{"id": 123, "name": "Valid Robot", "coordinates": [0.0, 0.0], "sensors": ["invalid_sensor"]}"#,
+          r#"{"id": 123, "name": "Valid Robot", "coordinates": [10.0, 20.0], "sensors": ["camera", "lidar"]}"#,
+      ];
+
+      for (i, test_case) in test_cases.iter().enumerate() {
+          println!("Testing case {}: ", i + 1);
+          match serde_json::from_str::<ValidatedRobotConfig>(test_case) {
+              Ok(config) => println!("✓ Valid: {:?}", config),
+              Err(e) => println!("✗ Invalid: {}", e),
+          }
+      }
+
+      // Return the last valid case
+      serde_json::from_str(test_cases.last().unwrap())
+          .map_err(DataProcessingError::from)
+  }
+  ```
+
+  **📋 TASK 5: Create Performance-Optimized Streaming Data Processor**
+  Implement efficient streaming data processing with custom deserializers.
+
+  Required:
+  ```rust
+  use std::io::{BufRead, BufReader};
+
+  #[derive(Debug)]
+  struct StreamingDataProcessor {
+      processed_count: usize,
+      error_count: usize,
+      last_error: Option<String>,
+  }
+
+  impl StreamingDataProcessor {
+      fn new() -> Self {
+          StreamingDataProcessor {
+              processed_count: 0,
+              error_count: 0,
+              last_error: None,
+          }
+      }
+
+      fn process_data_stream(&mut self, stream_data: &str) -> Result<Vec<ProcessedRecord>, DataProcessingError> {
+          let mut results = Vec::new();
+
+          for (line_num, line) in stream_data.lines().enumerate() {
+              if line.trim().is_empty() {
+                  continue;
+              }
+
+              match self.process_single_record(line) {
+                  Ok(record) => {
+                      results.push(record);
+                      self.processed_count += 1;
+                  }
+                  Err(e) => {
+                      self.error_count += 1;
+                      self.last_error = Some(format!("Line {}: {}", line_num + 1, e));
+                      println!("Skipping invalid record at line {}: {}", line_num + 1, e);
+                  }
+              }
+          }
+
+          println!("Streaming complete: {} processed, {} errors",
+                   self.processed_count, self.error_count);
+
+          Ok(results)
+      }
+
+      fn process_single_record(&self, line: &str) -> Result<ProcessedRecord, DataProcessingError> {
+          // Try different formats
+          if let Ok(record) = serde_json::from_str::<ProcessedRecord>(line) {
+              return Ok(record);
+          }
+
+          if let Ok(record) = serde_yaml::from_str::<ProcessedRecord>(line) {
+              return Ok(record);
+          }
+
+          // Try custom parsing
+          if let Ok(record) = self.parse_custom_format(line) {
+              return Ok(record);
+          }
+
+          Err(DataProcessingError::UnsupportedFormat(
+              format!("Unable to parse: {}", line)
+          ))
+      }
+
+      fn parse_custom_format(&self, line: &str) -> Result<ProcessedRecord, DataProcessingError> {
+          // Custom format: "ID:123|NAME:Robot|X:10.5|Y:20.3"
+          let mut id = None;
+          let mut name = None;
+          let mut x = None;
+          let mut y = None;
+
+          for part in line.split('|') {
+              if let Some((key, value)) = part.split_once(':') {
+                  match key {
+                      "ID" => id = value.parse().ok(),
+                      "NAME" => name = Some(value.to_string()),
+                      "X" => x = value.parse().ok(),
+                      "Y" => y = value.parse().ok(),
+                      _ => {}
+                  }
+              }
+          }
+
+          if let (Some(id), Some(name), Some(x), Some(y)) = (id, name, x, y) {
+              Ok(ProcessedRecord { id, name, position: (x, y) })
+          } else {
+              Err(DataProcessingError::CorruptedData(
+                  "Missing required fields in custom format".to_string()
+              ))
+          }
+      }
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct ProcessedRecord {
+      id: u32,
+      name: String,
+      position: (f64, f64),
+  }
+
+  fn process_streaming_data_source() -> Result<(), DataProcessingError> {
+      let stream_data = r#"
+  {"id": 1, "name": "Robot A", "position": [10.0, 20.0]}
+  {"id": 2, "name": "Robot B", "position": [15.0, 25.0]}
+  ID:3|NAME:Robot C|X:30.0|Y:40.0
+  {"id": 4, "name": "Robot D", "position": [50.0, 60.0]}
+  INVALID_LINE_HERE
+  ID:5|NAME:Robot E|X:70.0|Y:80.0
+  {"id": 6, "name": "Robot F", "position": [90.0, 100.0]}
+      "#;
+
+      let mut processor = StreamingDataProcessor::new();
+      let results = processor.process_data_stream(stream_data)?;
+
+      println!("Successfully processed {} records:", results.len());
+      for record in results {
+          println!("  {:?}", record);
+      }
+
+      if let Some(error) = processor.last_error {
+          println!("Last error encountered: {}", error);
+      }
+
+      Ok(())
+  }
+  ```
+
+  **🎯 Goal: Navigate through the challenging environment, process all complex data items with robust error handling, and demonstrate mastery of advanced Serde techniques!**
+
+achievement_message: "Phenomenal! You've mastered advanced Serde techniques and robust data processing!"
+next_level_hint: "Congratulations! You've completed the comprehensive Serde learning series!"
+
+starting_code: |
+  // Level 16: Serde Custom Serialization and Error Handling
+  // Master advanced Serde techniques and robust data processing
+
+  // Add these to your Cargo.toml dependencies:
+  // serde = { version = "1.0", features = ["derive"] }
+  // serde_json = "1.0"
+  // serde_yaml = "0.9"
+
+  use serde::{Serialize, Deserialize, Serializer, Deserializer, de};
+  use std::error::Error;
+  use std::fmt;
+
+  // TODO: Task 1 - Implement custom Serialize/Deserialize
+  // #[derive(Debug, Clone)]
+  // struct EncryptedData {
+  //     encrypted_payload: Vec<u8>,
+  //     algorithm: String,
+  //     key_id: String,
+  // }
+
+  // TODO: Task 2 - Define comprehensive error types
+  // #[derive(Debug)]
+  // enum DataProcessingError {
+  //     JsonError(serde_json::Error),
+  //     YamlError(serde_yaml::Error),
+  //     ValidationError(String),
+  //     // Add other error variants
+  // }
+
+  // TODO: Task 3 - Version migration system
+  // #[derive(Serialize, Deserialize, Debug)]
+  // #[serde(tag = "version")]
+  // enum VersionedConfig {
+  //     // Define version variants
+  // }
+
+  // TODO: Task 4 - Data validation during deserialization
+  // #[derive(Debug)]
+  // struct ValidatedRobotConfig {
+  //     // Add validated fields
+  // }
+
+  // TODO: Task 5 - Streaming data processor
+  // #[derive(Debug)]
+  // struct StreamingDataProcessor {
+  //     // Add processing state
+  // }
+
+  fn main() {
+      println!("Level 16: Serde Custom Serialization and Error Handling");
+      println!("Master advanced Serde techniques and robust data processing!");
+
+      // TODO: Task 1 - Test custom serialization
+      // TODO: Task 2 - Test error handling with corrupted data
+      // process_corrupted_json_data().unwrap();
+
+      // TODO: Task 3 - Test version migration
+      // process_versioned_config().unwrap();
+
+      // TODO: Task 4 - Test data validation
+      // process_validation_test_data().unwrap();
+
+      // TODO: Task 5 - Test streaming data processing
+      // process_streaming_data_source().unwrap();
+
+      println!("Navigate and process complex data with advanced techniques!");
+  }
+
+rust_docs_url: "https://serde.rs/custom-serialization.html"

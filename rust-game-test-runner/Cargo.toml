@@ -1,0 +1,24 @@
+[package]
+name = "rust-game-test-runner"
+version = "0.1.0"
+edition = "2021"
+authors = ["Game Test Runner Contributors"]
+license = "MIT OR Apache-2.0"
+description = "Testing framework for editors and basic game engines to verify code functionality without GUI interaction"
+homepage = "https://github.com/hastur-dev/rust-learning-game"
+repository = "https://github.com/hastur-dev/rust-learning-game"
+keywords = ["testing", "game", "editor", "automation", "validation"]
+categories = ["development-tools::testing", "game-development"]
+readme = "README.md"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+
+[[bin]]
+name = "test-runner"
+path = "src/bin/main.rs"

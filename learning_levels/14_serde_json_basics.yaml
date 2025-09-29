@@ -1,0 +1,354 @@
+name: "Level 14: Serde JSON Basics"
+description: "Learn JSON serialization and deserialization using Serde for robot data processing"
+max_turns: 300
+width: 10
+height: 8
+start: [0, 0]
+
+# Grid with JSON data items scattered throughout
+grid:
+  - ["S", ".", ".", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", ".", "E", ".", "#", ".", "E", "#", "."]
+  - [".", ".", "D", ".", ".", ".", "D", ".", ".", "."]
+  - ["E", ".", ".", "#", ".", "E", ".", "#", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", ".", "D", ".", "#", ".", "D", "#", "."]
+  - [".", ".", ".", "E", ".", ".", ".", "E", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", ".", ".", "G"]
+
+items:
+  - name: "robot_config_json"
+    pos: [2, 1]
+  - name: "sensor_data_json"
+    pos: [6, 2]
+  - name: "mission_params_json"
+    pos: [3, 5]
+  - name: "inventory_json"
+    pos: [7, 6]
+  - name: "status_report_json"
+    pos: [8, 7]
+
+# Scout Bot - Serde Data Communication Robot
+robots:
+  - position: [4, 4]
+    robot_type: "serde_demonstration"
+    name: "Scout Bot - JSON Communication"
+    movement_pattern: "serde_scout"
+    description: "📡 Scout Bot demonstrates serde JSON serialization for robot data communication"
+    color: "lime"
+
+enemies:
+  - start_position: [3, 1]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [7, 1]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [0, 3]
+    movement_pattern: "vertical"
+  - start_position: [5, 3]
+    movement_pattern: "horizontal"
+  - start_position: [3, 6]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [7, 6]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+
+doors:
+  - position: [2, 2]
+    initially_open: false
+  - position: [6, 2]
+    initially_open: false
+  - position: [3, 5]
+    initially_open: false
+  - position: [7, 5]
+    initially_open: false
+
+completion_flag: "goal"
+completion_message: |
+  📊 **LEVEL 14: Serde JSON Basics**
+
+  Master JSON serialization and deserialization with Serde for robot data processing!
+
+  **📋 TASK 1: Define Serializable Robot Configuration Struct**
+  Create a struct that can be serialized to and from JSON for robot configuration.
+
+  Required:
+  ```rust
+  use serde::{Serialize, Deserialize};
+
+  #[derive(Serialize, Deserialize, Debug, Clone)]
+  struct RobotConfig {
+      id: u32,
+      name: String,
+      max_speed: f64,
+      sensors_enabled: bool,
+      position: (i32, i32),
+  }
+
+  impl RobotConfig {
+      fn new(id: u32, name: String, max_speed: f64) -> Self {
+          RobotConfig {
+              id,
+              name,
+              max_speed,
+              sensors_enabled: true,
+              position: (0, 0),
+          }
+      }
+  }
+  ```
+
+  **📋 TASK 2: Deserialize JSON Data from Items**
+  When collecting items, deserialize JSON data found within them.
+
+  Required:
+  ```rust
+  fn process_robot_config_item() -> Result<RobotConfig, serde_json::Error> {
+      let json_data = r#"
+          {
+              "id": 12345,
+              "name": "Explorer Bot",
+              "max_speed": 2.5,
+              "sensors_enabled": true,
+              "position": [3, 4]
+          }
+      "#;
+
+      let config: RobotConfig = serde_json::from_str(json_data)?;
+      println!("Loaded robot config: {:?}", config);
+      Ok(config)
+  }
+
+  fn process_sensor_data_item() -> Result<(), serde_json::Error> {
+      let sensor_json = r#"
+          {
+              "temperature": 23.5,
+              "humidity": 45.2,
+              "battery_level": 87,
+              "obstacles_detected": ["wall", "debris"]
+          }
+      "#;
+
+      let sensor_data: serde_json::Value = serde_json::from_str(sensor_json)?;
+      println!("Sensor temperature: {}", sensor_data["temperature"]);
+      println!("Battery level: {}%", sensor_data["battery_level"]);
+      Ok(())
+  }
+  ```
+
+  **📋 TASK 3: Serialize Robot State to JSON**
+  Create and serialize robot state data to JSON format.
+
+  Required:
+  ```rust
+  #[derive(Serialize, Deserialize, Debug)]
+  struct RobotState {
+      config: RobotConfig,
+      current_position: (i32, i32),
+      energy: u32,
+      items_collected: Vec<String>,
+      doors_opened: u32,
+      mission_completed: bool,
+  }
+
+  fn serialize_robot_state() -> Result<String, serde_json::Error> {
+      let config = RobotConfig::new(1, "Data Collector".to_string(), 3.0);
+
+      let state = RobotState {
+          config,
+          current_position: robot.get_position(),
+          energy: robot.get_energy(),
+          items_collected: vec![
+              "robot_config_json".to_string(),
+              "sensor_data_json".to_string()
+          ],
+          doors_opened: 2,
+          mission_completed: false,
+      };
+
+      let json_string = serde_json::to_string_pretty(&state)?;
+      println!("Robot state JSON:\n{}", json_string);
+      Ok(json_string)
+  }
+  ```
+
+  **📋 TASK 4: Handle JSON Arrays and Nested Objects**
+  Process complex JSON structures with nested data and arrays.
+
+  Required:
+  ```rust
+  #[derive(Serialize, Deserialize, Debug)]
+  struct Mission {
+      id: String,
+      name: String,
+      objectives: Vec<Objective>,
+      estimated_duration: u32,
+  }
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct Objective {
+      description: String,
+      priority: String,
+      completed: bool,
+  }
+
+  fn process_mission_params_item() -> Result<Mission, serde_json::Error> {
+      let mission_json = r#"
+          {
+              "id": "MISSION_001",
+              "name": "Data Collection Protocol",
+              "objectives": [
+                  {
+                      "description": "Collect all JSON data items",
+                      "priority": "high",
+                      "completed": false
+                  },
+                  {
+                      "description": "Process sensor readings",
+                      "priority": "medium",
+                      "completed": false
+                  },
+                  {
+                      "description": "Generate status report",
+                      "priority": "low",
+                      "completed": false
+                  }
+              ],
+              "estimated_duration": 300
+          }
+      "#;
+
+      let mission: Mission = serde_json::from_str(mission_json)?;
+
+      println!("Mission: {}", mission.name);
+      for (i, objective) in mission.objectives.iter().enumerate() {
+          println!("  Objective {}: {} ({})",
+                   i + 1, objective.description, objective.priority);
+      }
+
+      Ok(mission)
+  }
+  ```
+
+  **📋 TASK 5: Create JSON Export System**
+  Implement a complete system that exports robot data to JSON files.
+
+  Required:
+  ```rust
+  use std::collections::HashMap;
+
+  #[derive(Serialize, Deserialize, Debug)]
+  struct RobotReport {
+      timestamp: String,
+      robot_info: RobotConfig,
+      mission_data: Mission,
+      performance_metrics: HashMap<String, serde_json::Value>,
+      final_position: (i32, i32),
+      success_rate: f64,
+  }
+
+  fn generate_final_report() -> Result<(), Box<dyn std::error::Error>> {
+      let mut metrics = HashMap::new();
+      metrics.insert("items_collected".to_string(),
+                     serde_json::Value::Number(serde_json::Number::from(5)));
+      metrics.insert("doors_opened".to_string(),
+                     serde_json::Value::Number(serde_json::Number::from(4)));
+      metrics.insert("energy_efficiency".to_string(),
+                     serde_json::Value::Number(serde_json::Number::from_f64(0.85).unwrap()));
+
+      let report = RobotReport {
+          timestamp: "2024-01-15T10:30:00Z".to_string(),
+          robot_info: RobotConfig::new(1, "JSON Processor".to_string(), 2.8),
+          mission_data: process_mission_params_item()?,
+          performance_metrics: metrics,
+          final_position: robot.get_position(),
+          success_rate: 0.95,
+      };
+
+      // Serialize to pretty JSON
+      let json_report = serde_json::to_string_pretty(&report)?;
+      println!("=== FINAL MISSION REPORT ===");
+      println!("{}", json_report);
+
+      // Also demonstrate compact serialization
+      let compact_json = serde_json::to_string(&report)?;
+      println!("\nCompact JSON length: {} bytes", compact_json.len());
+
+      Ok(())
+  }
+  ```
+
+  **🎯 Goal: Navigate through the level, collect all JSON data items, process them with Serde, and generate a comprehensive report!**
+
+achievement_message: "Excellent! You've mastered JSON serialization and deserialization with Serde!"
+next_level_hint: "Next: Level 15 - YAML processing and advanced Serde features"
+
+starting_code: |
+  // Level 14: Serde JSON Basics
+  // Learn JSON serialization and deserialization with Serde
+
+  // Add these to your Cargo.toml dependencies:
+  // serde = { version = "1.0", features = ["derive"] }
+  // serde_json = "1.0"
+
+  use serde::{Serialize, Deserialize};
+  use std::collections::HashMap;
+
+  // TODO: Task 1 - Define RobotConfig struct with Serde derives
+  // #[derive(Serialize, Deserialize, Debug, Clone)]
+  // struct RobotConfig {
+  //     id: u32,
+  //     name: String,
+  //     max_speed: f64,
+  //     sensors_enabled: bool,
+  //     position: (i32, i32),
+  // }
+
+  // TODO: Task 2 - Create deserialization functions
+  // fn process_robot_config_item() -> Result<RobotConfig, serde_json::Error> {
+  //     // Deserialize robot config JSON
+  // }
+
+  // TODO: Task 3 - Define RobotState struct and serialization
+  // #[derive(Serialize, Deserialize, Debug)]
+  // struct RobotState {
+  //     // Add fields for robot state
+  // }
+
+  // TODO: Task 4 - Define Mission and Objective structs
+  // #[derive(Serialize, Deserialize, Debug)]
+  // struct Mission {
+  //     // Add mission fields
+  // }
+
+  // TODO: Task 5 - Create final report system
+  // #[derive(Serialize, Deserialize, Debug)]
+  // struct RobotReport {
+  //     // Add comprehensive reporting fields
+  // }
+
+  fn main() {
+      println!("Level 14: Serde JSON Basics");
+      println!("Process JSON data with Serde serialization!");
+
+      // TODO: Task 1 - Test RobotConfig creation and serialization
+      // let config = RobotConfig::new(1, "Test Bot".to_string(), 2.0);
+      // println!("Config: {:?}", config);
+
+      // TODO: Task 2 - Process collected JSON items
+      // match process_robot_config_item() {
+      //     Ok(config) => println!("Successfully loaded config: {:?}", config),
+      //     Err(e) => println!("Error loading config: {}", e),
+      // }
+
+      // TODO: Task 3 - Serialize current robot state
+      // serialize_robot_state().unwrap();
+
+      // TODO: Task 4 - Process mission parameters
+      // process_mission_params_item().unwrap();
+
+      // TODO: Task 5 - Generate final JSON report
+      // generate_final_report().unwrap();
+
+      println!("Navigate and collect JSON data items!");
+  }
+
+rust_docs_url: "https://docs.rs/serde_json/latest/serde_json/"

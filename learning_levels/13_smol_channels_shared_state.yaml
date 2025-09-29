@@ -1,0 +1,411 @@
+name: "Level 13: Smol Channels and Shared State"
+description: "Master inter-task communication and shared state with Smol runtime"
+max_turns: 400
+width: 12
+height: 10
+start: [0, 0]
+
+# Complex environment requiring coordinated communication
+grid:
+  - ["S", ".", ".", ".", "#", "#", ".", ".", ".", ".", ".", "."]
+  - [".", "#", "E", ".", "D", "D", ".", "E", "#", ".", ".", "."]
+  - [".", ".", ".", "#", ".", ".", "#", ".", ".", ".", ".", "."]
+  - ["E", ".", "#", ".", "D", "D", ".", "#", ".", "E", ".", "."]
+  - [".", ".", ".", ".", "#", "#", ".", ".", ".", ".", ".", "."]
+  - [".", "E", ".", "#", ".", ".", "#", ".", "E", ".", ".", "."]
+  - [".", ".", "#", ".", "D", "D", ".", "#", ".", ".", ".", "."]
+  - ["E", ".", ".", ".", "#", "#", ".", ".", ".", "E", ".", "."]
+  - [".", "#", "E", ".", "D", "D", ".", "E", "#", ".", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "G"]
+
+items:
+  - name: "channel_tip"
+    pos: [3, 1]
+  - name: "receiver_tip"
+    pos: [8, 1]
+  - name: "shared_tip"
+    pos: [5, 4]
+  - name: "mutex_tip"
+    pos: [6, 4]
+  - name: "coordination_tip"
+    pos: [11, 9]
+
+enemies:
+  - start_position: [2, 1]
+    movement_pattern: "horizontal"
+  - start_position: [7, 1]
+    movement_pattern: "vertical"
+  - start_position: [0, 3]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [9, 3]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [1, 5]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+  - start_position: [8, 5]
+    movement_pattern: "horizontal"
+  - start_position: [0, 7]
+    movement_pattern: "vertical"
+  - start_position: [9, 7]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [2, 8]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [7, 8]
+    movement_pattern: "file:movement_patterns/chase_player.rs"
+
+doors:
+  - position: [4, 1]
+    initially_open: false
+  - position: [5, 1]
+    initially_open: false
+  - position: [4, 3]
+    initially_open: false
+  - position: [5, 3]
+    initially_open: false
+  - position: [4, 6]
+    initially_open: false
+  - position: [5, 6]
+    initially_open: false
+  - position: [4, 8]
+    initially_open: false
+  - position: [5, 8]
+    initially_open: false
+
+completion_flag: "goal"
+completion_message: |
+  📡 **LEVEL 13: Smol Channels and Shared State**
+
+  Master inter-task communication and shared state management with Smol!
+
+  **📋 TASK 1: Create Channel Communication System**
+  Use async-channel for communication between robot subsystems.
+
+  Required:
+  ```rust
+  use async_channel::{Sender, Receiver, unbounded};
+  use std::sync::{Arc, Mutex};
+
+  async fn scanner_task(sender: Sender<String>) {
+      loop {
+          smol::Timer::after(Duration::from_millis(300)).await;
+          let scan_result = robot.scan("all");
+          let message = format!("SCAN: {}", scan_result);
+
+          if sender.send(message).await.is_err() {
+              println!("Scanner: Channel closed");
+              break;
+          }
+
+          if scan_result.contains("goal") {
+              break;
+          }
+      }
+  }
+
+  async fn coordinator_task(receiver: Receiver<String>) {
+      while let Ok(message) = receiver.recv().await {
+          println!("Coordinator received: {}", message);
+
+          if message.contains("enemy") {
+              println!("⚠️ Coordinator: Enemy detected, changing strategy");
+              robot.evasive_action().await;
+          } else if message.contains("door") {
+              println!("🚪 Coordinator: Door found, opening");
+              robot.open_door().await;
+          } else if message.contains("item") {
+              println!("📦 Coordinator: Item detected, collecting");
+              robot.collect_item().await;
+          }
+      }
+  }
+  ```
+
+  **📋 TASK 2: Implement Shared State Management**
+  Create shared state that multiple tasks can safely access.
+
+  Required:
+  ```rust
+  #[derive(Clone, Debug)]
+  struct RobotState {
+      position: (i32, i32),
+      energy: u32,
+      items_collected: Vec<String>,
+      doors_opened: u32,
+      scan_count: u32,
+  }
+
+  type SharedState = Arc<Mutex<RobotState>>;
+
+  async fn position_updater(state: SharedState) {
+      loop {
+          smol::Timer::after(Duration::from_millis(200)).await;
+
+          let new_pos = robot.get_position();
+          {
+              let mut robot_state = state.lock().unwrap();
+              robot_state.position = new_pos;
+              robot_state.energy = robot_state.energy.saturating_sub(1);
+          }
+
+          if robot.at_goal() {
+              break;
+          }
+      }
+  }
+
+  async fn scan_counter(state: SharedState) {
+      loop {
+          smol::Timer::after(Duration::from_millis(500)).await;
+
+          robot.scan("all");
+          {
+              let mut robot_state = state.lock().unwrap();
+              robot_state.scan_count += 1;
+              println!("Scans performed: {}", robot_state.scan_count);
+          }
+
+          if robot.at_goal() {
+              break;
+          }
+      }
+  }
+  ```
+
+  **📋 TASK 3: Create Multi-Producer, Single-Consumer System**
+  Set up multiple tasks sending data to a single coordinator.
+
+  Required:
+  ```rust
+  async fn area_scanner(sender: Sender<(String, (i32, i32))>, area_name: String, positions: Vec<(i32, i32)>) {
+      for pos in positions {
+          robot.move_to(pos.0, pos.1).await;
+          smol::Timer::after(Duration::from_millis(100)).await;
+
+          let scan_result = robot.scan("all");
+          let message = (format!("{}: {}", area_name, scan_result), pos);
+
+          if sender.send(message).await.is_err() {
+              break;
+          }
+      }
+  }
+
+  async fn multi_area_exploration() {
+      let (sender, receiver) = unbounded::<(String, (i32, i32))>();
+
+      // Spawn multiple area scanners
+      let north_area = vec![(1, 1), (2, 1), (3, 1)];
+      let south_area = vec![(1, 8), (2, 8), (3, 8)];
+      let east_area = vec![(10, 3), (10, 4), (10, 5)];
+
+      let north_task = smol::spawn(area_scanner(sender.clone(), "North".to_string(), north_area));
+      let south_task = smol::spawn(area_scanner(sender.clone(), "South".to_string(), south_area));
+      let east_task = smol::spawn(area_scanner(sender.clone(), "East".to_string(), east_area));
+
+      // Drop the original sender so receiver knows when all are done
+      drop(sender);
+
+      // Coordinate all scan data
+      let mut scan_data = Vec::new();
+      while let Ok((message, pos)) = receiver.recv().await {
+          println!("Received from {:?}: {}", pos, message);
+          scan_data.push((message, pos));
+
+          if message.contains("enemy") {
+              println!("Enemy location logged: {:?}", pos);
+          }
+      }
+
+      println!("Total scan reports received: {}", scan_data.len());
+  }
+  ```
+
+  **📋 TASK 4: Implement Broadcast Communication**
+  Create a system where one task broadcasts to multiple listeners.
+
+  Required:
+  ```rust
+  async fn command_broadcaster(sender: Sender<String>) {
+      let commands = vec![
+          "SCAN_AREA".to_string(),
+          "OPEN_DOORS".to_string(),
+          "COLLECT_ITEMS".to_string(),
+          "MOVE_TO_GOAL".to_string(),
+      ];
+
+      for command in commands {
+          println!("Broadcasting command: {}", command);
+          if sender.send(command).await.is_err() {
+              break;
+          }
+          smol::Timer::after(Duration::from_secs(1)).await;
+      }
+  }
+
+  async fn subsystem_listener(mut receiver: Receiver<String>, subsystem_name: String) {
+      while let Ok(command) = receiver.recv().await {
+          println!("{} received command: {}", subsystem_name, command);
+
+          match command.as_str() {
+              "SCAN_AREA" => {
+                  let scan = robot.scan("all");
+                  println!("{} scan result: {}", subsystem_name, scan);
+              }
+              "OPEN_DOORS" => {
+                  if robot.scan("all").contains("door") {
+                      robot.open_door().await;
+                      println!("{} opened a door", subsystem_name);
+                  }
+              }
+              "COLLECT_ITEMS" => {
+                  if robot.scan("all").contains("item") {
+                      robot.collect_item().await;
+                      println!("{} collected an item", subsystem_name);
+                  }
+              }
+              "MOVE_TO_GOAL" => {
+                  robot.move_toward_goal().await;
+                  println!("{} moved toward goal", subsystem_name);
+              }
+              _ => println!("{} unknown command: {}", subsystem_name, command),
+          }
+      }
+  }
+  ```
+
+  **📋 TASK 5: Master Coordination System**
+  Create a comprehensive system combining channels and shared state.
+
+  Required:
+  ```rust
+  async fn master_robot_system() {
+      // Shared state
+      let shared_state = Arc::new(Mutex::new(RobotState {
+          position: (0, 0),
+          energy: 100,
+          items_collected: Vec::new(),
+          doors_opened: 0,
+          scan_count: 0,
+      }));
+
+      // Communication channels
+      let (scan_tx, scan_rx) = unbounded::<String>();
+      let (door_tx, door_rx) = unbounded::<(i32, i32)>();
+      let (status_tx, status_rx) = unbounded::<String>();
+
+      // Spawn coordinated tasks
+      let scanner = smol::spawn(scanner_task(scan_tx));
+      let coordinator = smol::spawn(coordinator_task(scan_rx));
+      let position_tracker = smol::spawn(position_updater(shared_state.clone()));
+      let scan_tracker = smol::spawn(scan_counter(shared_state.clone()));
+
+      // Door management system
+      let door_manager = smol::spawn(async move {
+          while let Ok(door_pos) = door_rx.recv().await {
+              robot.open_door_at(door_pos).await;
+              {
+                  let mut state = shared_state.lock().unwrap();
+                  state.doors_opened += 1;
+              }
+              status_tx.send(format!("Door opened at {:?}", door_pos)).await.ok();
+          }
+      });
+
+      // Status monitor
+      let status_monitor = smol::spawn(async move {
+          while let Ok(status) = status_rx.recv().await {
+              println!("STATUS: {}", status);
+          }
+      });
+
+      // Send door positions to be opened
+      for door_pos in [(4, 1), (5, 1), (4, 3), (5, 3)] {
+          door_tx.send(door_pos).await.ok();
+          smol::Timer::after(Duration::from_millis(500)).await;
+      }
+
+      // Wait for completion
+      futures_lite::future::race(
+          futures_lite::future::race(scanner, coordinator),
+          futures_lite::future::race(door_manager, status_monitor)
+      ).await;
+
+      // Final state report
+      let final_state = shared_state.lock().unwrap();
+      println!("Mission complete! Final state: {:?}", *final_state);
+  }
+  ```
+
+  **🎯 Goal: Use channels and shared state to coordinate multiple robot subsystems efficiently!**
+
+achievement_message: "Incredible! You've mastered async communication and shared state with Smol!"
+next_level_hint: "Congratulations! You've completed the Smol async programming series!"
+
+starting_code: |
+  // Level 13: Smol Channels and Shared State
+  // Master inter-task communication and shared state management
+
+  use async_channel::{Sender, Receiver, unbounded};
+  use std::sync::{Arc, Mutex};
+  use std::time::Duration;
+  use futures_lite::future;
+
+  // TODO: Task 2 - Define RobotState struct
+  // #[derive(Clone, Debug)]
+  // struct RobotState {
+  //     position: (i32, i32),
+  //     energy: u32,
+  //     items_collected: Vec<String>,
+  //     doors_opened: u32,
+  //     scan_count: u32,
+  // }
+
+  // type SharedState = Arc<Mutex<RobotState>>;
+
+  // TODO: Task 1 - Create scanner and coordinator tasks
+  // async fn scanner_task(sender: Sender<String>) {
+  //     // Scanning with channel communication
+  // }
+
+  // async fn coordinator_task(receiver: Receiver<String>) {
+  //     // Process incoming scan data
+  // }
+
+  // TODO: Task 2 - Shared state management tasks
+  // async fn position_updater(state: SharedState) {
+  //     // Update shared position state
+  // }
+
+  // TODO: Task 3 - Multi-producer exploration
+  // async fn area_scanner(sender: Sender<(String, (i32, i32))>, area_name: String, positions: Vec<(i32, i32)>) {
+  //     // Scan areas and send data
+  // }
+
+  // TODO: Task 4 - Broadcast system
+  // async fn command_broadcaster(sender: Sender<String>) {
+  //     // Broadcast commands to subsystems
+  // }
+
+  // TODO: Task 5 - Master coordination system
+  // async fn master_robot_system() {
+  //     // Comprehensive coordination system
+  // }
+
+  fn main() {
+      println!("Level 13: Smol Channels and Shared State");
+
+      smol::block_on(async {
+          println!("Master inter-task communication and shared state!");
+
+          // TODO: Task 1 - Set up basic channel communication
+          // let (tx, rx) = unbounded::<String>();
+          // let scanner = smol::spawn(scanner_task(tx));
+          // let coordinator = smol::spawn(coordinator_task(rx));
+
+          // TODO: Task 5 - Run master coordination system
+          // master_robot_system().await;
+
+          println!("Coordinate complex systems with channels and shared state!");
+      })
+  }
+
+rust_docs_url: "https://docs.rs/smol/latest/smol/"

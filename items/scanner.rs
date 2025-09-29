@@ -8,5 +8,5 @@ pub fn scan_capability() {
 }
 
 pub fn get_scan_range() -> u32 {
-    1 // Base scanner range
+    5 // Base scanner range
 }

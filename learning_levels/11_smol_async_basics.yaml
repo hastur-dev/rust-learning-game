@@ -1,0 +1,203 @@
+name: "Level 11: Smol Async Basics"
+description: "Learn async/await fundamentals and task spawning with the Smol executor"
+max_turns: 250
+width: 8
+height: 8
+start: [0, 0]
+
+# Grid with enemies and doors for async practice
+grid:
+  - ["S", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", ".", "E", ".", "#", ".", "."]
+  - [".", ".", "D", ".", ".", ".", "D", "."]
+  - [".", "E", ".", "#", ".", "E", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", "."]
+  - [".", "#", ".", "D", ".", "#", ".", "."]
+  - [".", ".", ".", "E", ".", ".", ".", "."]
+  - [".", ".", ".", ".", ".", ".", ".", "G"]
+
+items:
+  - name: "async_tip"
+    pos: [2, 1]
+  - name: "spawn_tip"
+    pos: [6, 2]
+  - name: "executor_tip"
+    pos: [3, 5]
+  - name: "task_tip"
+    pos: [6, 6]
+
+enemies:
+  - start_position: [3, 1]
+    movement_pattern: "file:movement_patterns/guard_area.rs"
+  - start_position: [1, 3]
+    movement_pattern: "file:movement_patterns/spiral_movement.rs"
+  - start_position: [5, 3]
+    movement_pattern: "vertical"
+  - start_position: [3, 6]
+    movement_pattern: "horizontal"
+
+doors:
+  - position: [2, 2]
+    initially_open: false
+  - position: [6, 2]
+    initially_open: false
+  - position: [3, 5]
+    initially_open: false
+
+completion_flag: "goal"
+completion_message: |
+  🚀 **LEVEL 11: Smol Async Basics**
+
+  Learn asynchronous programming with Smol - a small, fast async runtime!
+
+  **📋 TASK 1: Create Your First Async Function**
+  Create an async function that moves the robot with delays between moves.
+
+  Required:
+  ```rust
+  async fn move_robot_async(direction: &str) {
+      smol::Timer::after(std::time::Duration::from_millis(100)).await;
+      match direction {
+          "right" => robot.move_right(),
+          "down" => robot.move_down(),
+          "left" => robot.move_left(),
+          "up" => robot.move_up(),
+          _ => println!("Invalid direction"),
+      }
+  }
+  ```
+
+  **📋 TASK 2: Use block_on to Run Async Code**
+  Use smol::block_on to execute your async functions from main.
+
+  Required structure:
+  ```rust
+  fn main() {
+      smol::block_on(async {
+          println!("Starting async robot control...");
+          move_robot_async("right").await;
+          move_robot_async("down").await;
+          // Add more movements
+      })
+  }
+  ```
+
+  **📋 TASK 3: Spawn Concurrent Tasks**
+  Use smol::spawn to run multiple tasks concurrently.
+
+  Required:
+  ```rust
+  async fn main_async() {
+      // Spawn a background scanning task
+      let scan_task = smol::spawn(async {
+          loop {
+              let scan_result = robot.scan("all");
+              println!("Background scan: {}", scan_result);
+              smol::Timer::after(std::time::Duration::from_millis(500)).await;
+          }
+      });
+
+      // Spawn movement task
+      let move_task = smol::spawn(async {
+          move_robot_async("right").await;
+          move_robot_async("down").await;
+      });
+
+      // Wait for movement to complete
+      move_task.await;
+  }
+  ```
+
+  **📋 TASK 4: Handle Task Results**
+  Spawn tasks that return values and handle their results.
+
+  Required:
+  ```rust
+  async fn scan_area_async(area: &str) -> String {
+      smol::Timer::after(std::time::Duration::from_millis(200)).await;
+      robot.scan(area)
+  }
+
+  async fn parallel_scanning() {
+      let north_task = smol::spawn(scan_area_async("north"));
+      let south_task = smol::spawn(scan_area_async("south"));
+      let east_task = smol::spawn(scan_area_async("east"));
+      let west_task = smol::spawn(scan_area_async("west"));
+
+      let results = futures_lite::future::join_all(vec![
+          north_task, south_task, east_task, west_task
+      ]).await;
+
+      for (i, result) in results.iter().enumerate() {
+          println!("Direction {}: {}", i, result);
+      }
+  }
+  ```
+
+  **📋 TASK 5: Create Door Opening with Async**
+  Create an async function that opens doors when they're detected.
+
+  Required:
+  ```rust
+  async fn open_doors_async() {
+      let scan_result = robot.scan("all");
+      if scan_result.contains("door") {
+          println!("Door detected! Opening...");
+          smol::Timer::after(std::time::Duration::from_millis(100)).await;
+          robot.open_door();
+          println!("Door opened successfully!");
+      }
+  }
+  ```
+
+  **🎯 Goal: Navigate through the maze using async/await patterns and task spawning to reach the goal!**
+
+achievement_message: "Excellent! You've mastered async programming basics with Smol!"
+next_level_hint: "Next: Level 12 - Timers and coordination patterns"
+
+starting_code: |
+  // Level 11: Smol Async Basics
+  // Learn async/await fundamentals with the Smol runtime
+
+  // Add this to your Cargo.toml dependencies:
+  // smol = "2.0"
+  // futures-lite = "2.0"
+
+  use std::time::Duration;
+
+  // TODO: Task 1 - Create async function for robot movement
+  // async fn move_robot_async(direction: &str) {
+  //     smol::Timer::after(Duration::from_millis(100)).await;
+  //     // Add movement logic here
+  // }
+
+  // TODO: Task 4 - Create async scanning function
+  // async fn scan_area_async(area: &str) -> String {
+  //     smol::Timer::after(Duration::from_millis(200)).await;
+  //     robot.scan(area)
+  // }
+
+  // TODO: Task 5 - Create async door opening function
+  // async fn open_doors_async() {
+  //     // Add door detection and opening logic
+  // }
+
+  // TODO: Task 3 - Create main async function
+  // async fn main_async() {
+  //     // Spawn and coordinate tasks here
+  // }
+
+  fn main() {
+      println!("Level 11: Smol Async Basics");
+
+      // TODO: Task 2 - Use smol::block_on to run async code
+      smol::block_on(async {
+          println!("Convert this to async and use await patterns!");
+
+          // TODO: Task 3 - Add task spawning here
+          // let task = smol::spawn(async { ... });
+          // task.await;
+      })
+  }
+
+rust_docs_url: "https://docs.rs/smol/latest/smol/"

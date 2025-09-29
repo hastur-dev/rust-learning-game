@@ -10,6 +10,8 @@ mod game_state;
 mod menu;
 mod movement_patterns;
 mod popup;
+mod embedded_levels;
+mod learning_tests;
 
 use level::*;
 use game_state::*;
@@ -88,7 +90,7 @@ async fn run_game() {
     let rng = StdRng::from_entropy();
 
     // Load embedded levels for WASM
-    let levels = get_embedded_levels();
+    let levels = embedded_levels::get_embedded_level_specs();
     let mut game = Game::new(levels, rng);
     
     let mut current_level = 0;
@@ -97,10 +99,11 @@ async fn run_game() {
         clear_background(BLACK);
         
         // Handle popup input first - if popup is showing, consume input
-        let popup_handled_input = game.handle_popup_input();
+        let popup_action = game.handle_popup_input();
+        let popup_handled_input = popup_action != popup::PopupAction::None;
         
         // Update popup system with delta time
-        game.update_popup_system(get_frame_time());
+        game.update_popup_system(crate::crash_protection::safe_get_frame_time());
 
         // Only process game input if popup didn't handle it
         if !popup_handled_input {
@@ -108,16 +111,20 @@ async fn run_game() {
                 break;
             }
 
-            if is_key_pressed(KeyCode::R) {
+            if is_key_pressed(KeyCode::R) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
                 game.load_level(current_level);
                 continue;
+            }
+            
+            if is_key_pressed(KeyCode::C) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) {
+                game.show_completion_instructions();
             }
         }
 
         if game.finished {
             // Game finished screen
-            let screen_width = screen_width();
-            let screen_height = screen_height();
+            let screen_width = crate::crash_protection::safe_screen_width();
+            let screen_height = crate::crash_protection::safe_screen_height();
             
             let text = if game.max_turns > 0 && game.turns >= game.max_turns {
                 "Time's up! Press R to restart or ESC to quit"
@@ -129,7 +136,7 @@ async fn run_game() {
             draw_text(text, (screen_width - text_width) / 2.0, screen_height / 2.0, 30.0, GREEN);
             
             // Only handle level progression input if popup didn't handle it
-            if !popup_handled_input && is_key_pressed(KeyCode::Space) && current_level + 1 < game.levels.len() {
+            if !popup_handled_input && is_key_pressed(KeyCode::Space) && is_key_down(KeyCode::LeftControl) && is_key_down(KeyCode::LeftShift) && current_level + 1 < game.levels.len() {
                 current_level += 1;
                 game.load_level(current_level);
             }
@@ -153,7 +160,8 @@ async fn run_game() {
         }
 
         if moved {
-            game.grid.move_enemies();
+            game.update_laser_effects();
+            game.grid.move_enemies(Some(game.robot.get_position()), &game.stunned_enemies);
             game.turns += 1;
             
             // Check for enemy collision
@@ -207,7 +215,15 @@ fn draw_game_wasm(game: &Game) {
             
             let color = if game.grid.known.contains(&pos) {
                 if game.grid.is_blocked(pos) {
-                    BROWN
+                    if game.grid.is_door(pos) {
+                        if game.grid.is_door_open(pos) {
+                            GREEN  // Open door
+                        } else {
+                            BROWN  // Closed door
+                        }
+                    } else {
+                        BROWN  // Regular obstacle
+                    }
                 } else if game.grid.visited.contains(&pos) {
                     LIGHTGRAY
                 } else {
@@ -225,100 +241,51 @@ fn draw_game_wasm(game: &Game) {
     let robot_pos = game.robot.get_position();
     let robot_screen_x = grid_start_x + (robot_pos.0 as f32) * tile_size;
     let robot_screen_y = grid_start_y + (robot_pos.1 as f32) * tile_size;
-    draw_rectangle(robot_screen_x + 5.0, robot_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, BLUE);
+    draw_rectangle(robot_screen_x + 5.0, robot_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, SKYBLUE);
     
     // Draw enemies
     for enemy in &game.grid.enemies {
         let enemy_screen_x = grid_start_x + (enemy.pos.x as f32) * tile_size;
         let enemy_screen_y = grid_start_y + (enemy.pos.y as f32) * tile_size;
-        draw_rectangle(enemy_screen_x + 5.0, enemy_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, RED);
+        
+        // Determine enemy color based on movement type and state
+        let enemy_color = if let Some(ref pattern) = enemy.movement_pattern {
+            match pattern.as_str() {
+                "chase" => {
+                    // Check if actively chasing (orange) or not moving (blue)
+                    if let Some(is_chasing) = enemy.movement_data.get("is_chasing")
+                        .and_then(|v| v.as_bool()) {
+                        if is_chasing {
+                            ORANGE  // Actively chasing player
+                        } else {
+                            BLUE    // Not moving/searching
+                        }
+                    } else {
+                        ORANGE  // Default to orange for chase enemies
+                    }
+                }
+                "random" => MAGENTA,    // Random movement = magenta
+                "diagonal" => YELLOW,   // Diagonal movement = yellow
+                "circular" => LIME,     // Circular movement = lime green
+                "spiral" => PINK,       // Spiral movement = pink
+                pattern if pattern.starts_with("file:") => PURPLE, // Custom file patterns = purple
+                _ => RED                 // Unknown patterns = red
+            }
+        } else {
+            // Built-in horizontal/vertical enemies (no movement_pattern field)
+            match enemy.direction {
+                level::EnemyDirection::Horizontal => GREEN,  // Horizontal = green
+                level::EnemyDirection::Vertical => DARKBLUE, // Vertical = dark blue
+            }
+        };
+        
+        draw_rectangle(enemy_screen_x + 5.0, enemy_screen_y + 5.0, tile_size - 10.0, tile_size - 10.0, enemy_color);
     }
     
     // Draw controls
     let controls_y = grid_start_y + (game.grid.height as f32 + 2.0) * tile_size;
-    draw_text("Controls: WASD/Arrow Keys = Move, R = Restart, ESC = Quit", 
+    draw_text("Controls: WASD/Arrow Keys = Move, Ctrl+Shift+R = Restart, ESC = Quit", 
               10.0, controls_y, 16.0, WHITE);
 }
 
-// For WASM, we'll embed the levels as const data instead of loading from files
-fn get_embedded_levels() -> Vec<LevelSpec> {
-    vec![
-        // Basic exploration level
-        LevelSpec {
-            name: "Basic Exploration".to_string(),
-            width: 16,
-            height: 10,
-            start: (1, 1),
-            scanner_at: None,
-            blockers: vec![(5, 3), (7, 6), (12, 4), (10, 8), (3, 7)],
-            enemies: vec![],
-            items: vec![],
-            fog_of_war: true,
-            max_turns: 50,
-            income_per_square: 2,
-            message: Some("Welcome to the Rust Steam Game! Use WASD or arrow keys to explore and discover hidden areas. This is your first level - good luck!".to_string()),
-        },
-        // Enemy encounter level
-        LevelSpec {
-            name: "Enemy Encounter".to_string(),
-            width: 18,
-            height: 12,
-            start: (1, 1),
-            scanner_at: None,
-            blockers: vec![(8, 3), (12, 7), (5, 9), (15, 4)],
-            enemies: vec![
-                level::EnemySpec {
-                    pos: (15, 8),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: None,
-                },
-                level::EnemySpec {
-                    pos: (8, 3),
-                    direction: level::EnemyDirection::Vertical,
-                    moving_positive: false,
-                    movement_pattern: None,
-                }
-            ],
-            items: vec![],
-            fog_of_war: true,
-            max_turns: 0,
-            income_per_square: 1,
-            message: Some("Danger ahead! Red enemies patrol this area. Avoid them or they'll reset your progress. Plan your moves carefully.".to_string()),
-        },
-        // Custom movement demo level
-        LevelSpec {
-            name: "Custom Movement Demo".to_string(),
-            width: 20,
-            height: 15,
-            start: (1, 1),
-            scanner_at: None,
-            blockers: vec![(10, 5), (15, 8), (5, 12), (12, 3)],
-            enemies: vec![
-                level::EnemySpec {
-                    pos: (18, 13),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: Some("random".to_string()),
-                },
-                level::EnemySpec {
-                    pos: (5, 10),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: Some("diagonal".to_string()),
-                },
-                level::EnemySpec {
-                    pos: (15, 5),
-                    direction: level::EnemyDirection::Horizontal,
-                    moving_positive: true,
-                    movement_pattern: Some("circular".to_string()),
-                }
-            ],
-            items: vec![],
-            fog_of_war: true,
-            max_turns: 0,
-            income_per_square: 1,
-            message: Some("Advanced level! Enemies here use special movement patterns: random, diagonal, and circular. Study their behavior to succeed.".to_string()),
-        }
-    ]
-}
+// Levels are now loaded from embedded_levels module for consistency between desktop and WASM

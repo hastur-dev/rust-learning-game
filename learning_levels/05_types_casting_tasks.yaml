@@ -1,0 +1,484 @@
+name: "Level 5: Types and Casting"
+grid_size: "10x8"
+start_position: [0, 0]
+max_turns: 150
+fog_of_war: true
+income_per_square: 1
+message: |
+  🔄 **LEVEL 5: Types and Casting**
+
+  Master Rust's type conversion system - from explicit casting to safe conversions!
+
+  Learn how Rust prevents data loss and maintains type safety during conversions.
+
+hint_message: |
+  **Type Conversion Tips:**
+  - `as` keyword for explicit casting (can lose data)
+  - `.into()` for automatic conversions (From/Into traits)
+  - `.parse()` for string to number conversions
+  - Type inference works with conversions
+  - Rust prevents lossy conversions by default
+
+rust_docs_url: "https://doc.rust-lang.org/rust-by-example/cast.html"
+obstacles: 4
+
+items:
+  - name: "casting_tool"
+    item_file: "items/casting.rs"
+    spawn_randomly: false
+    location: [3, 2]
+  - name: "conversion_tool"
+    item_file: "items/conversion.rs"
+    spawn_randomly: false
+    location: [7, 3]
+  - name: "parse_tool"
+    item_file: "items/parsing.rs"
+    spawn_randomly: false
+    location: [2, 6]
+  - name: "inference_tool"
+    item_file: "items/inference.rs"
+    spawn_randomly: false
+    location: [8, 6]
+  - name: "goal_item"
+    item_file: "items/level_complete.rs"
+    spawn_randomly: false
+    location: [9, 7]
+
+tasks:
+  - name: "Explicit Type Casting with 'as'"
+    task_file: "learning_tests::level5_task1_casting::level5_task1_tests"
+    task_message: |
+      ## Task 1: Explicit Type Casting with 'as'
+
+      The `as` keyword performs explicit type casting, which can potentially lose data.
+
+      **Your goal:** Use `as` to cast between different numeric types and understand data loss.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Basic integer casting
+          let large_number: i64 = 1000;
+          let small_number: i32 = large_number as i32;
+
+          println!("Large (i64): {}", large_number);
+          println!("Small (i32): {}", small_number);
+
+          // Casting that loses precision
+          let precise_float: f64 = 3.14159265359;
+          let less_precise: f32 = precise_float as f32;
+
+          println!("Precise (f64): {}", precise_float);
+          println!("Less precise (f32): {}", less_precise);
+
+          // Float to integer (loses decimal part)
+          let pi: f64 = 3.14159;
+          let pi_int: i32 = pi as i32;
+
+          println!("Pi as float: {}", pi);
+          println!("Pi as integer: {} (decimal part lost)", pi_int);
+
+          // Potentially dangerous casting
+          let big_value: i32 = 1000;
+          let small_type: i8 = big_value as i8;  // Data loss possible!
+
+          println!("Big value (i32): {}", big_value);
+          println!("As i8: {} (wrapped around)", small_type);
+
+          // Unsigned to signed
+          let unsigned: u32 = 4294967295;  // Max u32
+          let signed: i32 = unsigned as i32;
+
+          println!("Unsigned: {}", unsigned);
+          println!("As signed: {} (overflow)", signed);
+      }
+      ```
+
+      **Key concepts:**
+      - `as` performs explicit casting
+      - Casting can lose data or precision
+      - Float to int truncates (doesn't round)
+      - Overflow wrapping in integer casts
+
+    completion_message: |
+      ✅ **Great!** You understand explicit casting with `as`!
+
+      **What you learned:**
+      - `as` keyword for explicit casts
+      - Potential data loss in casting
+      - Float to integer truncation
+      - Integer overflow behavior
+
+    start_task_message: "Let's explore explicit type casting and its potential pitfalls!"
+
+  - name: "Safe Conversions with From and Into"
+    task_file: "learning_tests::level5_task2_from_into::level5_task2_tests"
+    task_message: |
+      ## Task 2: Safe Conversions with From and Into
+
+      The `From` and `Into` traits provide safe, lossless conversions between types.
+
+      **Your goal:** Use `.into()` and `From::from()` for safe type conversions.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // From smaller to larger integer types (always safe)
+          let small: i32 = 100;
+          let large: i64 = small.into();  // or i64::from(small)
+
+          println!("Small (i32): {}", small);
+          println!("Large (i64): {}", large);
+
+          // String conversions
+          let number: i32 = 42;
+          let number_string: String = number.to_string();
+          let formatted: String = format!("Number: {}", number);
+
+          println!("Original number: {}", number);
+          println!("As string: {}", number_string);
+          println!("Formatted: {}", formatted);
+
+          // Character to string
+          let ch: char = 'R';
+          let ch_string: String = ch.into();
+
+          println!("Character: {}", ch);
+          println!("As string: {}", ch_string);
+
+          // Array to Vec (collection conversions)
+          let array: [i32; 3] = [1, 2, 3];
+          let vector: Vec<i32> = array.into();
+
+          println!("Array: {:?}", array);
+          println!("Vector: {:?}", vector);
+
+          // Using From explicitly
+          let from_example: String = String::from("Hello, Rust!");
+          let into_example: String = "Hello, Into!".into();
+
+          println!("From example: {}", from_example);
+          println!("Into example: {}", into_example);
+
+          // Chain conversions
+          let original: u16 = 500;
+          let converted: u64 = original.into();
+          let back_to_string = converted.to_string();
+
+          println!("Chain: {} -> {} -> {}", original, converted, back_to_string);
+      }
+      ```
+
+    completion_message: |
+      ✅ **Excellent!** You understand safe conversions!
+
+      **What you learned:**
+      - `From` and `Into` traits for safe conversions
+      - `.into()` for automatic type inference
+      - `.to_string()` for string conversions
+      - Safe conversions don't lose data
+
+    start_task_message: "Let's explore safe type conversions with From and Into!"
+
+  - name: "String Parsing and Error Handling"
+    task_file: "learning_tests::level5_task3_parsing::level5_task3_tests"
+    task_message: |
+      ## Task 3: String Parsing and Error Handling
+
+      Parsing strings to other types can fail, so Rust uses `Result` for safe parsing.
+
+      **Your goal:** Parse strings to numbers with proper error handling.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Basic parsing with expect (panics on failure)
+          let valid_number = "42";
+          let parsed: i32 = valid_number.parse().expect("Failed to parse number");
+
+          println!("Valid string: '{}'", valid_number);
+          println!("Parsed number: {}", parsed);
+
+          // Parsing with match for error handling
+          let strings = ["123", "45.67", "not_a_number", "0"];
+
+          for string_val in strings.iter() {
+              match string_val.parse::<i32>() {
+                  Ok(number) => println!("'{}' -> {} (success)", string_val, number),
+                  Err(error) => println!("'{}' -> Error: {}", string_val, error),
+              }
+          }
+
+          // Parsing floats
+          let float_strings = ["3.14", "2.718", "invalid", "42.0"];
+
+          for float_str in float_strings.iter() {
+              match float_str.parse::<f64>() {
+                  Ok(float_val) => println!("'{}' -> {} (float)", float_str, float_val),
+                  Err(_) => println!("'{}' -> Invalid float", float_str),
+              }
+          }
+
+          // Using unwrap_or for default values
+          let inputs = ["100", "invalid", "200"];
+
+          for input in inputs.iter() {
+              let number: i32 = input.parse().unwrap_or(0);
+              println!("'{}' -> {} (with default)", input, number);
+          }
+
+          // Parsing with type inference
+          let inferred_parse = "999".parse::<i32>().unwrap_or(-1);
+          let explicit_type: Result<i32, _> = "888".parse();
+
+          println!("Inferred parse: {}", inferred_parse);
+          match explicit_type {
+              Ok(val) => println!("Explicit parse: {}", val),
+              Err(_) => println!("Explicit parse failed"),
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Perfect!** You've mastered string parsing!
+
+      **What you learned:**
+      - `.parse()` returns `Result<T, E>`
+      - `expect()` for panicking on errors
+      - `match` for handling parse results
+      - `unwrap_or()` for default values
+
+    start_task_message: "Let's learn safe string parsing with error handling!"
+
+  - name: "Custom Type Conversions"
+    task_file: "learning_tests::level5_task4_custom_conversion::level5_task4_tests"
+    task_message: |
+      ## Task 4: Custom Type Conversions
+
+      Create your own types and implement conversion traits for them.
+
+      **Your goal:** Define custom types and implement `From` trait for conversions.
+
+      **Requirements:**
+      ```rust
+      // Custom types for robot system
+      struct Position {
+          x: i32,
+          y: i32,
+      }
+
+      struct RobotState {
+          position: Position,
+          energy: u32,
+      }
+
+      // Implement conversion from tuple to Position
+      impl From<(i32, i32)> for Position {
+          fn from(coord: (i32, i32)) -> Self {
+              Position {
+                  x: coord.0,
+                  y: coord.1,
+              }
+          }
+      }
+
+      // Implement conversion from Position to tuple
+      impl From<Position> for (i32, i32) {
+          fn from(pos: Position) -> Self {
+              (pos.x, pos.y)
+          }
+      }
+
+      fn main() {
+          // Create Position from tuple
+          let start_coords = (5, 10);
+          let start_position: Position = start_coords.into();
+
+          println!("Start coordinates: {:?}", start_coords);
+          println!("Position: x={}, y={}", start_position.x, start_position.y);
+
+          // Convert Position back to tuple
+          let end_position = Position { x: 15, y: 25 };
+          let end_coords: (i32, i32) = end_position.into();
+
+          println!("End position: x=15, y=25");
+          println!("End coordinates: {:?}", end_coords);
+
+          // Create RobotState using conversions
+          let robot = RobotState {
+              position: (0, 0).into(),  // tuple -> Position
+              energy: 100,
+          };
+
+          println!("Robot created at: x={}, y={}", robot.position.x, robot.position.y);
+          println!("Robot energy: {}", robot.energy);
+
+          // Chain conversions
+          let movement: (i32, i32) = (3, 4);
+          let new_position: Position = movement.into();
+          let back_to_tuple: (i32, i32) = new_position.into();
+
+          println!("Movement chain: {:?} -> Position -> {:?}", movement, back_to_tuple);
+
+          // Multiple conversion options
+          let coords = [(1, 2), (3, 4), (5, 6)];
+          let positions: Vec<Position> = coords.iter().map(|&c| c.into()).collect();
+
+          println!("Converted {} coordinates to positions", positions.len());
+          for (i, pos) in positions.iter().enumerate() {
+              println!("Position {}: ({}, {})", i, pos.x, pos.y);
+          }
+      }
+      ```
+
+    completion_message: |
+      ✅ **Amazing!** You can create custom type conversions!
+
+      **What you learned:**
+      - Implementing `From` trait for custom types
+      - Bidirectional conversions
+      - Using conversions in data structures
+      - Converting collections of data
+
+    start_task_message: "Let's create custom types and implement conversion traits!"
+
+  - name: "Type Inference with Conversions"
+    task_file: "learning_tests::level5_task5_inference::level5_task5_tests"
+    task_message: |
+      ## Task 5: Type Inference with Conversions
+
+      Understand how Rust's type inference works with conversions and when to be explicit.
+
+      **Your goal:** Master type inference in conversion contexts and understand its limits.
+
+      **Requirements:**
+      ```rust
+      fn main() {
+          // Type inference with numeric conversions
+          let small = 100_i32;
+          let large = small.into();  // Rust infers i64 from context
+
+          // Need explicit type when inference is ambiguous
+          let explicit: i64 = small.into();
+          let inferred: i64 = small.into();
+
+          println!("Small: {}", small);
+          println!("Large (inferred): {}", large);
+          println!("Explicit: {}", explicit);
+          println!("Inferred: {}", inferred);
+
+          // Collection inference
+          let numbers = vec![1, 2, 3];
+          let converted: Vec<i64> = numbers.into_iter().map(|x| x.into()).collect();
+
+          println!("Original: [1, 2, 3]");
+          println!("Converted: {:?}", converted);
+
+          // String conversion inference
+          let value = 42;
+          let string_val = value.to_string();  // Clear what we want
+
+          println!("Value: {}", value);
+          println!("String: {}", string_val);
+
+          // Parsing with inference
+          let parse_target = "123";
+
+          // These require type annotation because parse can return many types
+          let as_i32: i32 = parse_target.parse().expect("Parse failed");
+          let as_f64: f64 = parse_target.parse().expect("Parse failed");
+
+          println!("Parsed as i32: {}", as_i32);
+          println!("Parsed as f64: {}", as_f64);
+
+          // Function parameter inference
+          fn process_number(num: i64) {
+              println!("Processing: {}", num);
+          }
+
+          let input = 500_i32;
+          process_number(input.into());  // Inferred as i64 from function signature
+
+          // Turbofish syntax for explicit types
+          let parsed_with_turbofish = "456".parse::<i32>().expect("Parse failed");
+          let converted_with_turbofish = 789_i16.into::<i32>();
+
+          println!("Turbofish parsed: {}", parsed_with_turbofish);
+          println!("Turbofish converted: {}", converted_with_turbofish);
+
+          // When inference fails, be explicit
+          let ambiguous_collection: Vec<i32> = vec![1, 2, 3]
+              .into_iter()
+              .map(|x| x * 2)
+              .collect();
+
+          println!("Explicit collection: {:?}", ambiguous_collection);
+      }
+      ```
+
+    completion_message: |
+      🎉 **Outstanding!** You've mastered types, casting, and conversions!
+
+      **What you accomplished:**
+      - Explicit casting with `as` keyword
+      - Safe conversions with `From`/`Into` traits
+      - String parsing with error handling
+      - Custom type conversion implementations
+      - Type inference in conversion contexts
+
+      **You're ready for flow control and pattern matching!**
+
+    start_task_message: "Let's master type inference in conversion contexts!"
+
+starting_code: |
+  // Level 5: Types and Casting
+  // Master Rust's type conversion system
+
+  // TODO: Task 4 - Define custom types here
+  // struct Position {
+  //     x: i32,
+  //     y: i32,
+  // }
+
+  // TODO: Task 4 - Implement From trait
+  // impl From<(i32, i32)> for Position {
+  //     fn from(coord: (i32, i32)) -> Self {
+  //         Position { x: coord.0, y: coord.1 }
+  //     }
+  // }
+
+  fn main() {
+      println!("Level 5: Types and Casting");
+
+      // TODO: Task 1 - Explicit casting with 'as'
+      // let large_number: i64 = 1000;
+      // let small_number: i32 = large_number as i32;
+      // println!("Cast: {} -> {}", large_number, small_number);
+
+      // TODO: Task 2 - Safe conversions with From/Into
+      // let small: i32 = 100;
+      // let large: i64 = small.into();
+      // println!("Safe conversion: {} -> {}", small, large);
+
+      // TODO: Task 3 - String parsing
+      // let number_str = "42";
+      // match number_str.parse::<i32>() {
+      //     Ok(num) => println!("Parsed: {}", num),
+      //     Err(e) => println!("Error: {}", e),
+      // }
+
+      // TODO: Task 4 - Custom conversions
+      // let position: Position = (10, 20).into();
+      // println!("Position: x={}, y={}", position.x, position.y);
+
+      // TODO: Task 5 - Type inference with conversions
+      // let value = 500_i32;
+      // let converted: i64 = value.into();
+      // println!("Inferred conversion: {} -> {}", value, converted);
+
+      println!("Complete all tasks to master type conversions!");
+  }
+
+achievement_message: "🎉 Superb! You've mastered Rust's type system and conversion mechanisms!"
+next_level_hint: "Next: Flow control, conditionals, and pattern matching!"
+completion_flag: "goal"
