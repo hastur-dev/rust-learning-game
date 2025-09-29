@@ -76,6 +76,7 @@ pub struct Game {
     pub robot_code_modified: bool,
     pub current_code: String,
     pub cursor_position: usize,
+    pub code_execution_requested: bool, // Flag to request code execution via Ctrl+Shift+Enter
     pub selection_start: Option<usize>, // Start of text selection (None = no selection)
     pub selection_end: Option<usize>,   // End of text selection (None = no selection)
     pub mouse_drag_start: Option<(f32, f32)>, // Mouse position when drag started (None = no drag)
@@ -121,6 +122,9 @@ pub struct Game {
     pub last_system_key_time: f64,    // Time when last system key combination was detected
     // Debug flags
     pub enable_coordinate_logs: bool, // Enable detailed coordinate transformation logs
+    pub enable_key_press_logs: bool,  // Enable detailed key press and hotkey logs
+    pub last_key_log_time: f64,       // Time of last key press log (for rate limiting)
+    pub last_exec_log_time: f64,      // Time of last execution log (for rate limiting)
     // Window tracking timer
     pub last_window_update_time: f64, // Time of last window coordinate update (for throttling)
     pub last_mouse_click_time: f64,   // Time of last mouse click (for click rate limiting)
