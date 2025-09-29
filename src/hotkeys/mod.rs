@@ -88,6 +88,7 @@ impl HotkeySystem {
         default_bindings.insert("Ctrl+Shift+K".to_string(), EditorAction::DeleteLine);
         default_bindings.insert("Ctrl+S".to_string(), EditorAction::SaveFile);
         default_bindings.insert("Ctrl+Shift+Enter".to_string(), EditorAction::RunCode);
+        default_bindings.insert("Shift+Enter".to_string(), EditorAction::RunCode); // Add Shift+Enter as alternative
         default_bindings.insert("Ctrl+`".to_string(), EditorAction::ToggleEditor);
 
         let config_path = "hotkeys_config.json".to_string();

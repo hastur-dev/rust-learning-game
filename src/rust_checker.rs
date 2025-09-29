@@ -190,8 +190,12 @@ edition = "2021"
     }
     
     fn wrap_user_code(&self, user_code: &str) -> String {
-        // Comprehensive wrapper supporting full Rust language and ALL game functions
-        format!(r#"// Comprehensive Rust syntax checker with all game functions
+        // Check if the user code already contains fn main()
+        let has_main = user_code.contains("fn main()") || user_code.contains("fn main ()");
+
+        if has_main {
+            // If user code already has fn main(), just add the necessary imports and stubs
+            format!(r#"// Comprehensive Rust syntax checker with all game functions
 #![allow(unused_variables, dead_code, unused_imports, unused_mut, unused_parens)]
 #![allow(unused_assignments, unused_must_use, unreachable_code, path_statements)]
 
@@ -206,15 +210,11 @@ use std::{{
 // Movement functions
 fn move_bot(direction: &str) -> String {{ String::new() }}
 fn r#move(direction: &str) -> String {{ String::new() }}
-fn r#move(steps: i32) -> String {{ String::new() }}
-fn r#move(x: i32, y: i32) -> String {{ String::new() }}
 fn move_to(x: i32, y: i32) -> String {{ String::new() }}
 
 // Robot action functions
-fn scan(direction: &str) -> String {{ String::new() }}
 fn scan() -> String {{ String::new() }}
 fn grab() -> String {{ String::new() }}
-fn grab(item: &str) -> String {{ String::new() }}
 fn open_door(open: bool) -> String {{ String::new() }}
 fn use_item(item: &str) -> String {{ String::new() }}
 fn attack() -> String {{ String::new() }}
@@ -222,7 +222,69 @@ fn defend() -> String {{ String::new() }}
 
 // Search and navigation
 fn search() -> String {{ String::new() }}
-fn search(area: &str) -> String {{ String::new() }}
+fn navigate_to(x: i32, y: i32) -> String {{ String::new() }}
+fn find_path(target: &str) -> String {{ String::new() }}
+
+// Sensor functions
+fn check_position() -> (i32, i32) {{ (0, 0) }}
+fn get_health() -> i32 {{ 100 }}
+fn get_energy() -> i32 {{ 100 }}
+fn is_blocked(direction: &str) -> bool {{ false }}
+
+// Utility functions commonly used
+fn m(direction: &str) -> String {{ String::new() }} // Common abbreviation
+fn s() -> String {{ String::new() }} // Common abbreviation for search
+fn g() -> String {{ String::new() }} // Common abbreviation for grab
+
+// Laser module with comprehensive functions
+mod laser {{
+    pub fn direction(dir: &str) -> String {{ String::new() }}
+    pub fn tile(x: i32, y: i32) -> String {{ String::new() }}
+    pub fn fire() -> String {{ String::new() }}
+    pub fn aim(x: i32, y: i32) -> String {{ String::new() }}
+}}
+
+// Direction constants
+const UP: &str = "up";
+const DOWN: &str = "down";
+const LEFT: &str = "left";
+const RIGHT: &str = "right";
+const NORTH: &str = "north";
+const SOUTH: &str = "south";
+const EAST: &str = "east";
+const WEST: &str = "west";
+
+// User code with its own main function
+{}
+"#, user_code)
+        } else {
+            // If no main function, wrap it like before
+            format!(r#"// Comprehensive Rust syntax checker with all game functions
+#![allow(unused_variables, dead_code, unused_imports, unused_mut, unused_parens)]
+#![allow(unused_assignments, unused_must_use, unreachable_code, path_statements)]
+
+// Standard library prelude for full language support
+use std::{{
+    collections::{{HashMap, HashSet}},
+    fmt::{{Display, Debug}},
+    ops::Range,
+}};
+
+// ALL GAME FUNCTION STUBS - Support all possible game commands
+// Movement functions
+fn move_bot(direction: &str) -> String {{ String::new() }}
+fn move_to(x: i32, y: i32) -> String {{ String::new() }}
+
+// Robot action functions
+fn scan() -> String {{ String::new() }}
+fn grab() -> String {{ String::new() }}
+fn open_door(open: bool) -> String {{ String::new() }}
+fn use_item(item: &str) -> String {{ String::new() }}
+fn attack() -> String {{ String::new() }}
+fn defend() -> String {{ String::new() }}
+
+// Search and navigation
+fn search() -> String {{ String::new() }}
 fn navigate_to(x: i32, y: i32) -> String {{ String::new() }}
 fn find_path(target: &str) -> String {{ String::new() }}
 
@@ -273,6 +335,7 @@ fn main() {{
     // Explicit unit return to avoid expression issues
 }}
 "#, user_code)
+        }
     }
     
     fn parse_cargo_output(&self, output: &[u8]) -> Result<Vec<CompilerError>, String> {
@@ -319,9 +382,9 @@ fn main() {{
         let column_start = span.get("column_start")?.as_u64()? as usize;
         
         // Adjust line number to account for our wrapper code
-        // The user's code starts around line 65 in our enhanced wrapper
-        let adjusted_line = if line_start >= 65 {
-            line_start - 64  // Adjust for wrapper overhead
+        // The user's code starts around line 60-65 depending on whether it has fn main()
+        let adjusted_line = if line_start >= 60 {
+            line_start - 59  // Adjust for wrapper overhead
         } else {
             1  // If error is in wrapper, show as line 1
         };

@@ -1,0 +1,1 @@
+fn main() { println\!("{}", game.current_code.len()); println\!("{:?}", &game.current_code[..100]); }

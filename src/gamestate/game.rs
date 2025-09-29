@@ -36,6 +36,7 @@ impl Game {
             robot_code_modified: false,
             current_code: String::new(),
             cursor_position: 0,
+            code_execution_requested: false,
             selection_start: None,
             selection_end: None,
             mouse_drag_start: None,
@@ -80,6 +81,9 @@ impl Game {
             coordinate_transformer: crate::coordinate_system::CoordinateTransformer::new(), // Initialize coordinate transformer
             last_system_key_time: 0.0,    // Initialize system key timer
             enable_coordinate_logs: false, // Default to disabled, enabled via --all-logs command line flag
+            enable_key_press_logs: false,  // Default to disabled, enabled via --all-logs command line flag
+            last_key_log_time: 0.0,        // Initialize log rate limiting timers
+            last_exec_log_time: 0.0,
             last_window_update_time: 0.0, // Initialize timer
             last_mouse_click_time: 0.0,   // Initialize click timer
             autocomplete_engine: crate::autocomplete::AutocompleteEngine::new(),
@@ -158,6 +162,55 @@ impl Game {
     #[cfg(target_arch = "wasm32")]
     pub fn save_robot_code(&mut self) {
         // WASM version - no file I/O
+    }
+
+    // Request code execution (used by Ctrl+Shift+Enter)
+    pub fn request_code_execution(&mut self) {
+        // Set a flag that the main loop can check to trigger code execution
+        self.code_execution_requested = true;
+        println!("🚀 Code execution requested via Ctrl+Shift+Enter");
+    }
+
+    // Rate-limited logging helpers (max 1 per second to prevent spam)
+    pub fn log_key_press(&mut self, message: &str) -> bool {
+        if !self.enable_key_press_logs {
+            return false;
+        }
+        let current_time = crate::crash_protection::safe_get_time();
+        if current_time - self.last_key_log_time >= 1.0 {
+            self.last_key_log_time = current_time;
+            println!("🔍 [KEY] {}", message);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn log_execution(&mut self, message: &str) -> bool {
+        if !self.enable_key_press_logs {
+            return false;
+        }
+        let current_time = crate::crash_protection::safe_get_time();
+        if current_time - self.last_exec_log_time >= 1.0 {
+            self.last_exec_log_time = current_time;
+            println!("🔍 [EXEC] {}", message);
+            true
+        } else {
+            false
+        }
+    }
+
+    // Immediate logging (no rate limiting) for important events
+    pub fn log_key_immediate(&self, message: &str) {
+        if self.enable_key_press_logs {
+            println!("🔍 [KEY] {}", message);
+        }
+    }
+
+    pub fn log_execution_immediate(&self, message: &str) {
+        if self.enable_key_press_logs {
+            println!("🔍 [EXEC] {}", message);
+        }
     }
 
     pub fn load_level(&mut self, idx: usize) {
@@ -681,29 +734,51 @@ impl Game {
 
     // Hotkey system integration methods
     pub fn handle_hotkey(&mut self, key: macroquad::prelude::KeyCode, ctrl: bool, shift: bool, alt: bool) -> bool {
+        self.log_key_immediate(&format!("handle_hotkey called: {:?} (ctrl:{}, shift:{}, alt:{})", key, ctrl, shift, alt));
+
         if let Some(action) = self.hotkey_system.get_action_for_input(key, ctrl, shift, alt) {
-            self.execute_hotkey_action(action)
+            self.log_key_immediate(&format!("Hotkey system found action: {:?}", action));
+            let result = self.execute_hotkey_action(action);
+            self.log_key_immediate(&format!("execute_hotkey_action returned: {}", result));
+            result
         } else {
+            self.log_key_immediate("No action found for hotkey combination");
             false
         }
     }
 
     fn execute_hotkey_action(&mut self, action: crate::hotkeys::EditorAction) -> bool {
-        match action {
+        self.log_key_immediate(&format!("execute_hotkey_action called with action: {:?}", action));
+
+        let result = match action {
             crate::hotkeys::EditorAction::Accept => {
+                self.log_key_immediate("Executing Accept action (autocomplete)");
                 self.accept_autocomplete()
             },
             crate::hotkeys::EditorAction::ToggleEditor => {
+                self.log_key_immediate("Executing ToggleEditor action");
                 self.code_editor_active = !self.code_editor_active;
                 true
             },
             crate::hotkeys::EditorAction::SaveFile => {
+                self.log_key_immediate("Executing SaveFile action");
                 self.save_robot_code();
                 true
             },
+            crate::hotkeys::EditorAction::RunCode => {
+                self.log_key_immediate("Executing RunCode action - setting code_execution_requested flag");
+                self.request_code_execution();
+                true
+            },
             // Add more actions as needed
-            _ => false,
-        }
+            _ => {
+                self.log_key_immediate(&format!("Unknown action: {:?}", action));
+                false
+            }
+        };
+
+        self.log_key_immediate(&format!("execute_hotkey_action completed, returning: {}", result));
+        result
     }
 
     pub fn load_hotkey_config(&mut self) -> Result<(), String> {

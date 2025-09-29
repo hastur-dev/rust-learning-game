@@ -344,8 +344,8 @@ impl PopupSystem {
             PopupType::Info => (Color::new(0.2, 0.2, 0.3, 0.95), LIGHTGRAY, BLUE),
             PopupType::Warning => (Color::new(0.3, 0.2, 0.1, 0.95), ORANGE, YELLOW),
             PopupType::Success => (Color::new(0.1, 0.3, 0.1, 0.95), LIGHTGRAY, GREEN),
-            PopupType::Stdout => (Color::new(0.1, 0.2, 0.3, 0.95), SKYBLUE, WHITE),
-            PopupType::Stderr => (Color::new(0.3, 0.1, 0.1, 0.95), RED, YELLOW),
+            PopupType::Stdout => (Color::new(0.1, 0.3, 0.1, 0.95), GREEN, LIME),  // Green for println!
+            PopupType::Stderr => (Color::new(0.3, 0.1, 0.1, 0.95), RED, YELLOW),  // Red for eprintln!
             PopupType::Panic => (Color::new(0.4, 0.1, 0.1, 0.95), RED, ORANGE),
             PopupType::Tutorial => (Color::new(0.25, 0.15, 0.3, 0.95), PURPLE, PINK),
             PopupType::Congratulations => (Color::new(0.1, 0.3, 0.1, 0.95), GOLD, YELLOW),

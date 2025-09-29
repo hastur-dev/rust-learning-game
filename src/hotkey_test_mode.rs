@@ -187,6 +187,7 @@ pub async fn run_hotkey_test_mode(enable_all_logs: bool) {
 
     // Enable coordinate logs if --all-logs flag is present
     game.enable_coordinate_logs = enable_all_logs;
+    game.enable_key_press_logs = enable_all_logs;
 
     // Set up a simple level for testing
     game.level_idx = 0;

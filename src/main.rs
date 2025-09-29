@@ -7,32 +7,46 @@ use std::panic;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 mod crash_protection;
+mod code_executor;
 
 /// Parse only function calls that are reachable from main(), following proper Rust execution flow
 fn parse_rust_code_from_main(code: &str) -> Vec<FunctionCall> {
+    println!("🔍 [PARSE] parse_rust_code_from_main called with {} chars", code.len());
+    println!("🔍 [PARSE] Code preview: '{}'", &code.chars().take(150).collect::<String>());
+
     // Extract main function body
     let main_body = extract_main_function_body(code);
+    println!("🔍 [PARSE] Extracted main function body: {} chars", main_body.len());
     if main_body.is_empty() {
+        println!("🔍 [PARSE] Main function body is empty, returning empty vec");
         return Vec::new();
     }
-    
+
+    println!("🔍 [PARSE] Main body content: '{}'", main_body);
+
     // Parse calls only within main
-    parse_function_calls_in_body(&main_body)
+    let result = parse_function_calls_in_body(&main_body);
+    println!("🔍 [PARSE] Found {} function calls", result.len());
+    result
 }
 
 /// Extract the body of the main() function from Rust code
 fn extract_main_function_body(code: &str) -> String {
+    println!("🔍 [PARSE] extract_main_function_body called with {} chars", code.len());
     let lines: Vec<&str> = code.lines().collect();
+    println!("🔍 [PARSE] Code has {} lines", lines.len());
     let mut in_main = false;
     let mut brace_count = 0;
     let mut main_body = Vec::new();
     let mut found_main_start = false;
-    
-    for line in lines {
+
+    for (i, &line) in lines.iter().enumerate() {
         let trimmed = line.trim();
-        
+        println!("🔍 [PARSE] Line {}: '{}' (trimmed: '{}')", i, line, trimmed);
+
         // Look for main function declaration
         if !found_main_start && (trimmed.starts_with("fn main(") || trimmed.contains("fn main(")) {
+            println!("🔍 [PARSE] Found main function declaration at line {}", i);
             found_main_start = true;
             if trimmed.contains('{') {
                 in_main = true;
@@ -70,8 +84,10 @@ fn extract_main_function_body(code: &str) -> String {
             }
         }
     }
-    
-    main_body.join("\n")
+
+    let result = main_body.join("\n");
+    println!("🔍 [PARSE] extract_main_function_body completed, returning {} chars: '{}'", result.len(), result);
+    result
 }
 
 /// Parse function calls within a specific function body
@@ -165,12 +181,17 @@ fn parse_single_line_for_calls(line: &str) -> Option<FunctionCall> {
 
 /// Extract print statements only from main() and functions called by main()
 fn extract_print_statements_from_main(code: &str) -> Vec<String> {
+    println!("🔍 [PARSE] extract_print_statements_from_main called with {} chars", code.len());
     let main_body = extract_main_function_body(code);
+    println!("🔍 [PARSE] Extracted main function body: {} chars", main_body.len());
     if main_body.is_empty() {
+        println!("🔍 [PARSE] Main function body is empty, returning empty vec");
         return Vec::new();
     }
-    
-    extract_print_statements_from_body(&main_body)
+
+    let result = extract_print_statements_from_body(&main_body);
+    println!("🔍 [PARSE] Found {} print statements", result.len());
+    result
 }
 
 /// Extract print statements from a specific function body
@@ -1259,8 +1280,10 @@ fn get_default_robot_code() -> &'static str {
 // Follow the tasks shown above to learn Rust step by step.
 
 // Task 1: Try your first print statement!
-// Uncomment the line below and run your code:
-// println!("Hello, Rust!");
+// This code is ready to run - press Ctrl+Shift+Enter to execute it:
+println!("Hello, Rust!");
+println!("🤖 Welcome to the robot programming tutorial!");
+println!("📝 Use Ctrl+Shift+Enter to run your code anytime.");
 
 "#
 }
@@ -1313,86 +1336,187 @@ fn setup_file_watcher(file_path: &str) -> Option<Receiver<notify::Result<Event>>
 }
 
 async fn execute_rust_code(game: &mut Game) -> String {
+    game.log_execution_immediate("Starting execute_rust_code function");
+    game.log_execution_immediate(&format!("Current code length: {} chars", game.current_code.len()));
+    game.log_execution_immediate(&format!("Code preview (first 100 chars): '{}'", &game.current_code.chars().take(100).collect::<String>()));
+
     let code_to_execute = if game.current_code.is_empty() {
+        game.log_execution_immediate(&format!("Current code is empty, reading from file: {}", game.robot_code_path));
         // Fallback to reading from file if current_code is empty
         match crate::read_robot_code(&game.robot_code_path) {
             Ok(code) => {
+                game.log_execution_immediate(&format!("Successfully read {} chars from file", code.len()));
                 game.current_code = code.clone();
                 code
             },
-            Err(e) => return e,
+            Err(e) => {
+                game.log_execution_immediate(&format!("Failed to read from file: {}", e));
+                return e;
+            }
         }
     } else {
+        game.log_execution_immediate(&format!("Using current_code directly ({} chars)", game.current_code.len()));
         game.current_code.clone()
     };
     
     // First, check syntax with Cargo (desktop only)
     #[cfg(not(target_arch = "wasm32"))]
     {
+        game.log_execution_immediate("Entering syntax checking phase (desktop)");
+        let has_rust_checker = game.rust_checker.is_some();
+        if has_rust_checker {
+            game.log_execution_immediate("Rust checker available, running enhanced syntax check");
+        }
+
         if let Some(ref mut checker) = game.rust_checker {
             match checker.check_syntax_enhanced(&code_to_execute) {
                 Ok(errors) => {
-                    // Format and display syntax check results
+                    // Extract info we need before doing any game logging
+                    let error_count = errors.len();
                     let syntax_result = format_errors_for_display(&errors);
-
-                    // If there are errors, show them and don't execute
                     let has_errors = errors.iter().any(|e| e.severity == rust_checker::ErrorSeverity::Error);
+
+                    // Now we can log without borrowing conflicts
+                    game.log_execution_immediate(&format!("Syntax check returned {} errors/warnings", error_count));
+                    game.log_execution_immediate(&format!("Formatted error result: '{}'", syntax_result));
+                    game.log_execution_immediate(&format!("Has compilation errors: {}", has_errors));
+
                     if has_errors {
+                        game.log_execution_immediate("EARLY RETURN: Compilation errors detected");
                         return format!("🔍 ENHANCED SYNTAX CHECK:\n{}\n\n⚠️ Your code has errors that prevent execution!", syntax_result);
                     } else if !errors.is_empty() {
+                        game.log_execution_immediate("Warnings detected, continuing with execution");
                         // Show warnings but continue execution
                         game.execution_result = format!("🔍 SYNTAX CHECK:\n{}\n\nCode executing with warnings...", syntax_result);
                     } else {
+                        game.log_execution_immediate("Clean compilation, no errors or warnings");
                         // Clean compilation, show success briefly
                         game.execution_result = "🔍 SYNTAX CHECK: ✅ Code compiled successfully!".to_string();
                     }
                 },
                 Err(e) => {
+                    let error_msg = e.to_string();
+                    game.log_execution_immediate(&format!("EARLY RETURN: Syntax checker error: {}", error_msg));
                     // If enhanced syntax checking fails, show the error with helpful context
-                    return format!("⚠️ COMPILATION SYSTEM ERROR:\n{}\n\n🔧 Troubleshooting:\n• Make sure Rust and Cargo are properly installed\n• Check if your code has basic syntax errors\n• Try running a simple test like: println!(\"Hello!\");", e);
+                    return format!("⚠️ COMPILATION SYSTEM ERROR:\n{}\n\n🔧 Troubleshooting:\n• Make sure Rust and Cargo are properly installed\n• Check if your code has basic syntax errors\n• Try running a simple test like: println!(\"Hello!\");", error_msg);
                 }
             }
         } else {
+            game.log_execution_immediate("No rust checker available, using basic validation");
             // No rust checker available - show warning
             game.execution_result = "⚠️ Advanced error checking unavailable. Code will be parsed with basic validation.".to_string();
         }
+        game.log_execution_immediate("Syntax checking phase completed");
     }
-    
-    // Extract and display print statements
-    let print_outputs = extract_print_statements_from_main(&code_to_execute);
-    
-    // Debug: Show extracted print outputs (commented out)
-    // if game.level_idx == 0 {
-    //     game.execution_result = format!("DEBUG: Extracted {} print outputs: {:?}", print_outputs.len(), print_outputs);
-    // }
-    
-    for output in &print_outputs {
-        if output.starts_with("stdout:") {
-            let message = output.strip_prefix("stdout: ").unwrap_or("").to_string();
-            game.popup_system.show_println_output(message.clone());
-            game.println_outputs.push(message);
-        } else if output.starts_with("stderr:") {
-            let message = output.strip_prefix("stderr: ").unwrap_or("").to_string();
-            game.popup_system.show_eprintln_output(message.clone());
-            game.error_outputs.push(message);
-        } else if output.starts_with("panic:") {
-            let message = output.strip_prefix("panic: ").unwrap_or("").to_string();
-            game.popup_system.show_panic_output(message.clone());
-            game.panic_occurred = true;
-            game.error_outputs.push(format!("panic: {}", message));
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        game.log_execution_immediate("Skipping syntax checking (WASM build)");
+    }
+
+    game.log_execution_immediate("📋 EXECUTION PATH: About to start real code compilation and execution");
+
+    // Actually compile and run the user's code to get real output
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        game.log_execution_immediate("🔥 REAL EXECUTION: Attempting to compile and execute user code");
+
+        // Create a code executor
+        match crate::code_executor::CodeExecutor::new() {
+            Ok(executor) => {
+                // Execute the code and capture output
+                match executor.execute_code(&code_to_execute) {
+                    Ok(result) => {
+                        game.log_execution_immediate(&format!("Code execution completed. Success: {}", result.success));
+                        game.log_execution_immediate(&format!("Stdout: '{}'", result.stdout));
+                        game.log_execution_immediate(&format!("Stderr: '{}'", result.stderr));
+
+                        // If compilation failed, show the error and return early
+                        if result.is_compilation_error {
+                            game.log_execution_immediate("Code failed to compile");
+                            return format!("❌ Compilation Error:\n{}", result.stderr);
+                        }
+
+                        // Process stdout - each line becomes a println! output
+                        game.log_execution_immediate(&format!("📤 STDOUT LENGTH: {}", result.stdout.len()));
+                        game.log_execution_immediate(&format!("📤 STDOUT CONTENT: '{}'", result.stdout));
+                        if !result.stdout.is_empty() {
+                            for line in result.stdout.lines() {
+                                if !line.trim().is_empty() {
+                                    game.log_execution_immediate(&format!("💚 SHOWING GREEN POPUP: '{}'", line));
+                                    game.popup_system.show_println_output(line.to_string());
+                                    game.println_outputs.push(line.to_string());
+                                }
+                            }
+                        } else {
+                            game.log_execution_immediate("📤 STDOUT WAS EMPTY - NO GREEN POPUP");
+                        }
+
+                        // Process stderr - each line becomes an eprintln! output
+                        game.log_execution_immediate(&format!("📥 STDERR LENGTH: {}", result.stderr.len()));
+                        game.log_execution_immediate(&format!("📥 STDERR CONTENT: '{}'", result.stderr));
+                        if !result.stderr.is_empty() {
+                            for line in result.stderr.lines() {
+                                if !line.trim().is_empty() {
+                                    game.log_execution_immediate(&format!("❤️ SHOWING RED POPUP: '{}'", line));
+                                    game.popup_system.show_eprintln_output(line.to_string());
+                                    game.error_outputs.push(line.to_string());
+                                }
+                            }
+                        } else {
+                            game.log_execution_immediate("📥 STDERR WAS EMPTY - NO RED POPUP");
+                        }
+
+                        // Clean up temp files
+                        let _ = executor.cleanup();
+                    },
+                    Err(e) => {
+                        game.log_execution_immediate(&format!("Failed to execute code: {}", e));
+                        return format!("❌ Execution Error: {}", e);
+                    }
+                }
+            },
+            Err(e) => {
+                game.log_execution_immediate(&format!("Failed to create code executor: {}", e));
+                return format!("❌ Setup Error: {}", e);
+            }
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        // For WASM, fall back to parsing approach
+        let print_outputs = extract_print_statements_from_main(&code_to_execute);
+
+        for output in &print_outputs {
+            if output.starts_with("stdout:") {
+                let message = output.strip_prefix("stdout: ").unwrap_or("").to_string();
+                game.popup_system.show_println_output(message.clone());
+                game.println_outputs.push(message);
+            } else if output.starts_with("stderr:") {
+                let message = output.strip_prefix("stderr: ").unwrap_or("").to_string();
+                game.popup_system.show_eprintln_output(message.clone());
+                game.error_outputs.push(message);
+            }
         }
     }
     
     let calls = parse_rust_code_from_main(&code_to_execute);
-    if calls.is_empty() && print_outputs.is_empty() {
+
+    game.log_execution_immediate(&format!("Parsed {} function calls: {:?}", calls.len(), calls));
+
+    if calls.is_empty() && game.println_outputs.is_empty() && game.error_outputs.is_empty() {
+        game.log_execution_immediate("No valid function calls or print statements found");
         return "No valid function calls found".to_string();
     }
-    
+
     let mut results = Vec::new();
-    
+
     // Handle robot function calls if any
-    for call in &calls {
+    for (i, call) in calls.iter().enumerate() {
+        game.log_execution_immediate(&format!("Executing function call {}/{}: {:?}", i + 1, calls.len(), call));
         let result = execute_function(game, call.clone());
+        game.log_execution_immediate(&format!("Function result: '{}'", result));
         results.push(result.clone());
         
         // Add delay if time slow is active
@@ -1415,12 +1539,12 @@ async fn execute_rust_code(game: &mut Game) -> String {
             break;
         }
     }
-    
+
     // If we only had print statements (no robot function calls), provide feedback
-    if calls.is_empty() && !print_outputs.is_empty() {
+    if calls.is_empty() && (!game.println_outputs.is_empty() || !game.error_outputs.is_empty()) {
         results.push("Print statements executed successfully!".to_string());
     }
-    
+
     // Show function results in popup if we have meaningful robot function calls
     if !calls.is_empty() {
         game.popup_system.show_function_results(results.clone());
@@ -1428,11 +1552,15 @@ async fn execute_rust_code(game: &mut Game) -> String {
     
     // Check tutorial progress after execution
     game.check_tutorial_progress();
-    
+
     // Check for level completion after execution
     game.check_end_condition();
-    
-    results.join("; ")
+
+    let final_result = results.join("; ");
+    game.log_execution_immediate(&format!("Final execution result: '{}'", final_result));
+    game.log_execution_immediate("execute_rust_code function completed");
+
+    final_result
 }
 
 
@@ -1586,6 +1714,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
 
     // Enable coordinate logs if --all-logs flag is present
     game.enable_coordinate_logs = enable_all_logs;
+    game.enable_key_press_logs = enable_all_logs;
 
     // Force the editor to be active and set up a test level
     game.code_editor_active = true;
@@ -1722,6 +1851,7 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
             // Arrow key navigation with selection support
             let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
             let ctrl_held = is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl);
+            let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
 
             if is_key_pressed(KeyCode::Up) {
                 game.move_cursor_up_with_selection(shift_held);
@@ -1736,7 +1866,31 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
                 game.move_cursor_right_with_selection(shift_held);
             }
 
-            // Hotkey support for clipboard and undo operations
+            // Centralized hotkey system - handle all configured hotkeys
+            let mut hotkey_handled = false;
+            for key_code in [
+                KeyCode::Enter, KeyCode::S, KeyCode::Tab, KeyCode::Z, KeyCode::Y,
+                KeyCode::C, KeyCode::V, KeyCode::X, KeyCode::A, KeyCode::F,
+                KeyCode::H, KeyCode::G, KeyCode::Slash, KeyCode::D, KeyCode::K,
+                KeyCode::GraveAccent
+            ] {
+                if is_key_pressed(key_code) {
+                    game.log_key_immediate(&format!("Key pressed: {:?} (ctrl:{}, shift:{}, alt:{})", key_code, ctrl_held, shift_held, alt_held));
+                    if game.handle_hotkey(key_code, ctrl_held, shift_held, alt_held) {
+                        game.log_key_immediate(&format!("✅ Handled hotkey via centralized system: {:?} (ctrl:{}, shift:{}, alt:{})", key_code, ctrl_held, shift_held, alt_held));
+                        // Some hotkeys might modify code (like paste, undo, etc.)
+                        if matches!(key_code, KeyCode::V | KeyCode::Z | KeyCode::Y | KeyCode::X) {
+                            code_modified = true;
+                        }
+                        hotkey_handled = true;
+                        break; // Stop processing other keys once we handled one
+                    } else {
+                        game.log_key_immediate(&format!("❌ Hotkey not handled by centralized system: {:?}", key_code));
+                    }
+                }
+            }
+
+            // Hotkey support for clipboard and undo operations (fallback for individual handling)
             if ctrl_held {
                 if is_key_pressed(KeyCode::C) {
                     if game.copy_to_clipboard() {
@@ -1764,6 +1918,25 @@ async fn run_real_editor_test_mode(enable_all_logs: bool) {
                 if is_key_pressed(KeyCode::A) {
                     game.select_all();
                     println!("📝 Selected all text!");
+                }
+            }
+
+            // Check if code execution was requested via Ctrl+Shift+Enter
+            if game.code_execution_requested {
+                game.code_execution_requested = false; // Reset the flag
+                println!("🚀 Executing code via Ctrl+Shift+Enter...");
+
+                // Execute the current code using the existing execution system
+                let execution_result = execute_rust_code(&mut game).await;
+                game.execution_result = execution_result.clone();
+
+                // Show actual result instead of misleading success message
+                if execution_result.contains("⚠️") || execution_result.contains("error") || execution_result.contains("Error") {
+                    println!("❌ Code execution failed: {}", execution_result);
+                } else if execution_result.contains("No valid function calls found") {
+                    println!("⚠️ No executable code found: {}", execution_result);
+                } else {
+                    println!("✅ Code execution completed: {}", execution_result);
                 }
             }
 
@@ -1810,6 +1983,7 @@ async fn run_command_test_mode(enable_all_logs: bool) {
 
     // Enable coordinate logs if --all-logs flag is present
     game.enable_coordinate_logs = enable_all_logs;
+    game.enable_key_press_logs = enable_all_logs;
 
     // Set up a simple level for testing
     game.level_idx = 1; // Use level 2 which has more space
@@ -1940,25 +2114,19 @@ async fn run_command_test_mode(enable_all_logs: bool) {
 
             // Enter key handling
             if is_key_pressed(KeyCode::Enter) {
-                // Check if Shift+Enter (execute code)
-                let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
-
-                if shift_held {
-                    // Execute the code
-                    last_result = format!("Code execution requested! (Feature coming soon)");
-                } else {
-                    // Regular enter (new line)
-                    if game.delete_selection() {
-                        code_modified = true;
-                    }
-                    game.current_code.insert(game.cursor_position, '\n');
-                    game.cursor_position += 1;
+                // Regular enter (new line) - Ctrl+Shift+Enter is handled by centralized system
+                if game.delete_selection() {
                     code_modified = true;
                 }
+                game.current_code.insert(game.cursor_position, '\n');
+                game.cursor_position += 1;
+                code_modified = true;
             }
 
             // Arrow key navigation with selection support
             let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+            let ctrl_held = is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl);
+            let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
 
             if is_key_pressed(KeyCode::Up) {
                 game.move_cursor_up_with_selection(shift_held);
@@ -1971,6 +2139,50 @@ async fn run_command_test_mode(enable_all_logs: bool) {
             }
             if is_key_pressed(KeyCode::Right) {
                 game.move_cursor_right_with_selection(shift_held);
+            }
+
+            // Centralized hotkey system - handle all configured hotkeys
+            let mut hotkey_handled = false;
+            for key_code in [
+                KeyCode::Enter, KeyCode::S, KeyCode::Tab, KeyCode::Z, KeyCode::Y,
+                KeyCode::C, KeyCode::V, KeyCode::X, KeyCode::A, KeyCode::F,
+                KeyCode::H, KeyCode::G, KeyCode::Slash, KeyCode::D, KeyCode::K,
+                KeyCode::GraveAccent
+            ] {
+                if is_key_pressed(key_code) {
+                    game.log_key_immediate(&format!("Key pressed: {:?} (ctrl:{}, shift:{}, alt:{})", key_code, ctrl_held, shift_held, alt_held));
+                    if game.handle_hotkey(key_code, ctrl_held, shift_held, alt_held) {
+                        game.log_key_immediate(&format!("✅ Handled hotkey via centralized system: {:?} (ctrl:{}, shift:{}, alt:{})", key_code, ctrl_held, shift_held, alt_held));
+                        // Some hotkeys might modify code (like paste, undo, etc.)
+                        if matches!(key_code, KeyCode::V | KeyCode::Z | KeyCode::Y | KeyCode::X) {
+                            code_modified = true;
+                        }
+                        hotkey_handled = true;
+                        break; // Stop processing other keys once we handled one
+                    } else {
+                        game.log_key_immediate(&format!("❌ Hotkey not handled by centralized system: {:?}", key_code));
+                    }
+                }
+            }
+
+            // Check if code execution was requested via Ctrl+Shift+Enter
+            if game.code_execution_requested {
+                game.code_execution_requested = false; // Reset the flag
+                println!("🚀 Executing code via Ctrl+Shift+Enter...");
+
+                // Execute the current code using the existing execution system
+                let execution_result = execute_rust_code(&mut game).await;
+                last_result = execution_result.clone();
+                game.execution_result = execution_result.clone();
+
+                // Show actual result instead of misleading success message
+                if execution_result.contains("⚠️") || execution_result.contains("error") || execution_result.contains("Error") {
+                    println!("❌ Code execution failed: {}", execution_result);
+                } else if execution_result.contains("No valid function calls found") {
+                    println!("⚠️ No executable code found: {}", execution_result);
+                } else {
+                    println!("✅ Code execution completed: {}", execution_result);
+                }
             }
 
             // Update autocomplete if code modified
@@ -2288,6 +2500,7 @@ async fn run_test_mode(test_file: String, enable_all_logs: bool) {
     let core_levels = embedded_levels::get_embedded_level_specs();
     let mut game = Game::new(core_levels, rng);
     game.enable_coordinate_logs = enable_all_logs;
+    game.enable_key_press_logs = enable_all_logs;
     game.current_code = test_code.clone();
     
     // Load level 0 for testing
@@ -2577,6 +2790,7 @@ async fn test_level_solution(config: &crate::gamestate::types::LearningLevelConf
     
     let mut game = Game::new(core_levels, rng);
     game.enable_coordinate_logs = enable_all_logs;
+    game.enable_key_press_logs = enable_all_logs;
     game.current_code = solution.to_string();
     
     // Load the specific level
@@ -2922,6 +3136,7 @@ async fn desktop_main() {
     
     // Enable coordinate logs if --all-logs flag is present
     game.enable_coordinate_logs = enable_all_logs;
+    game.enable_key_press_logs = enable_all_logs;
     
     // Restore cached game settings if available
     if let Some(cached) = cached_settings {
@@ -3237,6 +3452,50 @@ async fn desktop_main() {
                         // Update key press timers
                         game.update_key_press_timers(crash_protection::safe_get_frame_time());
                         
+                        // Centralized hotkey system - handle all configured hotkeys first
+                        let shift_held = is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift);
+                        let ctrl_held = is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl);
+                        let alt_held = is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt);
+
+                        let mut hotkey_handled = false;
+                        for key_code in [
+                            KeyCode::Enter, KeyCode::S, KeyCode::Tab, KeyCode::Z, KeyCode::Y,
+                            KeyCode::C, KeyCode::V, KeyCode::X, KeyCode::A, KeyCode::F,
+                            KeyCode::H, KeyCode::G, KeyCode::Slash, KeyCode::D, KeyCode::K,
+                            KeyCode::GraveAccent
+                        ] {
+                            if is_key_pressed(key_code) {
+                                if game.handle_hotkey(key_code, ctrl_held, shift_held, alt_held) {
+                                    println!("🎹 Handled hotkey via centralized system: {:?} (ctrl:{}, shift:{}, alt:{})", key_code, ctrl_held, shift_held, alt_held);
+                                    // Some hotkeys might modify code (like paste, undo, etc.)
+                                    if matches!(key_code, KeyCode::V | KeyCode::Z | KeyCode::Y | KeyCode::X) {
+                                        code_modified = true;
+                                    }
+                                    hotkey_handled = true;
+                                    break; // Stop processing other keys once we handled one
+                                }
+                            }
+                        }
+
+                        // Check if code execution was requested via Ctrl+Shift+Enter
+                        if game.code_execution_requested {
+                            game.code_execution_requested = false; // Reset the flag
+                            println!("🚀 Executing code via Ctrl+Shift+Enter...");
+
+                            // Execute the current code using the existing execution system
+                            let execution_result = execute_rust_code(&mut game).await;
+                            game.execution_result = execution_result.clone();
+
+                            // Show actual result instead of misleading success message
+                            if execution_result.contains("⚠️") || execution_result.contains("error") || execution_result.contains("Error") {
+                                println!("❌ Code execution failed: {}", execution_result);
+                            } else if execution_result.contains("No valid function calls found") {
+                                println!("⚠️ No executable code found: {}", execution_result);
+                            } else {
+                                println!("✅ Code execution completed: {}", execution_result);
+                            }
+                        }
+
                         // Handle character input - both initial press and continuous hold
                         let mut current_char_pressed = None;
                         while let Some(character) = get_char_pressed() {
@@ -3271,28 +3530,26 @@ async fn desktop_main() {
                             }
                         }
                         
-                        if is_key_pressed(KeyCode::Enter) {
-                            if (is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift)) && 
-                               (is_key_down(KeyCode::LeftControl) || is_key_down(KeyCode::RightControl)) {
-                                game.execution_result = execute_rust_code(&mut game).await;
-                            } else {
-                                // Delete selection first if it exists
-                                if game.delete_selection() {
-                                    code_modified = true;
-                                }
-                                
-                                // Get automatic indentation for the next line
-                                let auto_indent = get_auto_indentation(&game.current_code, game.cursor_position);
-                                let newline_with_indent = format!("\n{}", auto_indent);
-                                
-                                // Insert newline with automatic indentation
-                                for ch in newline_with_indent.chars() {
-                                    game.current_code.insert(game.cursor_position, ch);
-                                    game.cursor_position += 1;
-                                }
-                                game.ensure_cursor_visible(); // Ensure the cursor scrolls into view after newline
+                        if is_key_pressed(KeyCode::Enter) && !hotkey_handled {
+                            // Regular enter (new line) - only if centralized system didn't handle it
+                            println!("🔑 Processing regular Enter key (no hotkey handled)");
+
+                            // Delete selection first if it exists
+                            if game.delete_selection() {
                                 code_modified = true;
                             }
+
+                            // Get automatic indentation for the next line
+                            let auto_indent = get_auto_indentation(&game.current_code, game.cursor_position);
+                            let newline_with_indent = format!("\n{}", auto_indent);
+
+                            // Insert newline with automatic indentation
+                            for ch in newline_with_indent.chars() {
+                                game.current_code.insert(game.cursor_position, ch);
+                                game.cursor_position += 1;
+                            }
+                            game.ensure_cursor_visible(); // Ensure the cursor scrolls into view after newline
+                            code_modified = true;
                         }
                         
                         // Handle backspace - both initial press and continuous hold
