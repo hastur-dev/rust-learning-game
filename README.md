@@ -3,7 +3,7 @@
 A Rust-based grid exploration and robot programming game where you write Rust code to control a robot's movement and actions. Navigate through levels, collect items, avoid enemies, and learn programming concepts in an interactive environment.
 
 ![Version](https://img.shields.io/badge/version-0.2.0-blue)
-![Rust](https://img.shields.io/badge/rust-2021-orange)
+![Rust](https://img.shields.io/badge/rust-2024-orange)
 ![License](https://img.shields.io/badge/license-open--source-green)
 
 ## 🎮 Game Overview
