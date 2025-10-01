@@ -1,6 +1,6 @@
-# YAML Level Configuration System
+# 📦 YAML Level Configuration System
 
-This game supports YAML-based level configuration! You can create custom levels with specific grid sizes, obstacles, enemies, items, and more.
+**Robo Grid Explorer GUI** supports comprehensive YAML-based level configuration! Create custom challenges for robot programming with specific grid layouts, enemy behaviors, collectible items, and educational content.
 
 ## YAML Level Format
 
@@ -72,15 +72,17 @@ message: "Welcome to your first level! Use WASD or arrow keys to move around and
 - **Be informative**: Explain level objectives, new mechanics, or provide helpful hints
 - **Use proper punctuation**: Messages are displayed exactly as written
 - **Consider difficulty**: Provide more guidance for complex levels
+- **Programming hints**: Suggest which robot functions might be useful
+- **Educational focus**: Teach programming concepts through level design
 
 ### Example Messages
 
 ```yaml
 # Tutorial level
-message: "Welcome! Move with WASD keys and explore all the hidden tiles to win."
+message: "Welcome! Write Rust code to control your robot. Use move(up), move(down), move(left), move(right) to explore."
 
-# Enemy introduction level  
-message: "Danger ahead! Red enemies patrol this area. If they catch you, the level will reset. Plan your moves carefully."
+# Enemy introduction level
+message: "Danger ahead! Red enemies patrol this area. Study their patterns and code a safe path using conditional logic."
 
 # Advanced mechanics level
 message: "This level features special movement patterns. Study the enemy behavior - some move randomly, others in patterns. Use the scanner to reveal distant areas."
@@ -140,6 +142,8 @@ pub fn item_function() {
 - `scanner_range` - Range of scanner functionality
 - `grabber_boost` - Boost to grabber range
 - `credits_value` - Credit value when collected
+- `speed_boost` - Increases robot movement speed
+- `time_slow_duration` - Duration of time slow effect in milliseconds
 
 ## Custom Movement Patterns
 
@@ -183,12 +187,64 @@ enemies:
 1. Create your YAML level files in the `levels/` directory
 2. Create corresponding item files in the `items/` directory (if using custom items)
 3. Create custom movement patterns in the `movement_patterns/` directory (optional)
-4. Run the game - it will automatically load YAML levels if found, otherwise fall back to built-in levels
+4. Configure level ordering in `levels/order.txt` (optional)
+5. Run the game - it will automatically load YAML levels if found, otherwise fall back to built-in levels
 
 ## Level Loading Priority
 
 The game loads levels in this order:
-1. YAML files from `levels/` directory
+1. YAML files from `levels/` directory (ordered by `order.txt` if present)
 2. If no YAML levels found, loads built-in levels
 
-This allows for easy development and distribution of custom level packs!
+## Programming Integration
+
+### Available Robot Functions
+
+Levels can be designed to teach specific programming concepts:
+
+```rust
+// Basic movement (all levels)
+move(direction);      // direction: up, down, left, right
+
+// Item interaction (Level 2+)
+grab();              // Collect items in range
+set_auto_grab(bool); // Toggle automatic grabbing
+
+// Scanning (Level 3+)
+scan(direction);     // Reveal distant tiles
+
+// Advanced
+search_all();        // Automated exploration algorithm
+```
+
+### Educational Level Design Tips
+
+1. **Progressive Complexity**: Start with simple movement, add scanning, then enemies
+2. **Algorithm Teaching**: Design layouts that require specific algorithms (loops, conditions)
+3. **Problem Solving**: Create puzzles that can't be solved with brute force
+4. **Code Optimization**: Reward efficient solutions with bonus credits
+5. **Pattern Recognition**: Use enemy movements to teach pattern analysis
+
+## Special Items
+
+### Time Slow Item
+Add time slow pickups to help players debug their code:
+
+```yaml
+items:
+  - name: "time_slow"
+    item_file: "items/time_slow.rs"
+    spawn_randomly: true
+```
+
+### Custom Scoring Items
+Create high-value collectibles for bonus objectives:
+
+```yaml
+items:
+  - name: "golden_gem"
+    item_file: "items/golden_gem.rs"  # CAPABILITY: credits_value = 100
+    location: [15, 10]
+```
+
+This system allows for easy development and distribution of educational programming challenges!

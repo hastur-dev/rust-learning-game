@@ -1,6 +1,6 @@
-# Start Menu System
+# 🎮 Menu System Documentation
 
-The game now features a comprehensive start menu system with the banner "Welcome to Robo Wars Crab Edition"!
+**Robo Grid Explorer GUI** features a comprehensive menu system with intuitive navigation and professional UI design for easy access to all game features.
 
 ## Main Menu Features
 
@@ -55,15 +55,20 @@ Features:
 ## In-Game Menu Access
 
 While playing the game, you can:
-- Press **M** to return to the main menu at any time
-- All other controls remain the same (B for shop, N for next level, etc.)
+- Press **SHIFT+CTRL+M** to return to the main menu at any time
+- Press **SHIFT+CTRL+B** to open the upgrade shop
+- Press **SHIFT+CTRL+N** to proceed to the next level (when completed)
+- Press **SHIFT+CTRL+L** to reload the current level
+- Press **SHIFT+CTRL+R** to reset code to default
 
 ## Visual Features
 
-- **Animated background** with grid pattern and decorative crab elements
+- **Animated background** with grid pattern and robot/technology themed elements
 - **Professional UI** with proper button highlighting and text centering
-- **Theme consistency** with the existing game aesthetic
+- **Theme consistency** with the robot programming aesthetic
 - **Responsive design** that adapts to different screen sizes
+- **Visual feedback** for all interactive elements
+- **Color coding** for different menu states and options
 
 ## Technical Details
 
@@ -73,12 +78,33 @@ The menu system is built with:
 - Real-time file detection for custom levels
 - Mouse and keyboard input handling
 - Smooth transitions between menu states
+- Settings persistence (planned feature)
+- Resolution management for different displays
 
 ## Usage Tips
 
 1. **Custom Levels**: Place your `.yaml` level files in the `levels/` directory before starting the game
 2. **Level Testing**: Use the Player Levels menu to quickly test different custom levels
-3. **Quick Access**: The M key provides instant access back to the menu during gameplay
+3. **Quick Access**: SHIFT+CTRL+M provides instant access back to the menu during gameplay
 4. **File Changes**: The Refresh button in Player Levels will detect newly added level files
+5. **Settings**: Adjust resolution and audio settings to match your preferences
+6. **Level Order**: Customize level progression by editing `levels/order.txt`
 
-The menu system provides a polished, user-friendly way to access all game features while maintaining the technical depth of the robot programming gameplay!
+## Integration with Game Features
+
+### Shop System Access
+- Access the upgrade shop from the menu or in-game with SHIFT+CTRL+B
+- Purchase grabber range upgrades, scanner length extensions, and special items
+- View your current credit balance and upgrade status
+
+### Level Progression
+- Track completed levels and unlock new challenges
+- Quick restart for failed attempts
+- Level selection for replay and practice
+
+### Code Editor Integration
+- Menu provides context for the current coding challenge
+- Quick reset to default code if stuck
+- External IDE support (desktop version)
+
+The menu system provides a polished, user-friendly interface that seamlessly connects all game features while maintaining focus on the educational robot programming experience!

@@ -3,7 +3,7 @@
 A Rust-based grid exploration and robot programming game where you write Rust code to control a robot's movement and actions. Navigate through levels, collect items, avoid enemies, and learn programming concepts in an interactive environment.
 
 ![Version](https://img.shields.io/badge/version-0.2.0-blue)
-![Rust](https://img.shields.io/badge/rust-2024-orange)
+![Rust](https://img.shields.io/badge/rust-2021_edition-orange)
 ![License](https://img.shields.io/badge/license-open--source-green)
 
 ## 🎮 Game Overview
@@ -20,6 +20,8 @@ A Rust-based grid exploration and robot programming game where you write Rust co
 - **Item Collection**: Scanners, grabbers, speed boosts, and special upgrades
 - **Shop System**: Spend credits to upgrade your robot's capabilities
 - **Menu System**: Professional start menu with settings and level selection
+- **Popup System**: Interactive messages and tutorials during gameplay
+- **Time Slow Mechanic**: Special items that slow down game execution
 
 ## 🚀 Quick Start
 
@@ -27,6 +29,7 @@ A Rust-based grid exploration and robot programming game where you write Rust co
 
 - [Rust](https://rustup.rs/) (2021 edition or later)
 - Windows, macOS, or Linux
+- For WASM builds: wasm-pack and basic web server
 
 ### Installation & Running
 
@@ -245,7 +248,8 @@ src/
 ├── item.rs              # Item system and inventory
 ├── menu.rs              # Menu system and UI
 ├── movement_patterns.rs # Enemy AI patterns
-└── popup.rs             # Popup message system
+├── popup.rs             # Popup message system
+└── main.zip             # Backup/archive file
 
 levels/                  # YAML level definitions
 ├── 01_explore_grid.yaml
@@ -268,7 +272,7 @@ items/                   # Item capability definitions
 ### Platform Support
 
 - **Desktop**: Full-featured version with file I/O and hot-reload
-- **Web (WASM)**: ⚠️ Currently not working - will be fixed in a future update
+- **Web (WASM)**: Build and deploy to browsers (see README-WASM.md for details)
 
 ## 🎓 Educational Value
 
@@ -299,6 +303,10 @@ cargo build --release
 
 # Run with full logging
 cargo run --release -- --all-logs
+
+# Build for WebAssembly
+./build-wasm.sh   # On Unix-like systems
+build-wasm.bat    # On Windows
 ```
 
 ### Adding New Features
@@ -344,8 +352,10 @@ Contributions welcome! Areas for improvement:
 - New enemy movement patterns
 - More item types and capabilities
 - UI/UX enhancements
-- WASM version fixes
+- Enhanced WASM features
 - Documentation improvements
+- Multiplayer/leaderboard system
+- Level editor GUI
 
 ## 📄 License
 

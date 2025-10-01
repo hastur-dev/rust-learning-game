@@ -1,6 +1,6 @@
-# 🎮 Rust Steam Game - WebAssembly Edition
+# 🎮 Robo Grid Explorer GUI - WebAssembly Edition
 
-This is a Rust-based grid exploration game that can run both as a desktop application and in web browsers via WebAssembly (WASM).
+A Rust-based robot programming game that runs both as a desktop application and in web browsers via WebAssembly (WASM). Write actual Rust code to control your robot!
 
 ## 🌐 Web Version (WASM)
 
@@ -49,7 +49,7 @@ cp -r pkg dist/
    http://localhost:8000
    ```
 
-3. **Enjoy the game!** Use WASD or arrow keys to move, Space to scan, E to grab items.
+3. **Enjoy the game!** Write Rust code in the integrated editor to control your robot's movement and actions.
 
 ### Alternative Web Servers
 
@@ -71,11 +71,14 @@ cargo run
 ## 🎯 Game Features
 
 ### Core Gameplay
-- **Grid-based exploration** with fog of war
-- **Robot movement** with WASD or arrow keys
-- **Item collection** system
-- **Enemy avoidance** mechanics
+- **Programming-based control**: Write actual Rust code to control your robot
+- **Grid-based exploration** with fog of war mechanics
+- **Visual code execution**: Watch your code run step-by-step
+- **Item collection** system with various power-ups
+- **Enemy avoidance** mechanics with multiple AI patterns
 - **Multiple levels** with YAML configuration
+- **Shop system** for upgrades and enhancements
+- **Time slow mechanic** for precise control
 
 ### Movement Patterns
 The game supports various enemy movement patterns:
@@ -108,12 +111,14 @@ items: []
 
 | Key | Action |
 |-----|--------|
-| **WASD** / **Arrow Keys** | Move robot |
-| **Space** | Scan area (requires scanner) |
-| **E** | Grab item |
-| **Q** | Use time slow (if available) |
-| **R** | Restart level |
-| **Esc** | Return to menu |
+| **Click Code Editor** | Edit robot code |
+| **SHIFT+CTRL+ENTER** | Execute robot code |
+| **SHIFT+CTRL+E** | Open code in external IDE (desktop only) |
+| **SHIFT+CTRL+B** | Open upgrade shop |
+| **SHIFT+CTRL+N** | Next level (when completed) |
+| **SHIFT+CTRL+L** | Reload current level |
+| **SHIFT+CTRL+M** | Return to main menu |
+| **SHIFT+CTRL+R** | Reset code to default |
 
 ## 🚀 Technical Details
 
@@ -129,10 +134,14 @@ items: []
 src/
 ├── lib.rs              # WASM entry point
 ├── main.rs             # Desktop entry point
-├── game_state.rs       # Game logic
+├── game_state.rs       # Game logic and state management
 ├── grid.rs             # Grid and enemy management
+├── robot.rs            # Robot state and capabilities
 ├── level.rs            # Level loading and parsing
+├── item.rs             # Item system and inventory
+├── menu.rs             # Menu system and UI
 ├── movement_patterns.rs # Enemy AI patterns
+├── popup.rs            # Popup message system
 └── ...
 
 levels/                 # YAML level definitions
@@ -146,7 +155,9 @@ dist/                   # Web distribution files
 | Feature | Desktop | Web |
 |---------|---------|-----|
 | File I/O | ✅ Full filesystem access | ❌ Embedded levels only |
-| Hot reload | ✅ File watching | ❌ Not available |
+| Hot reload | ✅ File watching for robot_code.rs | ❌ Not available |
+| External IDE | ✅ Open code in system editor | ❌ Browser security restrictions |
+| Custom levels | ✅ Load from levels/ directory | ⚠️ Must be embedded at build time |
 | Performance | ✅ Native speed | ⚠️ Slight overhead |
 | Distribution | 📦 Single executable | 🌐 Web-ready bundle |
 
@@ -155,6 +166,7 @@ dist/                   # Web distribution files
 ### Adding New Levels
 1. Create a `.yaml` file in the `levels/` directory
 2. For web builds, add the level to the `get_embedded_levels()` function in `lib.rs`
+3. Update the `levels/order.txt` file to specify level ordering
 
 ### Custom Movement Patterns
 1. Create a `.rs` file in `movement_patterns/`
@@ -186,10 +198,19 @@ wasm-pack build --target web --out-dir pkg --release
    - Check that JavaScript is enabled
 
 ### Browser Compatibility
-- **Chrome/Chromium**: Full support
-- **Firefox**: Full support
-- **Safari**: Full support (recent versions)
-- **Edge**: Full support
+- **Chrome/Chromium**: Full support ✅
+- **Firefox**: Full support ✅
+- **Safari**: Full support (recent versions) ✅
+- **Edge**: Full support ✅
+- **Mobile browsers**: Limited support ⚠️ (no keyboard input)
+
+## 🎓 Educational Value
+
+The web version is perfect for:
+- **Learning Rust** in an interactive environment
+- **Teaching programming** concepts in classrooms
+- **Code sharing** - easily share your solutions via URL
+- **Cross-platform accessibility** - no installation required
 
 ## 📜 License
 
@@ -197,4 +218,4 @@ This project is open source. See the main README for license details.
 
 ---
 
-**Happy gaming! 🎮🦀**
+**Learn Rust while playing in your browser! 🎮🦀**
