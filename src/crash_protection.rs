@@ -37,7 +37,10 @@ pub fn is_permanent_protection_active() -> bool {
 }
 
 pub fn get_blacklisted_count() -> usize {
-    unsafe { BLACKLISTED_ADDRESSES.len() }
+    unsafe {
+        let count = std::ptr::addr_of!(BLACKLISTED_ADDRESSES);
+        (*count).len()
+    }
 }
 
 pub fn is_emergency_shutdown_active() -> bool {
@@ -89,10 +92,11 @@ unsafe extern "system" fn unhandled_exception_filter(
             // Be more aggressive about stopping repeated crashes at the same address
             if same_address_count >= 3 {
                 error!("INFINITE CRASH LOOP DETECTED - ACTIVATING EMERGENCY SHUTDOWN");
-                
+
                 // Add address to blacklist and enable ALL protection modes
                 unsafe {
-                    BLACKLISTED_ADDRESSES.push(current_address);
+                    let blacklist = std::ptr::addr_of_mut!(BLACKLISTED_ADDRESSES);
+                    (*blacklist).push(current_address);
                 }
                 PERMANENT_CRASH_PROTECTION.store(true, Ordering::SeqCst);
                 EMERGENCY_SHUTDOWN_MODE.store(true, Ordering::SeqCst);

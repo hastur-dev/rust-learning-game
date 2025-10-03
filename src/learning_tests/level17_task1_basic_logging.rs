@@ -40,7 +40,9 @@ impl SystemDiagnostics {
 pub fn initialize_emergency_logging() {
     // Check if logger is already initialized to avoid double initialization
     if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "trace");
+        unsafe {
+            env::set_var("RUST_LOG", "trace");
+        }
     }
 
     // Initialize env_logger - this should only be called once

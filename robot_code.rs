@@ -5,7 +5,8 @@
 // println!() for debugging output
 
 fn main() {
-    println!("Robot starting...");
+    let mut item: i32 = 3;
+    for _i in 0
     
     // Your code here
     
