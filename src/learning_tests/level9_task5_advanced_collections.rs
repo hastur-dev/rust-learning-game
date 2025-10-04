@@ -350,7 +350,7 @@ fn main() {
         "collect_collection_analyzer",
     ];
 
-    for task in tasks {
+    for task in &tasks {
         fleet.assign_task(task.to_string());
     }
 

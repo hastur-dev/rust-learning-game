@@ -236,7 +236,7 @@ enum Direction {
     West,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum RobotError {
     InsufficientEnergy { required: u32, available: u32 },
     PathBlocked { obstacle: String },

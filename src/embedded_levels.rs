@@ -13,7 +13,11 @@ fn load_level_tasks(level_number: u32) -> Option<Vec<TaskConfig>> {
         3 => vec!["learning_levels/03_primitives_data_types_tasks.yaml"],
         4 => vec!["learning_levels/04_variable_bindings_mutability_tasks.yaml"],
         5 => vec!["learning_levels/05_types_casting_tasks.yaml"],
-        6 => vec!["learning_levels/06_ownership_basics_tasks.yaml"],
+        6 => vec!["learning_levels/06_flow_control_conditionals_tasks.yaml"],
+        7 => vec!["learning_levels/07_structs_robot_systems_tasks.yaml"],
+        8 => vec!["learning_levels/08_enums_state_machines_tasks.yaml"],
+        9 => vec!["learning_levels/09_collections_vectors_tasks.yaml"],
+        10 => vec!["learning_levels/10_advanced_error_handling_tasks.yaml"],
         _ => vec![]
     };
     
@@ -423,92 +427,77 @@ fn main() {
             completion_message: None,
         },
 
-        // Level 6: Ownership Basics
+        // Level 6: Flow Control and Conditionals
         YamlLevelConfig {
-            name: "Level 6: Ownership Basics".to_string(),
-            grid_size: "18x13".to_string(),
-            obstacles: Some(6),
+            name: "Level 6: Flow Control and Conditionals".to_string(),
+            grid_size: "11x9".to_string(),
+            obstacles: Some(5),
             doors: None,
             enemies: None,
             items: Some(vec![
                 ItemConfig {
-                    name: "ownership_rules_tip".to_string(),
-                    item_file: "items/ownership_rules.rs".to_string(),
+                    name: "if_token".to_string(),
+                    item_file: "items/conditional.rs".to_string(),
                     spawn_randomly: Some(false),
-                    location: Some((6, 4)),
+                    location: Some((3, 2)),
                 },
                 ItemConfig {
-                    name: "move_semantics_tip".to_string(),
-                    item_file: "items/move_semantics.rs".to_string(),
+                    name: "loop_token".to_string(),
+                    item_file: "items/loops.rs".to_string(),
                     spawn_randomly: Some(false),
-                    location: Some((12, 7)),
+                    location: Some((8, 3)),
                 },
                 ItemConfig {
-                    name: "stack_heap_tip".to_string(),
-                    item_file: "items/stack_heap.rs".to_string(),
+                    name: "for_token".to_string(),
+                    item_file: "items/iteration.rs".to_string(),
                     spawn_randomly: Some(false),
-                    location: Some((16, 4)),
+                    location: Some((2, 7)),
+                },
+                ItemConfig {
+                    name: "match_token".to_string(),
+                    item_file: "items/matching.rs".to_string(),
+                    spawn_randomly: Some(false),
+                    location: Some((9, 7)),
                 },
                 ItemConfig {
                     name: "goal_item".to_string(),
                     item_file: "items/level_complete.rs".to_string(),
                     spawn_randomly: Some(false),
-                    location: Some((9, 11)),
+                    location: Some((10, 8)),
                 }
             ]),
             tasks: load_level_tasks(6),
             income_per_square: Some(1),
-            start_position: Some((1, 1)),
-            max_turns: Some(0),
-            fog_of_war: Some(true),
-            message: Some("🤖 **LEVEL 6: Robot Ownership Systems** - Welcome to the Command Center! Learn how robot ownership prevents conflicts in fleet management systems. Master the three ownership rules that keep your robot operations secure and efficient.".to_string()),
-            hint_message: Some("Robot Fleet Rules: 1) Each robot has exactly one commander, 2) Only one active assignment at a time, 3) Auto-cleanup when mission ends. Robot transfers happen through assignment and function deployment.".to_string()),
-            rust_docs_url: Some("https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html".to_string()),
-            starting_code: Some(r#"// Level 6: Robot Ownership Systems
-// Learn fleet management through Rust's ownership system
+            start_position: Some((0, 0)),
+            max_turns: Some(180),
+            fog_of_war: Some(false),
+            message: Some("🔀 **LEVEL 6: Flow Control and Conditionals** - Master Rust's control flow constructs - if/else, loops, and iteration! Learn how to make decisions and repeat actions efficiently.".to_string()),
+            hint_message: Some("**Control Flow Tips:** if expressions can return values, loop creates infinite loops, for works with iterators, break and continue control loop execution, match provides powerful pattern matching.".to_string()),
+            rust_docs_url: Some("https://doc.rust-lang.org/rust-by-example/flow_control.html".to_string()),
+            starting_code: Some(r#"// Level 6: Flow Control and Conditionals
+// Master control flow constructs in Rust
 
 fn main() {
-    println!("🤖 Level 6: Robot Ownership Systems - Command Center Online");
+    println!("Level 6: Flow Control and Conditionals");
 
-    // TODO: Task 1 - Robot Registration and Transfer Protocol
-    // let robot_ferris = String::from("FERRIS-2024");
-    // println!("✓ Robot {} registered to Command Center", robot_ferris);
-    // let field_assignment = robot_ferris; // Ownership transferred!
-    // println!("✓ Robot {} assigned to Field Operations", field_assignment);
+    // TODO: Task 1 - Use if/else conditionals
+    // let energy = 75;
+    // if energy > 50 {
+    //     println!("Sufficient energy");
+    // } else {
+    //     println!("Low energy");
+    // }
 
-    // TODO: Task 2 - Mission Handoff and Resource Transfer
-    // let mission_briefing = String::from("Sector-7-Recon");
-    // let active_mission = mission_briefing; // Mission transferred to field team
-    // println!("✓ Active mission: {}", active_mission);
+    // TODO: Task 2 - Use loops
+    // TODO: Task 3 - Use break and continue
+    // TODO: Task 4 - Use match expressions
+    // TODO: Task 5 - Advanced flow control
 
-    // TODO: Task 3 - Shared Resources and Robot Communication
-    // let robot_position = String::from("SECTOR-7-GRID-A5");
-    // let distance_calc = calculate_distance(&robot_position);
-    // println!("✓ Robot position: {}", robot_position);
-    // println!("✓ Distance calculation: {} units", distance_calc);
-
-    // TODO: Task 4 - Command Structure and Robot Deployment
-    // let commander_robot = String::from("COMMANDER-PRIME");
-    // assign_mission(&commander_robot, &75);
-    // println!("✓ {} remains under command control", commander_robot);
-
-    // TODO: Task 5 - Advanced Fleet Management Strategies
-    // let master_fleet_id = String::from("FLEET-OMEGA-7");
-    // let backup_fleet_id = master_fleet_id.clone();
-    // println!("✓ Master Fleet: {}", master_fleet_id);
-    // println!("✓ Backup Registry: {}", backup_fleet_id);
-
-    println!("🎯 Complete all tasks to master robot ownership systems!");
+    println!("Complete all tasks to master flow control!");
 }
-
-// TODO: Add helper functions for robot operations
-// fn calculate_distance(robot_pos: &String) -> usize { robot_pos.len() }
-// fn assign_mission(robot_name: &String, energy: &i32) {
-//     println!("📋 Assigning mission to {} (Energy: {}%)", robot_name, energy);
-// }
 "#.to_string()),
-            next_level_hint: Some("Next: Advanced robot systems with lifetimes and borrowing checker for complex fleet operations!".to_string()),
-            achievement_message: Some("🎉 Outstanding! You've mastered Robot Ownership Systems - your fleet is secure from data races and memory conflicts!".to_string()),
+            next_level_hint: Some("Next: Structs and organizing data!".to_string()),
+            achievement_message: Some("🎉 Excellent! You've mastered Rust's flow control mechanisms!".to_string()),
             completion_condition: None,
             completion_flag: Some("goal".to_string()),
             completion_message: None,

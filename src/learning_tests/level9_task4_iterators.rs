@@ -212,7 +212,7 @@ fn main() {
     let items_with_distance: Vec<_> = scan_data.iter()
         .filter(|(obj_type, _, _, _)| *obj_type == "Item")
         .map(|(_, x, y, _)| {
-            let distance = (robot_pos.0 - x).abs() + (robot_pos.1 - y).abs();
+            let distance = (robot_pos.0 - *x as i32).abs() + (robot_pos.1 - *y as i32).abs();
             ((x, y), distance)
         })
         .collect();
@@ -253,7 +253,7 @@ fn main() {
     }
 
     // Path optimization - find efficient route
-    let waypoints = vec![(3, 1), (13, 3), (2, 8), (14, 9)];
+    let waypoints: Vec<(i32, i32)> = vec![(3, 1), (13, 3), (2, 8), (14, 9)];
     let path_segments: Vec<_> = waypoints.windows(2)
         .map(|segment| {
             let (x1, y1) = segment[0];

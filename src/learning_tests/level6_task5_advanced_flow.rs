@@ -219,7 +219,7 @@ fn main() {
         }
 
         let best_move = next_moves.iter().min_by_key(|&&(x, y)| {
-            let distance = (target.0 - x).abs() + (target.1 - y).abs();
+            let distance = (target.0 - x as i32).abs() + (target.1 - y as i32).abs();
             distance
         });
 
@@ -234,8 +234,8 @@ fn main() {
                     println!("Aligned with target!");
                 }
                 _ => {
-                    let remaining_distance = (target.0 - new_pos.0).abs() +
-                                            (target.1 - new_pos.1).abs();
+                    let remaining_distance = (target.0 - new_pos.0 as i32).abs() +
+                                            (target.1 - new_pos.1 as i32).abs();
                     println!("Distance to target: {}", remaining_distance);
                 }
             }

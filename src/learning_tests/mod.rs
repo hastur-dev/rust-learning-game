@@ -32,6 +32,41 @@ pub mod level5_task3_parsing;
 pub mod level5_task4_custom_conversion;
 pub mod level5_task5_inference;
 
+// Level 6 tests
+pub mod level6_task1_conditionals;
+pub mod level6_task2_loops;
+pub mod level6_task3_loop_control;
+pub mod level6_task4_match;
+pub mod level6_task5_advanced_flow;
+
+// Level 7 tests
+pub mod level7_task1_position_struct;
+pub mod level7_task2_robot_state;
+pub mod level7_task3_inventory;
+pub mod level7_task4_navigation;
+pub mod level7_task5_complete_robot;
+
+// Level 8 tests
+pub mod level8_task1_basic_enums;
+pub mod level8_task2_state_machine;
+pub mod level8_task3_option_enum;
+pub mod level8_task4_result_enum;
+pub mod level8_task5_advanced_enums;
+
+// Level 9 tests
+pub mod level9_task1_vectors;
+pub mod level9_task2_hashmaps;
+pub mod level9_task3_hashsets;
+pub mod level9_task4_iterators;
+pub mod level9_task5_advanced_collections;
+
+// Level 10 tests
+pub mod level10_task1_result_basics;
+pub mod level10_task2_custom_errors;
+pub mod level10_task3_error_propagation;
+pub mod level10_task4_error_recovery;
+pub mod level10_task5_fault_tolerant_system;
+
 // Level 11 tests (Smol Async Basics)
 pub mod level11_task1_async_function;
 pub mod level11_task2_block_on;

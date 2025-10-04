@@ -181,15 +181,15 @@ fn main() {
     }
 
     println!("\n=== Loop returning values ===");
+    let mut input = 0;
     let result = loop {
-        let mut input = 0;
         for i in 1..10 {
             input += i;
             if input > 20 {
-                break input;  // Return value from loop
+                break;  // Exit the for loop
             }
         }
-        break input;
+        break input;  // Return value from outer loop
     };
 
     println!("Loop returned value: {}", result);

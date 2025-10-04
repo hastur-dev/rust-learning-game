@@ -217,6 +217,7 @@ fn main() {
 
     type RobotResult<T> = Result<T, RobotSystemError>;
 
+    #[derive(Debug)]
     struct AdvancedRobot {
         position: (i32, i32),
         energy: u32,
